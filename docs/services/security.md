@@ -57,7 +57,7 @@ CLIENT_NAME=client1
 # create directory for keys for CORE to use
 # NOTE: the default is set to a directory that requires using sudo, but can be
 # anywhere and not require sudo at all
-KEYDIR=/etc/core/keys
+KEYDIR=/opt/core/etc/keys
 sudo mkdir $KEYDIR
 
 # move keys to directory

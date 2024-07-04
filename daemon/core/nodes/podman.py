@@ -1,10 +1,13 @@
 import json
 import logging
+import os
 import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+from mako.template import Template
 
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError, CoreError
@@ -17,6 +20,7 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 PODMAN: str = "podman"
+PODMAN_COMPOSE: str = "podman-compose"
 
 
 @dataclass
@@ -31,6 +35,14 @@ class PodmanOptions(CoreNodeOptions):
 
     unique is True for node unique volume naming
     delete is True for deleting volume mount during shutdown
+    """
+    compose: str = None
+    """
+    Path to a compose file, if one should be used for this node.
+    """
+    compose_name: str = None
+    """
+    Service name to start, within the provided compose file.
     """
 
 
@@ -74,6 +86,8 @@ class PodmanNode(CoreNode):
         options = options or PodmanOptions()
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
+        self.compose: Optional[str] = options.compose
+        self.compose_name: Optional[str] = options.compose_name
         self.binds: list[tuple[str, str]] = options.binds
         self.volumes: dict[str, VolumeMount] = {}
         for src, dst, unique, delete in options.volumes:
@@ -100,6 +114,18 @@ class PodmanNode(CoreNode):
         if shell:
             args = f"{BASH} -c {shlex.quote(args)}"
         return f"{PODMAN} exec {self.name} {args}"
+
+    def create_net_cmd(self, args: str, shell: bool = False) -> str:
+        """
+        Create command used to run network commands within the context of a node.
+
+        :param args: command arguments
+        :param shell: True to run shell like, False otherwise
+        :return: node command
+        """
+        if shell:
+            args = f"{BASH} -c {shlex.quote(args)}"
+        return f"nsenter -t {self.pid} -n -- {args}"
 
     def _unique_name(self, name: str) -> str:
         """
@@ -135,38 +161,56 @@ class PodmanNode(CoreNode):
                 raise CoreError(f"starting node({self.name}) that is already up")
             # create node directory
             self.makenodedir()
-            # setup commands for creating bind/volume mounts
-            binds = ""
-            for src, dst in self.binds:
-                binds += f"--mount type=bind,source={src},target={dst} "
-            volumes = ""
-            for volume in self.volumes.values():
-                volumes += (
-                    f"--mount type=volume," f"source={volume.src},target={volume.dst} "
-                )
-            # normalize hostname
             hostname = self.name.replace("_", "-")
-            # create container and retrieve the created containers PID
-            self.host_cmd(
-                f"{PODMAN} run -td --init --net=none --hostname {hostname} "
-                f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
-                f"{binds} {volumes} "
-                f"--privileged {self.image} tail -f /dev/null"
-            )
-            # retrieve pid and process environment for use in nsenter commands
+            if self.compose:
+                if not self.compose_name:
+                    raise CoreError(
+                        "a compose name is required when using a compose file"
+                    )
+                compose_path = os.path.expandvars(self.compose)
+                data = self.host_cmd(f"cat {compose_path}")
+                template = Template(data)
+                rendered = template.render_unicode(node=self, hostname=hostname)
+                rendered = rendered.replace('"', r"\"")
+                rendered = "\\n".join(rendered.splitlines())
+                compose_path = self.directory / "podman-compose.yml"
+                self.host_cmd(f'printf "{rendered}" >> {compose_path}', shell=True)
+                self.host_cmd(
+                    f"{PODMAN_COMPOSE} up -d {self.compose_name}", cwd=self.directory
+                )
+            else:
+                # setup commands for creating bind/volume mounts
+                binds = ""
+                for src, dst in self.binds:
+                    binds += f"--mount type=bind,source={src},target={dst} "
+                volumes = ""
+                for volume in self.volumes.values():
+                    volumes += (
+                        f"--mount type=volume,"
+                        f"source={volume.src},target={volume.dst} "
+                    )
+                # normalize hostname
+                hostname = self.name.replace("_", "-")
+                # create container and retrieve the created containers PID
+                self.host_cmd(
+                    f"{PODMAN} run -td --init --net=none --hostname {hostname} "
+                    f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
+                    f"{binds} {volumes} "
+                    f"--privileged {self.image} tail -f /dev/null"
+                )
+                # setup symlinks for bind and volume mounts within
+                for src, dst in self.binds:
+                    link_path = self.host_path(Path(dst), True)
+                    self.host_cmd(f"ln -s {src} {link_path}")
+                for volume in self.volumes.values():
+                    volume.path = self.host_cmd(
+                        f"{PODMAN} volume inspect -f '{{{{.Mountpoint}}}}' {volume.src}"
+                    )
+                    link_path = self.host_path(Path(volume.dst), True)
+                    self.host_cmd(f"ln -s {volume.path} {link_path}")
             self.pid = self.host_cmd(
                 f"{PODMAN} inspect -f '{{{{.State.Pid}}}}' {self.name}"
             )
-            # setup symlinks for bind and volume mounts within
-            for src, dst in self.binds:
-                link_path = self.host_path(Path(dst), True)
-                self.host_cmd(f"ln -s {src} {link_path}")
-            for volume in self.volumes.values():
-                volume.path = self.host_cmd(
-                    f"{PODMAN} volume inspect -f '{{{{.Mountpoint}}}}' {volume.src}"
-                )
-                link_path = self.host_path(Path(volume.dst), True)
-                self.host_cmd(f"ln -s {volume.path} {link_path}")
             logger.debug("node(%s) pid: %s", self.name, self.pid)
             self.up = True
 
@@ -181,10 +225,13 @@ class PodmanNode(CoreNode):
             return
         with self.lock:
             self.ifaces.clear()
-            self.host_cmd(f"{PODMAN} rm -f {self.name}")
-            for volume in self.volumes.values():
-                if volume.delete:
-                    self.host_cmd(f"{PODMAN} volume rm {volume.src}")
+            if self.compose:
+                self.host_cmd(f"{PODMAN_COMPOSE} down -t 0", cwd=self.directory)
+            else:
+                self.host_cmd(f"{PODMAN} rm -f {self.name}")
+                for volume in self.volumes.values():
+                    if volume.delete:
+                        self.host_cmd(f"{PODMAN} volume rm {volume.src}")
             self.up = False
 
     def termcmdstring(self, sh: str = "/bin/sh") -> str:

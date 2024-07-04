@@ -20,17 +20,6 @@ class MessageFlags(Enum):
     TTY = 0x40
 
 
-class ConfigFlags(Enum):
-    """
-    Configuration flags.
-    """
-
-    NONE = 0x00
-    REQUEST = 0x01
-    UPDATE = 0x02
-    RESET = 0x03
-
-
 class NodeTypes(Enum):
     """
     Node types.
@@ -45,10 +34,7 @@ class NodeTypes(Enum):
     TUNNEL = 8
     EMANE = 10
     TAP_BRIDGE = 11
-    PEER_TO_PEER = 12
-    CONTROL_NET = 13
     DOCKER = 15
-    LXC = 16
     WIRELESS = 17
     PODMAN = 18
 
@@ -69,11 +55,6 @@ class RegisterTlvs(Enum):
 
     WIRELESS = 0x01
     MOBILITY = 0x02
-    UTILITY = 0x03
-    EXECUTE_SERVER = 0x04
-    GUI = 0x05
-    EMULATION_SERVER = 0x06
-    SESSION = 0x0A
 
 
 class ConfigDataTypes(Enum):
@@ -123,9 +104,9 @@ class EventTypes(Enum):
         return self.value >= self.DATACOLLECT_STATE.value
 
 
-class ExceptionLevels(Enum):
+class AlertLevels(Enum):
     """
-    Exception levels.
+    Alert levels.
     """
 
     NONE = 0

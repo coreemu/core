@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 9.0.3)
+AC_INIT(core, 9.1.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -17,18 +17,14 @@ PACKAGE_VENDOR="CORE Developers"
 PACKAGE_MAINTAINERS="$PACKAGE_VENDOR"
 
 # core specific variables
-CORE_LIB_DIR="\${prefix}/lib/core"
-CORE_CONF_DIR="/etc/core"
-CORE_DATA_DIR="\${datadir}/core"
-CORE_STATE_DIR="/var"
+CORE_CONF_DIR="/opt/core/etc"
+CORE_DATA_DIR="/opt/core/share"
 
 AC_SUBST(PACKAGE_DATE)
 AC_SUBST(PACKAGE_MAINTAINERS)
 AC_SUBST(PACKAGE_VENDOR)
-AC_SUBST(CORE_LIB_DIR)
 AC_SUBST(CORE_CONF_DIR)
 AC_SUBST(CORE_DATA_DIR)
-AC_SUBST(CORE_STATE_DIR)
 
 # documentation option
 AC_ARG_ENABLE([docs],

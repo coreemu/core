@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Optional
 
 from PIL import Image
+from PIL.Image import Resampling
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Node, NodeType
@@ -32,7 +33,7 @@ def from_file(
     width = int(width * scale)
     height = int(height * scale)
     image = Image.open(file_path)
-    image = image.resize((width, height), Image.ANTIALIAS)
+    image = image.resize((width, height), Resampling.LANCZOS)
     return PhotoImage(image)
 
 
@@ -79,7 +80,6 @@ class ImageEnum(Enum):
     ANTENNA = "antenna"
     DOCKER = "docker"
     PODMAN = "podman"
-    LXC = "lxc"
     ALERT = "alert"
     DELETE = "delete"
     SHUTDOWN = "shutdown"
@@ -103,7 +103,6 @@ TYPE_MAP: dict[tuple[NodeType, str], ImageEnum] = {
     (NodeType.TUNNEL, None): ImageEnum.TUNNEL,
     (NodeType.DOCKER, None): ImageEnum.DOCKER,
     (NodeType.PODMAN, None): ImageEnum.PODMAN,
-    (NodeType.LXC, None): ImageEnum.LXC,
 }
 
 

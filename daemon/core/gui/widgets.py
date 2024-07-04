@@ -1,4 +1,5 @@
 import logging
+import re
 import tkinter as tk
 from functools import partial
 from pathlib import Path
@@ -9,6 +10,7 @@ from core.api.grpc.wrappers import ConfigOption, ConfigOptionType
 from core.gui import appconfig, themes, validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
+from core.gui.tooltip import Tooltip
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +43,7 @@ class FrameScroll(ttk.Frame):
         master: tk.Widget,
         app: "Application",
         _cls: type[ttk.Frame] = ttk.Frame,
-        **kw: Any
+        **kw: Any,
     ) -> None:
         super().__init__(master, **kw)
         self.app: "Application" = app
@@ -88,7 +90,7 @@ class ConfigFrame(ttk.Notebook):
         app: "Application",
         config: dict[str, ConfigOption],
         enabled: bool = True,
-        **kw: Any
+        **kw: Any,
     ) -> None:
         super().__init__(master, **kw)
         self.app: "Application" = app
@@ -148,6 +150,8 @@ class ConfigFrame(ttk.Notebook):
                     else:
                         entry = ttk.Entry(tab.frame, textvariable=value, state=state)
                         entry.grid(row=index, column=1, sticky=tk.EW)
+                        if option.regex:
+                            Tooltip(entry, option.regex)
                 elif option.type in INT_TYPES:
                     value.set(option.value)
                     state = tk.NORMAL if self.enabled else tk.DISABLED
@@ -177,6 +181,12 @@ class ConfigFrame(ttk.Notebook):
                 else:
                     option.value = "0"
             else:
+                if option.regex:
+                    if not re.match(option.regex, config_value):
+                        raise ValueError(
+                            f"{option.label} value '{config_value}' "
+                            f"does not match regex '{option.regex}'"
+                        )
                 option.value = config_value
         return {x: self.config[x].value for x in self.config}
 
@@ -216,7 +226,7 @@ class CheckboxList(FrameScroll):
         master: ttk.Widget,
         app: "Application",
         clicked: Callable = None,
-        **kw: Any
+        **kw: Any,
     ) -> None:
         super().__init__(master, app, **kw)
         self.clicked: Callable = clicked

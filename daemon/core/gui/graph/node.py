@@ -14,7 +14,6 @@ from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
-from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wirelessconfig import WirelessConfigDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
@@ -198,7 +197,9 @@ class CanvasNode:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
             try:
-                output = self.app.core.run(self.core_node.id)
+                output = self.app.core.run_cmd(
+                    self.core_node.id, self.app.core.observer
+                )
                 self.tooltip.text.set(output)
             except grpc.RpcError as e:
                 self.app.show_grpc_exception("Observer Error", e)
@@ -242,8 +243,17 @@ class CanvasNode:
                     label="Mobility Player", command=self.show_mobility_player
                 )
             if nutils.is_container(self.core_node):
+                cmds_menu = tk.Menu(self.context)
+                for name, cmd in self.app.core.node_commands.items():
+                    cmd_func = functools.partial(
+                        self.app.core.run_cmd, self.core_node.id, cmd
+                    )
+                    cmds_menu.add_command(label=name, command=cmd_func)
+                themes.style_menu(cmds_menu)
+                self.context.add_cascade(label="Commands", menu=cmds_menu)
+
                 services_menu = tk.Menu(self.context)
-                for service in sorted(self.core_node.config_services):
+                for service in sorted(self.core_node.services):
                     service_menu = tk.Menu(services_menu)
                     themes.style_menu(service_menu)
                     start_func = functools.partial(self.start_service, service)
@@ -260,12 +270,7 @@ class CanvasNode:
         else:
             self.context.add_command(label="Configure", command=self.show_config)
             if nutils.is_container(self.core_node):
-                self.context.add_command(
-                    label="Config Services", command=self.show_config_services
-                )
-                self.context.add_command(
-                    label="Services (Deprecated)", command=self.show_services
-                )
+                self.context.add_command(label="Services", command=self.show_services)
             if is_emane:
                 self.context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -382,10 +387,6 @@ class CanvasNode:
         dialog = NodeServiceDialog(self.app, self.core_node)
         dialog.show()
 
-    def show_config_services(self) -> None:
-        dialog = NodeConfigServiceDialog(self.app, self.core_node)
-        dialog.show()
-
     def has_emane_link(self, iface_id: int) -> Node:
         result = None
         for edge in self.edges:
@@ -479,7 +480,7 @@ class CanvasNode:
     def _service_action(self, service: str, action: ServiceAction) -> None:
         session_id = self.app.core.session.id
         try:
-            result = self.app.core.client.config_service_action(
+            result = self.app.core.client.service_action(
                 session_id, self.core_node.id, service, action
             )
             if not result:

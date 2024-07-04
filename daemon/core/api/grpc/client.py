@@ -13,11 +13,6 @@ from typing import Any, Optional
 import grpc
 
 from core.api.grpc import core_pb2, core_pb2_grpc, emane_pb2, wrappers
-from core.api.grpc.configservices_pb2 import (
-    GetConfigServiceDefaultsRequest,
-    GetConfigServiceRenderedRequest,
-    GetNodeConfigServiceRequest,
-)
 from core.api.grpc.core_pb2 import (
     ExecuteScriptRequest,
     GetConfigRequest,
@@ -39,12 +34,11 @@ from core.api.grpc.mobility_pb2 import (
     SetMobilityConfigRequest,
 )
 from core.api.grpc.services_pb2 import (
-    GetNodeServiceFileRequest,
+    CreateServiceRequest,
     GetNodeServiceRequest,
     GetServiceDefaultsRequest,
+    GetServiceRenderedRequest,
     ServiceActionRequest,
-    ServiceDefaults,
-    SetServiceDefaultsRequest,
 )
 from core.api.grpc.wlan_pb2 import (
     GetWlanConfigRequest,
@@ -109,6 +103,24 @@ class EmanePathlossesStreamer:
 
     def next(self) -> Optional[emane_pb2.EmanePathlossesRequest]:
         request: Optional[wrappers.EmanePathlossesRequest] = self.queue.get()
+        if request:
+            return request.to_proto()
+        else:
+            return request
+
+    def iter(self):
+        return iter(self.next, None)
+
+
+class EmaneEventsStreamer:
+    def __init__(self) -> None:
+        self.queue: Queue = Queue()
+
+    def send(self, request: Optional[wrappers.EmaneEventsRequest]) -> None:
+        self.queue.put(request)
+
+    def next(self) -> Optional[emane_pb2.EmaneEventsRequest]:
+        request: Optional[wrappers.EmaneEventsRequest] = self.queue.get()
         if request:
             return request.to_proto()
         else:
@@ -326,7 +338,7 @@ class CoreGrpcClient:
     def alert(
         self,
         session_id: int,
-        level: wrappers.ExceptionLevel,
+        level: wrappers.AlertLevel,
         source: str,
         text: str,
         node_id: int = None,
@@ -707,79 +719,6 @@ class CoreGrpcClient:
         response = self.stub.GetConfig(request)
         return wrappers.CoreConfig.from_proto(response)
 
-    def get_service_defaults(self, session_id: int) -> list[wrappers.ServiceDefault]:
-        """
-        Get default services for different default node models.
-
-        :param session_id: session id
-        :return: list of service defaults
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetServiceDefaultsRequest(session_id=session_id)
-        response = self.stub.GetServiceDefaults(request)
-        defaults = []
-        for default_proto in response.defaults:
-            default = wrappers.ServiceDefault.from_proto(default_proto)
-            defaults.append(default)
-        return defaults
-
-    def set_service_defaults(
-        self, session_id: int, service_defaults: dict[str, list[str]]
-    ) -> bool:
-        """
-        Set default services for node models.
-
-        :param session_id: session id
-        :param service_defaults: node models to lists of services
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        defaults = []
-        for model in service_defaults:
-            services = service_defaults[model]
-            default = ServiceDefaults(model=model, services=services)
-            defaults.append(default)
-        request = SetServiceDefaultsRequest(session_id=session_id, defaults=defaults)
-        response = self.stub.SetServiceDefaults(request)
-        return response.result
-
-    def get_node_service(
-        self, session_id: int, node_id: int, service: str
-    ) -> wrappers.NodeServiceData:
-        """
-        Get service data for a node.
-
-        :param session_id: session id
-        :param node_id: node id
-        :param service: service name
-        :return: node service data
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = GetNodeServiceRequest(
-            session_id=session_id, node_id=node_id, service=service
-        )
-        response = self.stub.GetNodeService(request)
-        return wrappers.NodeServiceData.from_proto(response.service)
-
-    def get_node_service_file(
-        self, session_id: int, node_id: int, service: str, file_name: str
-    ) -> str:
-        """
-        Get a service file for a node.
-
-        :param session_id: session id
-        :param node_id: node id
-        :param service: service name
-        :param file_name: file name to get data for
-        :return: file data
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = GetNodeServiceFileRequest(
-            session_id=session_id, node_id=node_id, service=service, file=file_name
-        )
-        response = self.stub.GetNodeServiceFile(request)
-        return response.data
-
     def service_action(
         self,
         session_id: int,
@@ -802,30 +741,6 @@ class CoreGrpcClient:
             session_id=session_id, node_id=node_id, service=service, action=action.value
         )
         response = self.stub.ServiceAction(request)
-        return response.result
-
-    def config_service_action(
-        self,
-        session_id: int,
-        node_id: int,
-        service: str,
-        action: wrappers.ServiceAction,
-    ) -> bool:
-        """
-        Send an action to a config service for a node.
-
-        :param session_id: session id
-        :param node_id: node id
-        :param service: config service name
-        :param action: action for service (start, stop, restart,
-            validate)
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = ServiceActionRequest(
-            session_id=session_id, node_id=node_id, service=service, action=action.value
-        )
-        response = self.stub.ConfigServiceAction(request)
         return response.result
 
     def get_wlan_config(
@@ -907,7 +822,7 @@ class CoreGrpcClient:
         """
         request = core_pb2.SaveXmlRequest(session_id=session_id)
         response = self.stub.SaveXml(request)
-        with open(file_path, "w") as xml_file:
+        with open(file_path, "wb") as xml_file:
             xml_file.write(response.data)
 
     def open_xml(self, file_path: Path, start: bool = False) -> tuple[bool, int]:
@@ -952,28 +867,28 @@ class CoreGrpcClient:
         response = self.stub.GetInterfaces(request)
         return list(response.ifaces)
 
-    def get_config_service_defaults(
+    def get_service_defaults(
         self, session_id: int, node_id: int, name: str
-    ) -> wrappers.ConfigServiceDefaults:
+    ) -> wrappers.ServiceDefaults:
         """
-        Retrieves config service default values.
+        Retrieves service default values.
 
         :param session_id: session id to get node from
         :param node_id: node id to get service data from
         :param name: name of service to get defaults for
-        :return: config service defaults
+        :return: service defaults
         """
-        request = GetConfigServiceDefaultsRequest(
+        request = GetServiceDefaultsRequest(
             name=name, session_id=session_id, node_id=node_id
         )
-        response = self.stub.GetConfigServiceDefaults(request)
-        return wrappers.ConfigServiceDefaults.from_proto(response)
+        response = self.stub.GetServiceDefaults(request)
+        return wrappers.ServiceDefaults.from_proto(response)
 
-    def get_node_config_service(
+    def get_node_service(
         self, session_id: int, node_id: int, name: str
     ) -> dict[str, str]:
         """
-        Retrieves information for a specific config service on a node.
+        Retrieves information for a specific service on a node.
 
         :param session_id: session node belongs to
         :param node_id: id of node to get service information from
@@ -981,27 +896,27 @@ class CoreGrpcClient:
         :return: config dict of names to values
         :raises grpc.RpcError: when session or node doesn't exist
         """
-        request = GetNodeConfigServiceRequest(
+        request = GetNodeServiceRequest(
             session_id=session_id, node_id=node_id, name=name
         )
-        response = self.stub.GetNodeConfigService(request)
+        response = self.stub.GetNodeService(request)
         return dict(response.config)
 
-    def get_config_service_rendered(
+    def get_service_rendered(
         self, session_id: int, node_id: int, name: str
     ) -> dict[str, str]:
         """
-        Retrieve the rendered config service files for a node.
+        Retrieve the rendered service files for a node.
 
         :param session_id: id of session
         :param node_id: id of node
         :param name: name of service
         :return: dict mapping names of files to rendered data
         """
-        request = GetConfigServiceRenderedRequest(
+        request = GetServiceRenderedRequest(
             session_id=session_id, node_id=node_id, name=name
         )
-        response = self.stub.GetConfigServiceRendered(request)
+        response = self.stub.GetServiceRendered(request)
         return dict(response.rendered)
 
     def get_emane_event_channel(
@@ -1065,6 +980,16 @@ class CoreGrpcClient:
             exist
         """
         self.stub.EmanePathlosses(streamer.iter())
+
+    def emane_events(self, streamer: EmaneEventsStreamer) -> None:
+        """
+        Stream EMANE events.
+
+        :param streamer: emane events streamer
+        :return: nothing
+        :raises grpc.RpcError: when an event session, node, iface, or nem does not exist
+        """
+        self.stub.EmaneEvents(streamer.iter())
 
     def linked(
         self,
@@ -1140,6 +1065,20 @@ class CoreGrpcClient:
         request = GetWirelessConfigRequest(session_id=session_id, node_id=node_id)
         response = self.stub.GetWirelessConfig(request)
         return wrappers.ConfigOption.from_dict(response.config)
+
+    def create_service(
+        self,
+        service: wrappers.Service,
+        templates: dict[str, str],
+        recreate: bool = False,
+    ) -> bool:
+        request = CreateServiceRequest(
+            service=service.to_proto(),
+            templates=templates,
+            recreate=recreate,
+        )
+        response = self.stub.CreateService(request)
+        return response.result
 
     def connect(self) -> None:
         """

@@ -22,7 +22,7 @@ This section covers using the saved **scenario.xml** file to get and up and runn
    </p>
 * Make sure the **core-daemon** is running in a terminal
    ```shell
-   sudop core-daemon
+   sudo core-daemon
    ```
 * In another terminal run the GUI
    ```shell
@@ -101,7 +101,7 @@ This section covers leveraging the gRPC script to get up and running.
    </p>
 * Make sure the **core-daemon** is running in a terminal
    ```shell
-   sudop core-daemon
+   sudo core-daemon
    ```
 * In another terminal run the GUI
    ```shell

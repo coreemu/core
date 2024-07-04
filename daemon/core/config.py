@@ -45,6 +45,7 @@ class Configuration:
     default: str = ""
     options: list[str] = field(default_factory=list)
     group: str = "Configuration"
+    regex: str = None
 
     def __post_init__(self) -> None:
         self.label = self.label if self.label else self.id
@@ -80,6 +81,7 @@ class ConfigBool(Configuration):
 
     type: ConfigDataTypes = ConfigDataTypes.BOOL
     value: bool = False
+    default: str = "0"
 
 
 @dataclass

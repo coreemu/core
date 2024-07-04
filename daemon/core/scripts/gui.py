@@ -2,6 +2,7 @@ import argparse
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
+from core import utils
 from core.gui import appconfig, images
 from core.gui.app import Application
 
@@ -39,6 +40,10 @@ def main() -> None:
         level=log_level, format=log_format, handlers=[stream_handler, file_handler]
     )
     logging.getLogger("PIL").setLevel(logging.ERROR)
+
+    # enable xhost for root
+    if utils.which("xhost", False):
+        utils.cmd("xhost +SI:localuser:root")
 
     # start app
     images.load_all()

@@ -71,7 +71,7 @@ Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.
 
 ## EMANE Configuration
 
-The CORE configuration file **/etc/core/core.conf** has options specific to
+The CORE configuration file **/opt/core/etc/core.conf** has options specific to
 EMANE. An example emane section from the **core.conf** file is shown below:
 
 ```shell
@@ -124,7 +124,7 @@ Here is an example model with documentation describing functionality:
 Example custom emane model.
 """
 from pathlib import Path
-from typing import Dict, Optional, Set, List
+from typing import Optional
 
 from core.config import Configuration
 from core.emane import emanemanifest, emanemodel
@@ -162,18 +162,20 @@ class ExampleModel(emanemodel.EmaneModel):
 
     name: str = "emane_example"
     mac_library: str = "rfpipemaclayer"
-    mac_xml: str = "/usr/share/emane/manifest/rfpipemaclayer.xml"
-    mac_defaults: Dict[str, str] = {
+    mac_xml: str = "rfpipemaclayer.xml"
+    mac_defaults: dict[str, str] = {
         "pcrcurveuri": "/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
     }
-    mac_config: List[Configuration] = []
+    mac_config: list[Configuration] = []
     phy_library: Optional[str] = None
-    phy_xml: str = "/usr/share/emane/manifest/emanephy.xml"
-    phy_defaults: Dict[str, str] = {
-        "subid": "1", "propagationmodel": "2ray", "noisemode": "none"
+    phy_xml: str = "emanephy.xml"
+    phy_defaults: dict[str, str] = {
+        "subid": "1",
+        "propagationmodel": "2ray",
+        "noisemode": "none",
     }
-    phy_config: List[Configuration] = []
-    config_ignore: Set[str] = set()
+    phy_config: list[Configuration] = []
+    config_ignore: set[str] = set()
 
     @classmethod
     def load(cls, emane_prefix: Path) -> None:
@@ -192,6 +194,7 @@ class ExampleModel(emanemodel.EmaneModel):
         # load phy configuration
         phy_xml_path = emane_prefix / manifest_path / cls.phy_xml
         cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)
+
 ```
 
 ## Single PC with EMANE

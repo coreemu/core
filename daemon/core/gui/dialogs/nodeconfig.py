@@ -1,10 +1,12 @@
 import logging
 import tkinter as tk
 from functools import partial
-from tkinter import messagebox, ttk
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
 import netaddr
+from netaddr import AddrFormatError, IPNetwork
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Interface, Node
@@ -186,11 +188,16 @@ class NodeConfigDialog(Dialog):
         self.name: tk.StringVar = tk.StringVar(value=self.node.name)
         self.type: tk.StringVar = tk.StringVar(value=self.node.model)
         self.container_image: tk.StringVar = tk.StringVar(value=self.node.image)
+        self.compose_file: tk.StringVar = tk.StringVar(value=self.node.compose)
+        self.compose_name: tk.StringVar = tk.StringVar(value=self.node.compose_name)
         server = DEFAULT_SERVER
         if self.node.server:
             server = self.node.server
         self.server: tk.StringVar = tk.StringVar(value=server)
         self.ifaces: dict[int, InterfaceData] = {}
+        subnets = self.app.core.ifaces_manager.get_wireless_nets(self.node.id)
+        self.ip4_subnet: tk.StringVar = tk.StringVar(value=str(subnets.ip4))
+        self.ip6_subnet: tk.StringVar = tk.StringVar(value=str(subnets.ip6))
         self.draw()
 
     def draw(self) -> None:
@@ -219,42 +226,88 @@ class NodeConfigDialog(Dialog):
         self.image_button.grid(row=row, column=1, sticky=tk.EW)
         row += 1
 
-        # name field
-        label = ttk.Label(frame, text="Name")
-        label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-        entry = validation.NodeNameEntry(frame, textvariable=self.name, state=state)
-        entry.grid(row=row, column=1, sticky=tk.EW)
+        overview_frame = ttk.Labelframe(frame, text="Overview", padding=FRAME_PAD)
+        overview_frame.grid(row=row, columnspan=2, sticky=tk.EW, pady=PADY)
+        overview_frame.columnconfigure(1, weight=1)
+        overview_row = 0
         row += 1
+
+        # name field
+        label = ttk.Label(overview_frame, text="Name")
+        label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+        entry = validation.NodeNameEntry(
+            overview_frame, textvariable=self.name, state=state
+        )
+        entry.grid(row=overview_row, column=1, sticky=tk.EW)
+        overview_row += 1
 
         # node type field
         if nutils.is_model(self.node):
-            label = ttk.Label(frame, text="Type")
-            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-            entry = ttk.Entry(frame, textvariable=self.type, state=tk.DISABLED)
-            entry.grid(row=row, column=1, sticky=tk.EW)
-            row += 1
-
-        # container image field
-        if nutils.has_image(self.node.type):
-            label = ttk.Label(frame, text="Image")
-            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-            entry = ttk.Entry(frame, textvariable=self.container_image, state=state)
-            entry.grid(row=row, column=1, sticky=tk.EW)
-            row += 1
+            label = ttk.Label(overview_frame, text="Type")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            entry = ttk.Entry(overview_frame, textvariable=self.type, state=tk.DISABLED)
+            entry.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
 
         if nutils.is_container(self.node):
-            # server
-            frame.grid(sticky=tk.EW)
-            frame.columnconfigure(1, weight=1)
-            label = ttk.Label(frame, text="Server")
-            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            label = ttk.Label(overview_frame, text="Server")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             servers = [DEFAULT_SERVER]
             servers.extend(list(sorted(self.app.core.servers.keys())))
             combobox = ttk.Combobox(
-                frame, textvariable=self.server, values=servers, state=combo_state
+                overview_frame,
+                textvariable=self.server,
+                values=servers,
+                state=combo_state,
             )
-            combobox.grid(row=row, column=1, sticky=tk.EW)
-            row += 1
+            combobox.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
+
+        # container image field
+        if nutils.has_image(self.node.type):
+            # image name
+            label = ttk.Label(overview_frame, text="Image")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            entry = ttk.Entry(
+                overview_frame, textvariable=self.container_image, state=state
+            )
+            entry.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
+            # compose file
+            compose_frame = ttk.Frame(overview_frame)
+            compose_frame.columnconfigure(0, weight=2)
+            compose_frame.columnconfigure(1, weight=1)
+            compose_frame.columnconfigure(2, weight=1)
+            entry = ttk.Entry(
+                compose_frame, textvariable=self.compose_file, state=state
+            )
+            entry.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
+            button = ttk.Button(
+                compose_frame,
+                text="Compose File",
+                command=self.click_compose,
+                state=state,
+            )
+            button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
+            button = ttk.Button(
+                compose_frame,
+                text="Clear",
+                command=self.click_compose_clear,
+                state=state,
+            )
+            button.grid(row=0, column=2, sticky=tk.EW)
+            compose_frame.grid(
+                row=overview_row, column=0, columnspan=2, sticky=tk.EW, pady=PADY
+            )
+            overview_row += 1
+            # compose name
+            label = ttk.Label(overview_frame, text="Compose Name")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            entry = ttk.Entry(
+                overview_frame, textvariable=self.compose_name, state=state
+            )
+            entry.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
 
         if nutils.is_rj45(self.node):
             ifaces = self.app.core.client.get_ifaces()
@@ -269,6 +322,9 @@ class NodeConfigDialog(Dialog):
             row += 1
             ifaces_scroll.listbox.bind("<<ListboxSelect>>", self.iface_select)
 
+        if nutils.is_wireless(self.node):
+            self.draw_network_config()
+
         # interfaces
         if nutils.is_container(self.node):
             self.draw_ifaces()
@@ -276,7 +332,23 @@ class NodeConfigDialog(Dialog):
         self.draw_spacer()
         self.draw_buttons()
 
+    def draw_network_config(self) -> None:
+        frame = ttk.LabelFrame(self.top, text="Network", padding=FRAME_PAD)
+        frame.grid(sticky=tk.EW, pady=PADY)
+        for i in range(2):
+            frame.columnconfigure(i, weight=1)
+        label = ttk.Label(frame, text="IPv4 Subnet")
+        label.grid(row=0, column=0, sticky=tk.EW)
+        entry = ttk.Entry(frame, textvariable=self.ip4_subnet)
+        entry.grid(row=0, column=1, sticky=tk.EW)
+        label = ttk.Label(frame, text="IPv6 Subnet")
+        label.grid(row=1, column=0, sticky=tk.EW)
+        entry = ttk.Entry(frame, textvariable=self.ip6_subnet)
+        entry.grid(row=1, column=1, sticky=tk.EW)
+
     def draw_ifaces(self) -> None:
+        if not self.canvas_node.ifaces:
+            return
         notebook = ttk.Notebook(self.top)
         notebook.grid(sticky=tk.NSEW, pady=PADY)
         self.top.rowconfigure(notebook.grid_info()["row"], weight=1)
@@ -378,7 +450,16 @@ class NodeConfigDialog(Dialog):
         # update core node
         self.node.name = self.name.get()
         if nutils.has_image(self.node.type):
-            self.node.image = self.container_image.get()
+            self.node.image = self.container_image.get() or None
+            self.node.compose = self.compose_file.get() or None
+            self.node.compose_name = self.compose_name.get() or None
+            if self.node.compose and not self.node.compose_name:
+                messagebox.showerror(
+                    "Compose Error",
+                    "Name required when using a compose file",
+                    parent=self.top,
+                )
+                return
         server = self.server.get()
         if nutils.is_container(self.node):
             if server == DEFAULT_SERVER:
@@ -400,6 +481,18 @@ class NodeConfigDialog(Dialog):
             if error:
                 break
 
+        # save custom network for wireless node types
+        if nutils.is_wireless(self.node):
+            try:
+                ip4_subnet = IPNetwork(self.ip4_subnet.get())
+                ip6_subnet = IPNetwork(self.ip6_subnet.get())
+                self.app.core.ifaces_manager.set_wireless_nets(
+                    self.node.id, ip4_subnet, ip6_subnet
+                )
+            except AddrFormatError as e:
+                messagebox.showerror("IP Network Error", str(e), parent=self.top)
+                return
+
         # redraw
         if not error:
             self.canvas_node.redraw()
@@ -411,3 +504,19 @@ class NodeConfigDialog(Dialog):
         if cur:
             iface = listbox.get(cur[0])
             self.name.set(iface)
+
+    def click_compose(self) -> None:
+        file_path = filedialog.askopenfilename(
+            parent=self,
+            initialdir=str(Path.home()),
+            title="Select Compose File",
+            filetypes=(
+                ("yaml", "*.yml *.yaml ..."),
+                ("All Files", "*"),
+            ),
+        )
+        if file_path:
+            self.compose_file.set(file_path)
+
+    def click_compose_clear(self) -> None:
+        self.compose_file.set("")

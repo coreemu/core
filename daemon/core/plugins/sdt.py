@@ -91,8 +91,8 @@ class Sdt:
         self.address: Optional[tuple[Optional[str], Optional[int]]] = None
         self.protocol: Optional[str] = None
         self.network_layers: set[str] = set()
-        self.session.node_handlers.append(self.handle_node_update)
-        self.session.link_handlers.append(self.handle_link_update)
+        self.session.broadcast_manager.add_handler(NodeData, self.handle_node_update)
+        self.session.broadcast_manager.add_handler(LinkData, self.handle_link_update)
 
     def is_enabled(self) -> bool:
         """

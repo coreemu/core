@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:22.04
+WORKDIR /opt
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    git \
+    ca-certificates \
+    automake \
+    make \
+    libtool \
+    pkg-config \
+    gawk \
+    g++ \
+    dpkg-dev \
+    debhelper \
+    libreadline-dev \
+    texinfo \
+    imagemagick \
+    groff \
+    build-essential:native \
+    texlive-latex-recommended \
+    texlive-plain-generic && \
+    git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+    cd ospf-mdr && \
+    ./bootstrap.sh && \
+    ./configure && \
+    (make -f quagga.deb.mk build || make -f quagga.deb.mk build) && \
+    mv quagga-mr_0.99*.deb /opt/ && \
+    cd /opt && \
+    rm -rf ospf-mdr && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*

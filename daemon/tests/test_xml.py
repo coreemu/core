@@ -11,7 +11,7 @@ from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode, WlanNode
-from core.services.utility import SshService
+from core.services.defaults.utilservices.services import DefaultRouteService
 
 
 class TestXml:
@@ -46,14 +46,13 @@ class TestXml:
         session.shutdown()
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        runtime_hooks = session.hooks.get(state)
-        assert runtime_hooks
-        runtime_hook = runtime_hooks[0]
-        assert file_name == runtime_hook[0]
-        assert data == runtime_hook[1]
+        hooks = session.hook_manager.script_hooks[state]
+        runtime_data = hooks[file_name]
+        assert runtime_data == data
 
     def test_xml_ptp(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -98,6 +97,7 @@ class TestXml:
         assert len(session.link_manager.links()) == 0
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -125,12 +125,10 @@ class TestXml:
         session.add_link(node1.id, node2.id, iface1_data, iface2_data)
 
         # set custom values for node service
-        session.services.set_service(node1.id, SshService.name)
-        service_file = SshService.configs[0]
+        service = node1.services[DefaultRouteService.name]
+        file_name = DefaultRouteService.files[0]
         file_data = "# test"
-        session.services.set_service_file(
-            node1.id, SshService.name, service_file, file_data
-        )
+        service.set_template(file_name, file_data)
 
         # instantiate session
         session.instantiate()
@@ -154,15 +152,18 @@ class TestXml:
             assert not session.get_node(node2.id, CoreNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # retrieve custom service
-        service = session.services.get_service(node1.id, SshService.name)
+        node1_xml = session.get_node(node1.id, CoreNode)
+        service_xml = node1_xml.services[DefaultRouteService.name]
 
         # verify nodes have been recreated
         assert session.get_node(node1.id, CoreNode)
         assert session.get_node(node2.id, CoreNode)
-        assert service.config_data.get(service_file) == file_data
+        templates = service_xml.get_templates()
+        assert file_data == templates[file_name]
 
     def test_xml_mobility(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -211,6 +212,7 @@ class TestXml:
             assert not session.get_node(node2.id, CoreNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # retrieve configuration we set originally
@@ -258,6 +260,7 @@ class TestXml:
             assert not session.get_node(switch2.id, SwitchNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -314,6 +317,7 @@ class TestXml:
             assert not session.get_node(switch.id, SwitchNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -377,6 +381,7 @@ class TestXml:
             assert not session.get_node(node2.id, CoreNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -410,7 +415,7 @@ class TestXml:
 
         # create link
         options1 = LinkOptions()
-        options1.unidirectional = 1
+        options1.unidirectional = True
         options1.bandwidth = 5000
         options1.delay = 10
         options1.loss = 10.5
@@ -421,7 +426,7 @@ class TestXml:
             node1.id, node2.id, iface1_data, iface2_data, options1
         )
         options2 = LinkOptions()
-        options2.unidirectional = 1
+        options2.unidirectional = True
         options2.bandwidth = 10000
         options2.delay = 20
         options2.loss = 10
@@ -452,6 +457,7 @@ class TestXml:
             assert not session.get_node(node2.id, CoreNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated

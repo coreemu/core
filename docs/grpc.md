@@ -1,4 +1,4 @@
-* Table of Contents
+# gRPC API
 
 ## Overview
 
@@ -97,7 +97,7 @@ Event types:
 * node - events for node movements and icon changes
 * link - events for link configuration changes and wireless link add/delete
 * config - configuration events when legacy gui joins a session
-* exception - alert/error events
+* alert - alert events
 * file - file events when the legacy gui joins a session
 
 ```python

@@ -21,7 +21,7 @@ file, leveraging an NS2 file for mobility.
 
 * Make sure the **core-daemon** is running a terminal
    ```shell
-   sudop core-daemon
+   sudo core-daemon
    ```
 * In another terminal run the GUI
    ```shell
@@ -80,7 +80,7 @@ This section covers using a gRPC script to create and provide scenario movement.
 
 * Make sure the **core-daemon** is running a terminal
    ```shell
-   sudop core-daemon
+   sudo core-daemon
    ```
 * From another terminal run the **scenario.py** script
    ```shell
@@ -136,7 +136,7 @@ This section provides an example for running a script within a node, that
 leverages a control network in CORE for issuing mobility using the gRPC
 API.
 
-* Edit the following line in **/etc/core/core.conf**
+* Edit the following line in **/opt/core/etc/core.conf**
    ```shell
    grpcaddress = 0.0.0.0
    ```

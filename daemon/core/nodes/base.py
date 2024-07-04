@@ -9,28 +9,26 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 import netaddr
 
 from core import utils
-from core.configservice.dependencies import ConfigServiceDependencies
 from core.emulator.data import InterfaceData, LinkOptions
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH, MOUNT, TEST, VCMD, VNODED
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.netclient import LinuxNetClient, get_net_client
+from core.services.dependencies import ServiceDependencies
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
-    from core.configservice.base import ConfigService
-    from core.services.coreservices import CoreService
+    from core.services.base import CoreService
 
-    CoreServices = list[Union[CoreService, type[CoreService]]]
-    ConfigServiceType = type[ConfigService]
+    ServiceType = type[CoreService]
 
 PRIVATE_DIRS: list[Path] = [Path("/var/run"), Path("/var/log")]
 
@@ -115,12 +113,8 @@ class CoreNodeOptions(NodeOptions):
     """model is used for providing a default set of services"""
     services: list[str] = field(default_factory=list)
     """services to start within node"""
-    config_services: list[str] = field(default_factory=list)
-    """config services to start within node"""
     directory: Path = None
     """directory to define node, defaults to path under the session directory"""
-    legacy: bool = False
-    """legacy nodes default to standard services"""
 
 
 class NodeBase(abc.ABC):
@@ -131,7 +125,7 @@ class NodeBase(abc.ABC):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
+        _id: int,
         name: str = None,
         server: "DistributedServer" = None,
         options: NodeOptions = None,
@@ -147,11 +141,10 @@ class NodeBase(abc.ABC):
         :param options: options to create node with
         """
         self.session: "Session" = session
-        self.id: int = _id if _id is not None else self.session.next_node_id()
+        self.id: int = _id
         self.name: str = name or f"{self.__class__.__name__}{self.id}"
         self.server: "DistributedServer" = server
         self.model: Optional[str] = None
-        self.services: CoreServices = []
         self.ifaces: dict[int, CoreInterface] = {}
         self.iface_id: int = 0
         self.position: Position = Position()
@@ -160,9 +153,18 @@ class NodeBase(abc.ABC):
         self.net_client: LinuxNetClient = get_net_client(
             self.session.use_ovs(), self.host_cmd
         )
+        self.node_net_client: LinuxNetClient = self._get_node_net_client()
         options = options if options else NodeOptions()
         self.canvas: Optional[int] = options.canvas
         self.icon: Optional[str] = options.icon
+
+    def _get_node_net_client(self) -> LinuxNetClient:
+        """
+        Create and return network command client to run within context of the node.
+
+        :return: network command client
+        """
+        return get_net_client(self.session.use_ovs(), self.cmd)
 
     @classmethod
     def create_options(cls) -> NodeOptions:
@@ -388,14 +390,14 @@ class CoreNodeBase(NodeBase):
         """
         Create a CoreNodeBase instance.
 
-        :param session: CORE session object
-        :param _id: object id
-        :param name: object name
+        :param session: session owning this node
+        :param _id: id of this node
+        :param name: name of this node
         :param server: remote server node
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server, options)
-        self.config_services: dict[str, "ConfigService"] = {}
+        self.services: dict[str, "CoreService"] = {}
         self.directory: Optional[Path] = None
         self.tmpnodedir: bool = False
 
@@ -469,17 +471,17 @@ class CoreNodeBase(NodeBase):
             directory = str(path.parent).strip("/").replace("/", ".")
             return self.directory / directory / path.name
 
-    def add_config_service(self, service_class: "ConfigServiceType") -> None:
+    def add_service(self, service_class: "ServiceType") -> None:
         """
-        Adds a configuration service to the node.
+        Adds a service to the node.
 
-        :param service_class: configuration service class to assign to node
+        :param service_class: service class to assign to node
         :return: nothing
         """
         name = service_class.name
-        if name in self.config_services:
+        if name in self.services:
             raise CoreError(f"node({self.name}) already has service({name})")
-        self.config_services[name] = service_class(self)
+        self.services[name] = service_class(self)
 
     def set_service_config(self, name: str, data: dict[str, str]) -> None:
         """
@@ -489,30 +491,30 @@ class CoreNodeBase(NodeBase):
         :param data: custom config data to set
         :return: nothing
         """
-        service = self.config_services.get(name)
+        service = self.services.get(name)
         if service is None:
             raise CoreError(f"node({self.name}) does not have service({name})")
         service.set_config(data)
 
-    def start_config_services(self) -> None:
+    def start_services(self) -> None:
         """
-        Determines startup paths and starts configuration services, based on their
+        Determines startup paths and starts services, based on their
         dependency chains.
 
         :return: nothing
         """
-        startup_paths = ConfigServiceDependencies(self.config_services).startup_paths()
+        startup_paths = ServiceDependencies(self.services).startup_paths()
         for startup_path in startup_paths:
             for service in startup_path:
                 service.start()
 
-    def stop_config_services(self) -> None:
+    def stop_services(self) -> None:
         """
-        Stop all configuration services.
+        Stop all services.
 
         :return: nothing
         """
-        for service in self.config_services.values():
+        for service in self.services.values():
             service.stop()
 
     def makenodedir(self) -> None:
@@ -584,37 +586,33 @@ class CoreNode(CoreNodeBase):
         self.ctrlchnlname: Path = self.session.directory / self.name
         self.pid: Optional[int] = None
         self._mounts: list[tuple[Path, Path]] = []
-        self.node_net_client: LinuxNetClient = self.create_node_net_client(
-            self.session.use_ovs()
-        )
         options = options or CoreNodeOptions()
         self.model: Optional[str] = options.model
-        # setup services
-        if options.legacy or options.services:
-            logger.debug("set node type: %s", self.model)
-            self.session.services.add_services(self, self.model, options.services)
-        # add config services
-        config_services = options.config_services
-        if not options.legacy and not config_services and not options.services:
-            config_services = self.session.services.default_services.get(self.model, [])
-        logger.info("setting node config services: %s", config_services)
-        for name in config_services:
+        # add services
+        services = options.services
+        if not services:
+            services = self.session.service_manager.defaults.get(self.model, [])
+        logger.info(
+            "setting node(%s) model(%s) services: %s",
+            self.name,
+            self.model,
+            services,
+        )
+        for name in services:
             service_class = self.session.service_manager.get_service(name)
-            self.add_config_service(service_class)
+            self.add_service(service_class)
+
+    def _get_node_net_client(self) -> LinuxNetClient:
+        """
+        Create and return network command client to run within context of the node.
+
+        :return: network command client
+        """
+        return get_net_client(self.session.use_ovs(), self.net_cmd)
 
     @classmethod
     def create_options(cls) -> CoreNodeOptions:
         return CoreNodeOptions()
-
-    def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
-        """
-        Create node network client for running network commands within the nodes
-        container.
-
-        :param use_ovs: True for OVS bridges, False for Linux bridges
-        :return: node network client
-        """
-        return get_net_client(use_ovs, self.cmd)
 
     def alive(self) -> bool:
         """
@@ -658,7 +656,8 @@ class CoreNode(CoreNodeBase):
             self.node_net_client.device_up("lo")
             # set hostname for node
             logger.debug("setting hostname: %s", self.name)
-            self.node_net_client.set_hostname(self.name)
+            hostname = self.name.replace("_", "-")
+            self.cmd(f"hostname {hostname}")
             # mark node as up
             self.up = True
             # create private directories
@@ -667,7 +666,7 @@ class CoreNode(CoreNodeBase):
 
     def shutdown(self) -> None:
         """
-        Shutdown logic for simple lxc nodes.
+        Shutdown logic for nodes.
 
         :return: nothing
         """
@@ -728,6 +727,33 @@ class CoreNode(CoreNodeBase):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         args = self.create_cmd(args, shell)
+        if self.server is None:
+            return utils.cmd(args, wait=wait, shell=shell)
+        else:
+            return self.server.remote_cmd(args, wait=wait)
+
+    def create_net_cmd(self, args: str, shell: bool = False) -> str:
+        """
+        Create command used to run network commands within the context of a node.
+
+        :param args: command arguments
+        :param shell: True to run shell like, False otherwise
+        :return: node command
+        """
+        return self.create_cmd(args, shell)
+
+    def net_cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
+        """
+        Runs a command that is used to configure and setup the network within a
+        node.
+
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        args = self.create_net_cmd(args, shell)
         if self.server is None:
             return utils.cmd(args, wait=wait, shell=shell)
         else:
@@ -889,7 +915,8 @@ class CoreNode(CoreNodeBase):
         self.node_net_client.device_name(iface.name, name)
         iface.name = name
         # turn checksums off
-        self.node_net_client.checksums_off(iface.name)
+        if self.session.options.get_int("checksums", 0) == 0:
+            self.node_net_client.checksums_off(iface.name)
         # retrieve flow id for container
         iface.flow_id = self.node_net_client.get_ifindex(iface.name)
         logger.debug("interface flow index: %s - %s", iface.name, iface.flow_id)

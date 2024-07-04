@@ -40,7 +40,8 @@ nav:
   - Installation:
       - Overview: install.md
       - Ubuntu: install_ubuntu.md
-      - CentOS: install_centos.md
+      - Rocky: install_rocky.md
+      - Docker: install_docker.md
   - Tutorials:
       - Overview: tutorials/overview.md
       - Setup: tutorials/setup.md
@@ -56,10 +57,8 @@ nav:
       - Node Types:
           - Overview: nodetypes.md
           - Docker: docker.md
-          - LXC: lxc.md
       - Services:
-          - Config Services: configservices.md
-          - Services (Deprecated): services.md
+          - Overview: services.md
           - Provided:
               - Bird: services/bird.md
               - EMANE: services/emane.md

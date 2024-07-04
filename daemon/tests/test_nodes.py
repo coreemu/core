@@ -172,3 +172,32 @@ class TestNodes:
         # then
         assert node
         assert node.up
+
+    def test_ptp(self, session):
+        # given
+
+        # when
+        ptp = session.create_ptp()
+
+        # then
+        assert ptp
+        assert ptp.up
+
+    def test_control_net(self, session):
+        # given
+
+        # when
+        control_net = session.create_control_net(0, "172.168.0.0/24", None, None)
+
+        # then
+        assert control_net
+        assert control_net.up
+
+    def test_control_net_error(self, session):
+        # given
+        ip_prefix = "172.168.0.0/24"
+        session.create_control_net(0, ip_prefix, None, None)
+
+        # when
+        with pytest.raises(CoreError):
+            session.create_control_net(0, ip_prefix, None, None)

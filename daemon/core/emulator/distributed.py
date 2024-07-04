@@ -19,7 +19,7 @@ from core.emulator.links import CoreLink
 from core.errors import CoreCommandError, CoreError
 from core.executables import get_requirements
 from core.nodes.interface import GreTap
-from core.nodes.network import CoreNetwork, CtrlNet
+from core.nodes.network import CoreNetwork
 
 logger = logging.getLogger(__name__)
 
@@ -187,8 +187,8 @@ class DistributedController:
         :return: nothing
         """
         mtu = self.session.options.get_int("mtu")
-        for node in self.session.nodes.values():
-            if not isinstance(node, CtrlNet) or node.serverintf is not None:
+        for node in self.session.control_nodes.values():
+            if node.serverintf is not None:
                 continue
             for name in self.servers:
                 server = self.servers[name]
@@ -250,7 +250,7 @@ class DistributedController:
     def tunnel_key(self, node1_id: int, node2_id: int) -> int:
         """
         Compute a 32-bit key used to uniquely identify a GRE tunnel.
-        The hash(n1num), hash(n2num) values are used, so node numbers may be
+        The hash(node1_id), hash(node2_id) values are used, so node numbers may be
         None or string values (used for e.g. "ctrlnet").
 
         :param node1_id: node one id

@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:22.04
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    automake \
+    ca-certificates \
+    g++ \
+    git \
+    libpcap-dev \
+    libpcre3-dev \
+    libprotobuf-dev \
+    libtool \
+    libxml2-dev \
+    make \
+    pkg-config \
+    python3 \
+    python3-pip \
+    unzip \
+    uuid-dev \
+    wget && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /opt
+ARG PROTOC_VERSION=3.19.6
+RUN wget -q https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
+    mkdir protoc && \
+    unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d protoc && \
+    git clone https://github.com/adjacentlink/emane.git && \
+    cd emane && \
+    git checkout v1.5.1 && \
+    ./autogen.sh && \
+    PYTHON=python3 ./configure --prefix=/usr && \
+    cd src/python && \
+    PATH=/opt/protoc/bin:$PATH make && \
+    python3 setup.py bdist_wheel && \
+    mv dist/*.whl /opt/ && \
+    cd /opt && \
+    rm -rf protoc && \
+    rm -rf emane && \
+    rm -f protoc-${PROTOC_VERSION}-linux-x86_64.zip

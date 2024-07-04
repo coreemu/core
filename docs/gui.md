@@ -392,13 +392,6 @@ system and anything you change or do can impact the greater system. By default, 
 will open within the nodes home directory for the running session, but it is temporary and
 will be removed when the session is stopped.
 
-You can also launch GUI based applications from within standard CORE nodes, but you need to
-enable xhost  access to root.
-
-```shell
-xhost +local:root
-```
-
 ### Mobility Scripting
 
 CORE has a few ways to script mobility.
@@ -467,11 +460,11 @@ create a bridge or namespace, or the failure to launch EMANE processes for an
 EMANE-based network.
 
 Clicking on an alert displays details for that
-exceptio. The exception source is a text string
-to help trace where the exception occurred; "service:UserDefined" for example,
+alert. The alert source is a text string
+to help trace where the alert occurred; "service:UserDefined" for example,
 would appear for a failed validation command with the UserDefined service.
 
-A button is available at the bottom of the dialog for clearing the exception
+A button is available at the bottom of the dialog for clearing the alert
 list.
 
 ## Customizing your Topology's Look

@@ -17,29 +17,53 @@ daemon. Here is a brief description of the source directories.
 
 To setup CORE for develop we will leverage to automated install script.
 
-## Clone CORE Repo
-
-```shell
-cd ~/Documents
-git clone https://github.com/coreemu/core.git
-cd core
-git checkout develop
-```
-
 ## Install the Development Environment
 
-This command will automatically install system dependencies, clone and build OSPF-MDR,
-build CORE, setup the CORE poetry environment, and install pre-commit hooks. You can
-refer to the [install docs](install.md) for issues related to different distributions.
+The current recommended development environment is Ubuntu 22.04. This section
+covers a complete example for installing CORE on a clean install. It will help
+setup CORE in development mode, OSPF MDR, and EMANE.
 
-```shell
-./install -d
+``` shell
+# install system packages
+sudo apt-get update -y
+sudo apt-get install -y ca-certificates git sudo wget tzdata libpcap-dev libpcre3-dev \
+    libprotobuf-dev libxml2-dev protobuf-compiler unzip uuid-dev iproute2 iputils-ping \
+    tcpdump
+
+# install core
+cd ~/Documents
+git clone https://github.com/coreemu/core
+cd core
+./setup.sh
+source ~/.bashrc
+inv install -d
+
+# install emane
+cd ~/Documents
+wget https://adjacentlink.com/downloads/emane/emane-1.5.1-release-1.ubuntu-22_04.amd64.tar.gz
+tar xf emane-1.5.1-release-1.ubuntu-22_04.amd64.tar.gz
+cd emane-1.5.1-release-1/debs/ubuntu-22_04/amd64
+sudo apt-get install -y ./openstatistic*.deb ./emane*.deb ./python3-emane_*.deb
+
+# install emane python bindings
+cd ~/Documents
+wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip
+mkdir protoc
+unzip protoc-3.19.6-linux-x86_64.zip -d protoc
+git clone https://github.com/adjacentlink/emane.git
+cd emane
+git checkout v1.5.1
+./autogen.sh
+./configure --prefix=/usr
+cd src/python
+PATH=~/Documents/protoc/bin:$PATH make
+sudo /opt/core/venv/bin/python -m pip install .
 ```
 
 ### pre-commit
 
 pre-commit hooks help automate running tools to check modified code. Every time a commit is made
-python utilities will be ran to check validity of code, potentially failing and backing out the commit.
+python utilities will be run to check validity of code, potentially failing and backing out the commit.
 These changes are currently mandated as part of the current CI, so add the changes and commit again.
 
 ## Running CORE
@@ -61,10 +85,8 @@ inv test-mock
 
 ## Linux Network Namespace Commands
 
-Linux network namespace containers are often managed using the *Linux Container Tools* or *lxc-tools* package.
-The lxc-tools website is available here http://lxc.sourceforge.net/ for more information. CORE does not use these
-management utilities, but includes its own set of tools for instantiating and configuring network namespace containers.
-This section describes these tools.
+CORE includes its own set of tools for instantiating and configuring network namespace
+containers. This section describes these tools.
 
 ### vnoded
 

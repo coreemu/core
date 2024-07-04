@@ -13,26 +13,23 @@ from typing import TYPE_CHECKING, Optional
 
 import grpc
 
-from core.api.grpc import client, configservices_pb2, core_pb2
+from core.api.grpc import client, core_pb2
 from core.api.grpc.wrappers import (
+    AlertEvent,
     ConfigOption,
-    ConfigService,
-    ConfigServiceDefaults,
     EmaneModelConfig,
     Event,
-    ExceptionEvent,
     Link,
     LinkEvent,
     LinkType,
     MessageType,
     Node,
     NodeEvent,
-    NodeServiceData,
     NodeType,
     Position,
     Server,
-    ServiceConfig,
-    ServiceFileConfig,
+    Service,
+    ServiceDefaults,
     Session,
     SessionLocation,
     SessionState,
@@ -53,8 +50,13 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-GUI_SOURCE = "gui"
-CPU_USAGE_DELAY = 3
+GUI_SOURCE: str = "gui"
+CPU_USAGE_DELAY: int = 3
+MOBILITY_ACTIONS: dict[int, str] = {
+    7: "PLAY",
+    8: "STOP",
+    9: "PAUSE",
+}
 
 
 def to_dict(config: dict[str, ConfigOption]) -> dict[str, str]:
@@ -76,15 +78,15 @@ class CoreClient:
         self.show_throughputs: tk.BooleanVar = tk.BooleanVar(value=False)
 
         # global service settings
-        self.services: dict[str, set[str]] = {}
-        self.config_services_groups: dict[str, set[str]] = {}
-        self.config_services: dict[str, ConfigService] = {}
+        self.services_groups: dict[str, set[str]] = {}
+        self.services: dict[str, Service] = {}
 
         # loaded configuration data
         self.emane_models: list[str] = []
         self.servers: dict[str, CoreServer] = {}
         self.custom_nodes: dict[str, NodeDraw] = {}
         self.custom_observers: dict[str, Observer] = {}
+        self.node_commands: dict[str, str] = {}
         self.read_config()
 
         # helpers
@@ -153,6 +155,9 @@ class CoreClient:
         # read observers
         for observer in self.app.guiconfig.observers:
             self.custom_observers[observer.name] = observer
+        # read node commands
+        for node_cmd in self.app.guiconfig.node_commands:
+            self.node_commands[node_cmd.name] = node_cmd.cmd
 
     def handle_events(self, event: Event) -> None:
         if not self.session or event.source == GUI_SOURCE:
@@ -167,11 +172,21 @@ class CoreClient:
         if event.link_event:
             self.app.after(0, self.handle_link_event, event.link_event)
         elif event.session_event:
-            logger.info("session event: %s", event)
             session_event = event.session_event
             if session_event.event <= SessionState.SHUTDOWN.value:
                 self.session.state = SessionState(session_event.event)
-            elif session_event.event in {7, 8, 9}:
+                logger.info(
+                    "session(%s) state(%s)",
+                    event.session_id,
+                    self.session.state,
+                )
+            elif session_event.event in MOBILITY_ACTIONS:
+                action = MOBILITY_ACTIONS[session_event.event]
+                logger.info(
+                    "session(%s) mobility action(%s)",
+                    event.session_id,
+                    action,
+                )
                 node_id = session_event.node_id
                 dialog = self.mobility_players.get(node_id)
                 if dialog:
@@ -181,14 +196,14 @@ class CoreClient:
                         dialog.set_stop()
                     else:
                         dialog.set_pause()
+            elif session_event.event == 15:
+                logger.info("session(%s) instantiation complete", event.session_id)
             else:
                 logger.warning("unknown session event: %s", session_event)
         elif event.node_event:
             self.app.after(0, self.handle_node_event, event.node_event)
-        elif event.config_event:
-            logger.info("config event: %s", event)
-        elif event.exception_event:
-            self.handle_exception_event(event.exception_event)
+        elif event.alert_event:
+            self.handle_alert_event(event.alert_event)
         else:
             logger.info("unhandled event: %s", event)
 
@@ -218,7 +233,9 @@ class CoreClient:
                 logger.warning("unknown link event: %s", event)
         else:
             if event.message_type == MessageType.ADD:
-                self.app.manager.add_wired_edge(canvas_node1, canvas_node2, event.link)
+                self.app.manager.add_wired_edge(
+                    canvas_node1, canvas_node2, event.link, organize=True
+                )
             elif event.message_type == MessageType.DELETE:
                 self.app.manager.delete_wired_edge(event.link)
             elif event.message_type == MessageType.NONE:
@@ -291,8 +308,8 @@ class CoreClient:
     def handle_cpu_event(self, event: core_pb2.CpuUsageEvent) -> None:
         self.app.after(0, self.app.statusbar.set_cpu, event.usage)
 
-    def handle_exception_event(self, event: ExceptionEvent) -> None:
-        logger.info("exception event: %s", event)
+    def handle_alert_event(self, event: AlertEvent) -> None:
+        logger.info("alert event: %s", event)
         self.app.statusbar.add_alert(event)
 
     def update_session_title(self) -> None:
@@ -358,17 +375,12 @@ class CoreClient:
         """
         try:
             self.client.connect()
-            # get current core configurations services/config services
+            # get current core configurations
             core_config = self.client.get_config()
             self.emane_models = sorted(core_config.emane_models)
             for service in core_config.services:
-                group_services = self.services.setdefault(service.group, set())
-                group_services.add(service.name)
-            for service in core_config.config_services:
-                self.config_services[service.name] = service
-                group_services = self.config_services_groups.setdefault(
-                    service.group, set()
-                )
+                self.services[service.name] = service
+                group_services = self.services_groups.setdefault(service.group, set())
                 group_services.add(service.name)
             # join provided session, create new session, or show dialog to select an
             # existing session
@@ -560,30 +572,6 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Open XML Error", e)
 
-    def get_node_service(self, node_id: int, service_name: str) -> NodeServiceData:
-        node_service = self.client.get_node_service(
-            self.session.id, node_id, service_name
-        )
-        logger.debug(
-            "get node(%s) service(%s): %s", node_id, service_name, node_service
-        )
-        return node_service
-
-    def get_node_service_file(
-        self, node_id: int, service_name: str, file_name: str
-    ) -> str:
-        data = self.client.get_node_service_file(
-            self.session.id, node_id, service_name, file_name
-        )
-        logger.debug(
-            "get service file for node(%s), service: %s, file: %s, data: %s",
-            node_id,
-            service_name,
-            file_name,
-            data,
-        )
-        return data
-
     def close(self) -> None:
         """
         Clean ups when done using grpc
@@ -638,12 +626,12 @@ class CoreClient:
         )
         if nutils.is_custom(node):
             services = nutils.get_custom_services(self.app.guiconfig, model)
-            node.config_services = set(services)
+            node.services = set(services)
         # assign default services to CORE node
         else:
             services = self.session.default_services.get(model)
             if services:
-                node.config_services = set(services)
+                node.services = set(services)
         logger.info(
             "add node(%s) to session(%s), coordinates(%s, %s)",
             node.name,
@@ -663,6 +651,8 @@ class CoreClient:
             node = canvas_node.core_node
             del self.canvas_nodes[node.id]
             del self.session.nodes[node.id]
+            if nutils.is_wireless(node):
+                self.ifaces_manager.clear_wireless_nets(node.id)
 
     def deleted_canvas_edges(self, edges: Iterable[CanvasEdge]) -> None:
         links = []
@@ -718,70 +708,11 @@ class CoreClient:
                 configs.append(config)
         return configs
 
-    def get_service_configs(self) -> list[ServiceConfig]:
-        configs = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.service_configs:
-                continue
-            for name, config in node.service_configs.items():
-                config = ServiceConfig(
-                    node_id=node.id,
-                    service=name,
-                    files=config.configs,
-                    directories=config.dirs,
-                    startup=config.startup,
-                    validate=config.validate,
-                    shutdown=config.shutdown,
-                )
-                configs.append(config)
-        return configs
+    def get_service_rendered(self, node_id: int, name: str) -> dict[str, str]:
+        return self.client.get_service_rendered(self.session.id, node_id, name)
 
-    def get_service_file_configs(self) -> list[ServiceFileConfig]:
-        configs = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.service_file_configs:
-                continue
-            for service, file_configs in node.service_file_configs.items():
-                for file, data in file_configs.items():
-                    config = ServiceFileConfig(node.id, service, file, data)
-                    configs.append(config)
-        return configs
-
-    def get_config_service_rendered(self, node_id: int, name: str) -> dict[str, str]:
-        return self.client.get_config_service_rendered(self.session.id, node_id, name)
-
-    def get_config_service_defaults(
-        self, node_id: int, name: str
-    ) -> ConfigServiceDefaults:
-        return self.client.get_config_service_defaults(self.session.id, node_id, name)
-
-    def get_config_service_configs_proto(
-        self,
-    ) -> list[configservices_pb2.ConfigServiceConfig]:
-        config_service_protos = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.config_service_configs:
-                continue
-            for name, service_config in node.config_service_configs.items():
-                config_proto = configservices_pb2.ConfigServiceConfig(
-                    node_id=node.id,
-                    name=name,
-                    templates=service_config.templates,
-                    config=service_config.config,
-                )
-                config_service_protos.append(config_proto)
-        return config_service_protos
-
-    def run(self, node_id: int) -> str:
-        logger.info("running node(%s) cmd: %s", node_id, self.observer)
-        _, output = self.client.node_command(self.session.id, node_id, self.observer)
-        return output
+    def get_service_defaults(self, node_id: int, name: str) -> ServiceDefaults:
+        return self.client.get_service_defaults(self.session.id, node_id, name)
 
     def get_wlan_config(self, node_id: int) -> dict[str, ConfigOption]:
         config = self.client.get_wlan_config(self.session.id, node_id)
@@ -838,3 +769,7 @@ class CoreClient:
         result = self.client.edit_link(self.session.id, link, source=GUI_SOURCE)
         if not result:
             logger.error("error editing link: %s", link)
+
+    def run_cmd(self, node_id: int, cmd: str) -> str:
+        _, output = self.client.node_command(self.session.id, node_id, cmd)
+        return output

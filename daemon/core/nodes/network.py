@@ -215,8 +215,8 @@ class CoreNetwork(CoreNetworkBase):
         options = options or NetworkOptions()
         super().__init__(session, _id, name, server, options)
         self.policy: NetworkPolicy = options.policy if options.policy else self.policy
-        sessionid = self.session.short_session_id()
-        self.brname: str = f"b.{self.id}.{sessionid}"
+        session_id = self.session.short_session_id()
+        self.brname: str = f"b.{self.id}.{session_id}"
         self.has_nftables_chain: bool = False
 
     @classmethod
@@ -510,14 +510,6 @@ class CtrlNet(CoreNetwork):
     """
 
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
-    # base control interface index
-    CTRLIF_IDX_BASE: int = 99
-    DEFAULT_PREFIX_LIST: list[str] = [
-        "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
-        "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
-        "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
-        "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24",
-    ]
 
     def __init__(
         self,
@@ -544,6 +536,7 @@ class CtrlNet(CoreNetwork):
         self.assign_address: bool = options.assign_address
         self.updown_script: Optional[str] = options.updown_script
         self.serverintf: Optional[str] = options.serverintf
+        self.brname = f"ctrl{_id}.{self.session.short_session_id()}"
 
     @classmethod
     def create_options(cls) -> CtrlNetOptions:
@@ -635,6 +628,11 @@ class PtpNet(CoreNetwork):
     """
 
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
+
+    def __init__(self, session: "Session", _id: int) -> None:
+        super().__init__(session, _id)
+        session_id = self.session.short_session_id()
+        self.brname: str = f"p.{self.id}.{session_id}"
 
     def attach(self, iface: CoreInterface) -> None:
         """

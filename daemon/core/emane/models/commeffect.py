@@ -124,19 +124,17 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         if iface is None or iface2 is None:
             logger.warning("%s: missing NEM information", self.name)
             return
-        # TODO: batch these into multiple events per transmission
-        # TODO: may want to split out seconds portion of delay and jitter
-        event = CommEffectEvent()
         nem1 = self.session.emane.get_nem_id(iface)
         nem2 = self.session.emane.get_nem_id(iface2)
         logger.info("sending comm effect event")
-        event.append(
+        bandwidth = int(convert_none(options.bandwidth))
+        self.session.emane.event_manager.publish_comm_effect(
             nem1,
-            latency=convert_none(options.delay),
+            nem2,
+            delay=convert_none(options.delay),
             jitter=convert_none(options.jitter),
             loss=convert_none(options.loss),
-            duplicate=convert_none(options.dup),
-            unicast=int(convert_none(options.bandwidth)),
-            broadcast=int(convert_none(options.bandwidth)),
+            dup=convert_none(options.dup),
+            unicast=bandwidth,
+            broadcast=bandwidth,
         )
-        self.session.emane.publish_event(nem2, event)

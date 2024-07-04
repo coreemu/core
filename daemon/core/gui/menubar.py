@@ -17,6 +17,7 @@ from core.gui.dialogs.find import FindDialog
 from core.gui.dialogs.hooks import HooksDialog
 from core.gui.dialogs.ipdialog import IpConfigDialog
 from core.gui.dialogs.macdialog import MacConfigDialog
+from core.gui.dialogs.nodecommands import NodeCommandsDialog
 from core.gui.dialogs.observers import ObserverDialog
 from core.gui.dialogs.preferences import PreferencesDialog
 from core.gui.dialogs.servers import ServersDialog
@@ -247,6 +248,7 @@ class Menubar(tk.Menu):
         Create widget menu
         """
         menu = tk.Menu(self)
+        menu.add_command(label="Node Commands", command=self.click_node_commands)
         self.create_observer_widgets_menu(menu)
         self.create_adjacency_menu(menu)
         self.create_throughput_menu(menu)
@@ -450,6 +452,10 @@ class Menubar(tk.Menu):
     def click_servers(self) -> None:
         logger.debug("Click emulation servers")
         dialog = ServersDialog(self.app)
+        dialog.show()
+
+    def click_node_commands(self) -> None:
+        dialog = NodeCommandsDialog(self.app)
         dialog.show()
 
     def click_edit_observer_widgets(self) -> None:

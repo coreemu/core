@@ -18,19 +18,9 @@ class LinuxNetClient:
         """
         Create LinuxNetClient instance.
 
-        :param run: function to run commands with
+        :param run: function to run commands within node context
         """
         self.run: Callable[..., str] = run
-
-    def set_hostname(self, name: str) -> None:
-        """
-        Set network hostname.
-
-        :param name: name for hostname
-        :return: nothing
-        """
-        name = name.replace("_", "-")
-        self.run(f"hostname {name}")
 
     def create_route(self, route: str, device: str) -> None:
         """
@@ -88,15 +78,6 @@ class LinuxNetClient:
         """
         return self.run(f"{IP} address show {device}")
 
-    def get_mac(self, device: str) -> str:
-        """
-        Retrieve MAC address for a given device.
-
-        :param device: device to get mac for
-        :return: MAC address
-        """
-        return self.run(f"cat /sys/class/net/{device}/address")
-
     def get_ifindex(self, device: str) -> int:
         """
         Retrieve ifindex for a given device.
@@ -104,7 +85,8 @@ class LinuxNetClient:
         :param device: device to get ifindex for
         :return: ifindex
         """
-        return int(self.run(f"cat /sys/class/net/{device}/ifindex"))
+        output = self.run(f"{IP} link show {device}")
+        return int(output.split()[0].strip(":"))
 
     def device_ns(self, device: str, namespace: str) -> None:
         """
@@ -390,7 +372,7 @@ def get_net_client(use_ovs: bool, run: Callable[..., str]) -> LinuxNetClient:
     Retrieve desired net client for running network commands.
 
     :param use_ovs: True for OVS bridges, False for Linux bridges
-    :param run: function used to run net client commands
+    :param run: function to run commands within node context
     :return: net client class
     """
     if use_ovs:

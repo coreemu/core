@@ -21,12 +21,6 @@ Docker nodes provide a convenience for running nodes using predefind images
 and filesystems that CORE nodes do not provide. Details for using Docker
 nodes can be found [here](docker.md).
 
-## LXC Nodes
-
-LXC nodes provide a convenience for running nodes using predefind images
-and filesystems that CORE nodes do not provide. Details for using LXC
-nodes can be found [here](lxc.md).
-
 ## Physical Nodes
 
 The *physical* machine type is used for nodes that represent a real Linux-based

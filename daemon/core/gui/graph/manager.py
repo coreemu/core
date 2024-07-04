@@ -260,7 +260,7 @@ class CanvasManager:
             if link.type == LinkType.WIRELESS:
                 self.add_wireless_edge(node1, node2, link)
             else:
-                self.add_wired_edge(node1, node2, link)
+                self.add_wired_edge(node1, node2, link, organize=False)
 
         # organize canvas order
         for canvas in self.canvases.values():
@@ -391,15 +391,17 @@ class CanvasManager:
         if edge:
             edge.delete()
 
-    def add_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
+    def add_wired_edge(
+        self, src: CanvasNode, dst: CanvasNode, link: Link, organize: bool
+    ) -> None:
         token = create_edge_token(link)
         if token in self.edges and link.options.unidirectional:
             edge = self.edges[token]
             edge.asymmetric_link = link
             edge.redraw()
         elif token not in self.edges:
-            edge = CanvasEdge(self.app, src, dst)
-            edge.complete(dst, link)
+            edge = CanvasEdge(self.app, src, dst, organize)
+            edge.complete(dst, link, organize)
 
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None

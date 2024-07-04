@@ -2,11 +2,10 @@ syntax = "proto3";
 
 package core;
 
-import "core/api/grpc/configservices.proto";
+import "core/api/grpc/services.proto";
 import "core/api/grpc/common.proto";
 import "core/api/grpc/emane.proto";
 import "core/api/grpc/mobility.proto";
-import "core/api/grpc/services.proto";
 import "core/api/grpc/wlan.proto";
 
 service CoreApi {
@@ -72,26 +71,16 @@ service CoreApi {
     rpc MobilityAction (mobility.MobilityActionRequest) returns (mobility.MobilityActionResponse) {
     }
 
-    // service rpc
+    // services
     rpc GetServiceDefaults (services.GetServiceDefaultsRequest) returns (services.GetServiceDefaultsResponse) {
-    }
-    rpc SetServiceDefaults (services.SetServiceDefaultsRequest) returns (services.SetServiceDefaultsResponse) {
     }
     rpc GetNodeService (services.GetNodeServiceRequest) returns (services.GetNodeServiceResponse) {
     }
-    rpc GetNodeServiceFile (services.GetNodeServiceFileRequest) returns (services.GetNodeServiceFileResponse) {
-    }
     rpc ServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
     }
-
-    // config services
-    rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
+    rpc GetServiceRendered (services.GetServiceRenderedRequest) returns (services.GetServiceRenderedResponse) {
     }
-    rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
-    }
-    rpc ConfigServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
-    }
-    rpc GetConfigServiceRendered (configservices.GetConfigServiceRenderedRequest) returns (configservices.GetConfigServiceRenderedResponse) {
+    rpc CreateService (services.CreateServiceRequest) returns (services.CreateServiceResponse) {
     }
 
     // wlan rpc
@@ -121,6 +110,8 @@ service CoreApi {
     }
     rpc EmaneLink (emane.EmaneLinkRequest) returns (emane.EmaneLinkResponse) {
     }
+    rpc EmaneEvents (stream emane.EmaneEventsRequest) returns (emane.EmaneEventsResponse) {
+    }
 
     // xml rpc
     rpc SaveXml (SaveXmlRequest) returns (SaveXmlResponse) {
@@ -145,8 +136,7 @@ message GetConfigRequest {
 
 message GetConfigResponse {
     repeated services.Service services = 1;
-    repeated configservices.ConfigService config_services = 2;
-    repeated string emane_models = 3;
+    repeated string emane_models = 2;
 }
 
 
@@ -209,7 +199,7 @@ message GetSessionResponse {
 
 message SessionAlertRequest {
     int32 session_id = 1;
-    ExceptionLevel.Enum level = 2;
+    AlertLevel.Enum level = 2;
     string source = 3;
     string text = 4;
     int32 node_id = 5;
@@ -258,9 +248,7 @@ message Event {
         SessionEvent session_event = 1;
         NodeEvent node_event = 2;
         LinkEvent link_event = 3;
-        ConfigEvent config_event = 4;
-        ExceptionEvent exception_event = 5;
-        FileEvent file_event = 6;
+        AlertEvent alert_event = 5;
     }
     int32 session_id = 7;
     string source = 8;
@@ -284,40 +272,13 @@ message SessionEvent {
     float time = 5;
 }
 
-message ConfigEvent {
-    MessageType.Enum message_type = 1;
-    int32 node_id = 2;
-    string object = 3;
-    int32 type = 4;
-    repeated int32 data_types = 5;
-    string data_values = 6;
-    string captions = 7;
-    string possible_values = 8;
-    string groups = 9;
-    int32 iface_id = 10;
-    int32 network_id = 11;
-    string opaque = 12;
-}
-
-message ExceptionEvent {
+message AlertEvent {
     int32 node_id = 1;
-    ExceptionLevel.Enum level = 2;
+    AlertLevel.Enum level = 2;
     string source = 3;
     string date = 4;
     string text = 5;
     string opaque = 6;
-}
-
-message FileEvent {
-    MessageType.Enum message_type = 1;
-    int32 node_id = 2;
-    string name = 3;
-    string mode = 4;
-    int32 number = 5;
-    string type = 6;
-    string source = 7;
-    string data = 8;
-    string compressed_data = 9;
 }
 
 message AddNodeRequest {
@@ -456,7 +417,7 @@ message SaveXmlRequest {
 }
 
 message SaveXmlResponse {
-    string data = 1;
+    bytes data = 1;
 }
 
 message OpenXmlRequest {
@@ -492,7 +453,6 @@ message EventType {
         SESSION = 0;
         NODE = 1;
         LINK = 2;
-        CONFIG = 3;
         EXCEPTION = 4;
         FILE = 5;
     }
@@ -541,10 +501,7 @@ message NodeType {
         TUNNEL = 8;
         EMANE = 10;
         TAP_BRIDGE = 11;
-        PEER_TO_PEER = 12;
-        CONTROL_NET = 13;
         DOCKER = 15;
-        LXC = 16;
         WIRELESS = 17;
         PODMAN = 18;
     }
@@ -567,7 +524,7 @@ message ConfigOptionType {
     }
 }
 
-message ExceptionLevel {
+message AlertLevel {
     enum Enum {
         DEFAULT = 0;
         FATAL = 1;
@@ -613,22 +570,22 @@ message Node {
     NodeType.Enum type = 3;
     string model = 4;
     Position position = 5;
-    repeated string services = 6;
-    string emane = 7;
-    string icon = 8;
-    string image = 9;
-    string server = 10;
-    repeated string config_services = 11;
-    Geo geo = 12;
-    string dir = 13;
-    string channel = 14;
-    int32 canvas = 15;
-    map<string, common.ConfigOption> wlan_config = 16;
-    map<string, common.ConfigOption> mobility_config = 17;
-    map<string, services.NodeServiceConfig> service_configs = 18;
-    map<string, configservices.ConfigServiceConfig> config_service_configs= 19;
-    repeated emane.NodeEmaneConfig emane_configs = 20;
-    map<string, common.ConfigOption> wireless_config = 21;
+    string emane = 6;
+    string icon = 7;
+    string image = 8;
+    string server = 9;
+    repeated string services = 10;
+    Geo geo = 11;
+    string dir = 12;
+    string channel = 13;
+    int32 canvas = 14;
+    map<string, common.ConfigOption> wlan_config = 15;
+    map<string, common.ConfigOption> mobility_config = 16;
+    map<string, services.ServiceConfig> service_configs = 17;
+    repeated emane.NodeEmaneConfig emane_configs = 18;
+    map<string, common.ConfigOption> wireless_config = 19;
+    string compose = 20;
+    string compose_name = 21;
 }
 
 message Link {

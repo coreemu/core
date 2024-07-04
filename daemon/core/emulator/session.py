@@ -8,7 +8,6 @@ import math
 import os
 import pwd
 import shutil
-import subprocess
 import sys
 import tempfile
 import threading
@@ -17,26 +16,21 @@ from pathlib import Path
 from typing import Callable, Optional, TypeVar, Union
 
 from core import constants, utils
-from core.configservice.manager import ConfigServiceManager
 from core.emane.emanemanager import EmaneManager, EmaneState
 from core.emane.nodes import EmaneNet
+from core.emulator.broadcast import BroadcastManager
+from core.emulator.controlnets import ControlNetManager
 from core.emulator.data import (
-    ConfigData,
+    AlertData,
     EventData,
-    ExceptionData,
-    FileData,
     InterfaceData,
     LinkData,
     LinkOptions,
     NodeData,
 )
 from core.emulator.distributed import DistributedController
-from core.emulator.enumerations import (
-    EventTypes,
-    ExceptionLevels,
-    MessageFlags,
-    NodeTypes,
-)
+from core.emulator.enumerations import AlertLevels, EventTypes, MessageFlags, NodeTypes
+from core.emulator.hooks import HookManager
 from core.emulator.links import CoreLink, LinkManager
 from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
@@ -46,7 +40,6 @@ from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase, NodeOptions, Position
 from core.nodes.docker import DockerNode
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.lxd import LxcNode
 from core.nodes.network import (
     CtrlNet,
     GreTapBridge,
@@ -60,7 +53,7 @@ from core.nodes.physical import PhysicalNode, Rj45Node
 from core.nodes.podman import PodmanNode
 from core.nodes.wireless import WirelessNode
 from core.plugins.sdt import Sdt
-from core.services.coreservices import CoreServices
+from core.services.manager import ServiceManager
 from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
@@ -77,10 +70,7 @@ NODES: dict[NodeTypes, type[NodeBase]] = {
     NodeTypes.TUNNEL: TunnelNode,
     NodeTypes.EMANE: EmaneNet,
     NodeTypes.TAP_BRIDGE: GreTapBridge,
-    NodeTypes.PEER_TO_PEER: PtpNet,
-    NodeTypes.CONTROL_NET: CtrlNet,
     NodeTypes.DOCKER: DockerNode,
-    NodeTypes.LXC: LxcNode,
     NodeTypes.WIRELESS: WirelessNode,
     NodeTypes.PODMAN: PodmanNode,
 }
@@ -126,25 +116,14 @@ class Session:
 
         # dict of nodes: all nodes and nets
         self.nodes: dict[int, NodeBase] = {}
+        self.ptp_nodes: dict[int, PtpNet] = {}
+        self.control_nodes: dict[int, CtrlNet] = {}
         self.nodes_lock: threading.Lock = threading.Lock()
         self.link_manager: LinkManager = LinkManager()
 
         # states and hooks handlers
         self.state: EventTypes = EventTypes.DEFINITION_STATE
         self.state_time: float = time.monotonic()
-        self.hooks: dict[EventTypes, list[tuple[str, str]]] = {}
-        self.state_hooks: dict[EventTypes, list[Callable[[EventTypes], None]]] = {}
-        self.add_state_hook(
-            state=EventTypes.RUNTIME_STATE, hook=self.runtime_state_hook
-        )
-
-        # handlers for broadcasting information
-        self.event_handlers: list[Callable[[EventData], None]] = []
-        self.exception_handlers: list[Callable[[ExceptionData], None]] = []
-        self.node_handlers: list[Callable[[NodeData], None]] = []
-        self.link_handlers: list[Callable[[LinkData], None]] = []
-        self.file_handlers: list[Callable[[FileData], None]] = []
-        self.config_handlers: list[Callable[[ConfigData], None]] = []
 
         # session options/metadata
         self.options: SessionConfig = SessionConfig(config)
@@ -154,14 +133,17 @@ class Session:
         self.distributed: DistributedController = DistributedController(self)
 
         # initialize session feature helpers
+        self.control_net_manager: ControlNetManager = ControlNetManager(self)
+        self.broadcast_manager: BroadcastManager = BroadcastManager()
+        self.hook_manager: HookManager = HookManager()
+        self.hook_manager.add_callback_hook(
+            EventTypes.RUNTIME_STATE, self.runtime_state_hook
+        )
         self.location: GeoLocation = GeoLocation()
         self.mobility: MobilityManager = MobilityManager(self)
-        self.services: CoreServices = CoreServices(self)
         self.emane: EmaneManager = EmaneManager(self)
+        self.service_manager: Optional[ServiceManager] = None
         self.sdt: Sdt = Sdt(self)
-
-        # config services
-        self.service_manager: Optional[ConfigServiceManager] = None
 
     @classmethod
     def get_node_class(cls, _type: NodeTypes) -> type[NodeBase]:
@@ -361,7 +343,7 @@ class Session:
         iface1 = node1.create_iface(iface1_data, options)
         iface2 = node2.create_iface(iface2_data, options)
         # join and attach to ptp bridge
-        ptp = self.create_node(PtpNet, self.state.should_start())
+        ptp = self.create_ptp()
         ptp.attach(iface1)
         ptp.attach(iface2)
         # track link
@@ -455,25 +437,22 @@ class Session:
                 f"there is no link for node({node1.name}):interface({iface1_id}) "
                 f"node({node2.name}):interface({iface2_id})"
             )
-        if iface1:
-            iface1.options.update(options)
-            iface1.set_config()
-        if iface2 and not options.unidirectional:
-            iface2.options.update(options)
-            iface2.set_config()
+        if iface1 and options:
+            iface1.update_options(options)
+        if iface2 and options and not options.unidirectional:
+            iface2.update_options(options)
 
-    def next_node_id(self) -> int:
+    def next_node_id(self, start_id: int = 1) -> int:
         """
         Find the next valid node id, starting from 1.
 
         :return: next node id
         """
-        _id = 1
         while True:
-            if _id not in self.nodes:
+            if start_id not in self.nodes:
                 break
-            _id += 1
-        return _id
+            start_id += 1
+        return start_id
 
     def add_node(
         self,
@@ -517,12 +496,13 @@ class Session:
             self.set_node_geo(node, position.lon, position.lat, position.alt)
         else:
             self.set_node_pos(node, position.x, position.y)
-        # setup default wlan
+        # setup default wlan and startup if already running
         if isinstance(node, WlanNode):
             self.mobility.set_model_config(node.id, BasicRangeModel.name)
+            if self.is_running():
+                self.mobility.startup([node.id])
         # boot core nodes after runtime
         if self.is_running() and isinstance(node, CoreNode):
-            self.add_remove_control_iface(node, remove=False)
             self.boot_node(node)
         self.sdt.add_node(node)
         return node
@@ -574,29 +554,19 @@ class Session:
         """
         CoreXmlWriter(self).write(file_path)
 
-    def add_hook(
-        self, state: EventTypes, file_name: str, data: str, src_name: str = None
-    ) -> None:
+    def add_hook(self, state: EventTypes, file_name: str, data: str) -> None:
         """
         Store a hook from a received file message.
 
         :param state: when to run hook
         :param file_name: file name for hook
-        :param data: hook data
-        :param src_name: source name
+        :param data: file data
         :return: nothing
         """
-        logger.info(
-            "setting state hook: %s - %s source(%s)", state, file_name, src_name
+        should_run = self.state == state
+        self.hook_manager.add_script_hook(
+            state, file_name, data, self.directory, self.get_environment(), should_run
         )
-        hook = file_name, data
-        state_hooks = self.hooks.setdefault(state, [])
-        state_hooks.append(hook)
-
-        # immediately run a hook if it is in the current state
-        if self.state == state:
-            logger.info("immediately running new state hook")
-            self.run_hook(hook)
 
     def clear(self) -> None:
         """
@@ -608,13 +578,13 @@ class Session:
         self.delete_nodes()
         self.link_manager.reset()
         self.distributed.shutdown()
-        self.hooks.clear()
+        self.hook_manager.reset()
         self.emane.reset()
         self.emane.config_reset()
         self.location.reset()
-        self.services.reset()
         self.mobility.config_reset()
         self.link_colors.clear()
+        self.control_net_manager.remove_nets()
 
     def set_location(self, lat: float, lon: float, alt: float, scale: float) -> None:
         """
@@ -647,25 +617,54 @@ class Session:
         if not preserve:
             shutil.rmtree(self.directory, ignore_errors=True)
 
-    def broadcast_event(self, event_data: EventData) -> None:
+    def broadcast_event(
+        self,
+        event_type: EventTypes,
+        *,
+        node_id: int = None,
+        name: str = None,
+        data: str = None,
+    ) -> None:
         """
         Handle event data that should be provided to event handler.
 
-        :param event_data: event data to send out
+        :param event_type: type of event to send
+        :param node_id: associated node id, default is None
+        :param name: name of event, default is None
+        :param data: data for event, default is None
         :return: nothing
         """
-        for handler in self.event_handlers:
-            handler(event_data)
+        event_data = EventData(
+            node=node_id,
+            event_type=event_type,
+            name=name,
+            data=data,
+            time=str(time.monotonic()),
+            session=self.id,
+        )
+        self.broadcast_manager.send(event_data)
 
-    def broadcast_exception(self, exception_data: ExceptionData) -> None:
+    def broadcast_alert(
+        self, level: AlertLevels, source: str, text: str, node_id: int = None
+    ) -> None:
         """
-        Handle exception data that should be provided to exception handlers.
+        Generate and broadcast an alert event.
 
-        :param exception_data: exception data to send out
+        :param level: alert level
+        :param source: source name
+        :param text: alert message
+        :param node_id: node related to alert, defaults to None
         :return: nothing
         """
-        for handler in self.exception_handlers:
-            handler(exception_data)
+        alert_data = AlertData(
+            node=node_id,
+            session=self.id,
+            level=level,
+            source=source,
+            date=time.ctime(),
+            text=text,
+        )
+        self.broadcast_manager.send(alert_data)
 
     def broadcast_node(
         self,
@@ -682,28 +681,7 @@ class Session:
         :return: nothing
         """
         node_data = NodeData(node=node, message_type=message_type, source=source)
-        for handler in self.node_handlers:
-            handler(node_data)
-
-    def broadcast_file(self, file_data: FileData) -> None:
-        """
-        Handle file data that should be provided to file handlers.
-
-        :param file_data: file data to send out
-        :return: nothing
-        """
-        for handler in self.file_handlers:
-            handler(file_data)
-
-    def broadcast_config(self, config_data: ConfigData) -> None:
-        """
-        Handle config data that should be provided to config handlers.
-
-        :param config_data: config data to send out
-        :return: nothing
-        """
-        for handler in self.config_handlers:
-            handler(config_data)
+        self.broadcast_manager.send(node_data)
 
     def broadcast_link(self, link_data: LinkData) -> None:
         """
@@ -712,8 +690,7 @@ class Session:
         :param link_data: link data to send out
         :return: nothing
         """
-        for handler in self.link_handlers:
-            handler(link_data)
+        self.broadcast_manager.send(link_data)
 
     def set_state(self, state: EventTypes, send_event: bool = False) -> None:
         """
@@ -728,68 +705,9 @@ class Session:
         self.state = state
         self.state_time = time.monotonic()
         logger.info("changing session(%s) to state %s", self.id, state.name)
-        self.run_hooks(state)
-        self.run_state_hooks(state)
+        self.hook_manager.run_hooks(state, self.directory, self.get_environment())
         if send_event:
-            event_data = EventData(event_type=state, time=str(time.monotonic()))
-            self.broadcast_event(event_data)
-
-    def run_hooks(self, state: EventTypes) -> None:
-        """
-        Run hook scripts upon changing states. If hooks is not specified, run all hooks
-        in the given state.
-
-        :param state: state to run hooks for
-        :return: nothing
-        """
-        hooks = self.hooks.get(state, [])
-        for hook in hooks:
-            self.run_hook(hook)
-
-    def run_hook(self, hook: tuple[str, str]) -> None:
-        """
-        Run a hook.
-
-        :param hook: hook to run
-        :return: nothing
-        """
-        file_name, data = hook
-        logger.info("running hook %s", file_name)
-        file_path = self.directory / file_name
-        log_path = self.directory / f"{file_name}.log"
-        try:
-            with file_path.open("w") as f:
-                f.write(data)
-            with log_path.open("w") as f:
-                args = ["/bin/sh", file_name]
-                subprocess.check_call(
-                    args,
-                    stdout=f,
-                    stderr=subprocess.STDOUT,
-                    close_fds=True,
-                    cwd=self.directory,
-                    env=self.get_environment(),
-                )
-        except (OSError, subprocess.CalledProcessError):
-            logger.exception("error running hook: %s", file_path)
-
-    def run_state_hooks(self, state: EventTypes) -> None:
-        """
-        Run state hooks.
-
-        :param state: state to run hooks for
-        :return: nothing
-        """
-        for hook in self.state_hooks.get(state, []):
-            self.run_state_hook(state, hook)
-
-    def run_state_hook(self, state: EventTypes, hook: Callable[[EventTypes], None]):
-        try:
-            hook(state)
-        except Exception:
-            message = f"exception occurred when running {state.name} state hook: {hook}"
-            logger.exception(message)
-            self.exception(ExceptionLevels.ERROR, "Session.run_state_hooks", message)
+            self.broadcast_event(state)
 
     def add_state_hook(
         self, state: EventTypes, hook: Callable[[EventTypes], None]
@@ -801,12 +719,8 @@ class Session:
         :param hook: hook callback for the state
         :return: nothing
         """
-        hooks = self.state_hooks.setdefault(state, [])
-        if hook in hooks:
-            raise CoreError("attempting to add duplicate state hook")
-        hooks.append(hook)
-        if self.state == state:
-            self.run_state_hook(state, hook)
+        should_run = self.state == state
+        self.hook_manager.add_callback_hook(state, hook, should_run)
 
     def del_state_hook(
         self, state: EventTypes, hook: Callable[[EventTypes], None]
@@ -818,9 +732,7 @@ class Session:
         :param hook: hook to delete
         :return: nothing
         """
-        hooks = self.state_hooks.get(state, [])
-        if hook in hooks:
-            hooks.remove(hook)
+        self.hook_manager.delete_callback_hook(state, hook)
 
     def runtime_state_hook(self, _state: EventTypes) -> None:
         """
@@ -856,7 +768,7 @@ class Session:
         if state:
             env["SESSION_STATE"] = str(self.state)
         # try reading and merging optional environments from:
-        # /etc/core/environment
+        # /opt/core/environment
         # /home/user/.coregui/environment
         # /tmp/pycore.<session id>/environment
         core_env_path = constants.CORE_CONF_DIR / "environment"
@@ -891,6 +803,66 @@ class Session:
         except OSError:
             logger.exception("failed to set permission on %s", self.directory)
 
+    def create_ptp(self) -> PtpNet:
+        """
+        Create node used to link wired nodes together.
+
+        :return: created node
+        """
+        with self.nodes_lock:
+            # get next ptp node id for creation
+            _id = 1
+            while _id in self.ptp_nodes:
+                _id += 1
+            node = PtpNet(self, _id=_id)
+            self.ptp_nodes[node.id] = node
+        logger.debug(
+            "created ptp node(%s) name(%s) start(%s)",
+            node.id,
+            node.name,
+            self.state.should_start(),
+        )
+        if self.state.should_start():
+            node.startup()
+        return node
+
+    def create_control_net(
+        self,
+        _id: int,
+        prefix: str,
+        updown_script: Optional[str],
+        server_iface: Optional[str],
+    ) -> CtrlNet:
+        """
+        Create a control net node, used to provide a common network between
+        the host running CORE and created nodes.
+
+        :param _id: id of the control net to create
+        :param prefix: network prefix to create control net with
+        :param updown_script: updown script for the control net
+        :param server_iface: interface name to use for control net
+        :return: created control net
+        """
+        with self.nodes_lock:
+            if _id in self.control_nodes:
+                raise CoreError(f"control net({_id}) already exists")
+            options = CtrlNet.create_options()
+            options.prefix = prefix
+            options.updown_script = updown_script
+            options.serverintf = server_iface
+            control_net = CtrlNet(self, _id, options=options)
+            self.control_nodes[_id] = control_net
+            logger.info(
+                "created control net(%s) prefix(%s) updown(%s) server interface(%s)",
+                _id,
+                prefix,
+                updown_script,
+                server_iface,
+            )
+            if self.state.should_start():
+                control_net.startup()
+        return control_net
+
     def create_node(
         self,
         _class: type[NT],
@@ -913,6 +885,7 @@ class Session:
         :raises core.CoreError: when id of the node to create already exists
         """
         with self.nodes_lock:
+            _id = _id if _id is not None else self.next_node_id()
             node = _class(self, _id=_id, name=name, server=server, options=options)
             if node.id in self.nodes:
                 node.shutdown()
@@ -977,31 +950,12 @@ class Session:
                 _, node = self.nodes.popitem()
                 nodes_ids.append(node.id)
                 funcs.append((node.shutdown, [], {}))
+            while self.ptp_nodes:
+                _, node = self.ptp_nodes.popitem()
+                funcs.append((node.shutdown, [], {}))
             utils.threadpool(funcs)
         for node_id in nodes_ids:
             self.sdt.delete_node(node_id)
-
-    def exception(
-        self, level: ExceptionLevels, source: str, text: str, node_id: int = None
-    ) -> None:
-        """
-        Generate and broadcast an exception event.
-
-        :param level: exception level
-        :param source: source name
-        :param text: exception message
-        :param node_id: node related to exception
-        :return: nothing
-        """
-        exception_data = ExceptionData(
-            node=node_id,
-            session=self.id,
-            level=level,
-            source=source,
-            date=time.ctime(),
-            text=text,
-        )
-        self.broadcast_exception(exception_data)
 
     def instantiate(self) -> list[Exception]:
         """
@@ -1014,10 +968,6 @@ class Session:
         if self.is_running():
             logger.warning("ignoring instantiate, already in runtime state")
             return []
-        # create control net interfaces and network tunnels
-        # which need to exist for emane to sync on location events
-        # in distributed scenarios
-        self.add_remove_control_net(0, remove=False)
         # initialize distributed tunnels
         self.distributed.start()
         # instantiate will be invoked again upon emane configure
@@ -1032,8 +982,7 @@ class Session:
                     node.post_startup()
             self.mobility.startup()
             # notify listeners that instantiation is complete
-            event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE)
-            self.broadcast_event(event)
+            self.broadcast_event(EventTypes.INSTANTIATION_COMPLETE)
             # startup event loop
             self.event_loop.run()
         self.set_state(EventTypes.RUNTIME_STATE, send_event=True)
@@ -1049,11 +998,10 @@ class Session:
         with self.nodes_lock:
             count = 0
             for node in self.nodes.values():
-                is_p2p_ctrlnet = isinstance(node, (PtpNet, CtrlNet))
                 is_tap = isinstance(node, GreTapBridge) and not isinstance(
                     node, TunnelNode
                 )
-                if is_p2p_ctrlnet or is_tap:
+                if is_tap:
                     continue
                 count += 1
         return count
@@ -1081,20 +1029,14 @@ class Session:
             funcs = []
             for node in self.nodes.values():
                 if isinstance(node, CoreNodeBase) and node.up:
-                    args = (node,)
-                    funcs.append((self.services.stop_services, args, {}))
-                    funcs.append((node.stop_config_services, (), {}))
+                    funcs.append((node.stop_services, (), {}))
             utils.threadpool(funcs)
 
         # shutdown emane
         self.emane.shutdown()
 
         # update control interface hosts
-        self.update_control_iface_hosts(remove=True)
-
-        # remove all four possible control networks
-        for i in range(4):
-            self.add_remove_control_net(i, remove=True)
+        self.control_net_manager.clear_etc_hosts()
 
     def short_session_id(self) -> str:
         """
@@ -1115,13 +1057,13 @@ class Session:
         :return: nothing
         """
         logger.info(
-            "booting node(%s): config services(%s) services(%s)",
+            "booting node(%s): services(%s)",
             node.name,
-            ", ".join(node.config_services.keys()),
-            ", ".join(x.name for x in node.services),
+            ", ".join(node.services.keys()),
         )
-        self.services.boot_services(node)
-        node.start_config_services()
+        self.control_net_manager.setup_ifaces(node)
+        with self.nodes_lock:
+            node.start_services()
 
     def boot_nodes(self) -> list[Exception]:
         """
@@ -1131,235 +1073,18 @@ class Session:
 
         :return: service boot exceptions
         """
-        with self.nodes_lock:
-            funcs = []
-            start = time.monotonic()
-            for node in self.nodes.values():
-                if isinstance(node, CoreNode):
-                    self.add_remove_control_iface(node, remove=False)
-                    funcs.append((self.boot_node, (node,), {}))
-            results, exceptions = utils.threadpool(funcs)
-            total = time.monotonic() - start
-            logger.debug("boot run time: %s", total)
+        funcs = []
+        start = time.monotonic()
+        self.control_net_manager.setup_nets()
+        for node in self.nodes.values():
+            if isinstance(node, CoreNode):
+                funcs.append((self.boot_node, (node,), {}))
+        results, exceptions = utils.threadpool(funcs)
+        total = time.monotonic() - start
+        logger.debug("boot run time: %s", total)
         if not exceptions:
-            self.update_control_iface_hosts()
+            self.control_net_manager.update_etc_hosts()
         return exceptions
-
-    def get_control_net_prefixes(self) -> list[str]:
-        """
-        Retrieve control net prefixes.
-
-        :return: control net prefix list
-        """
-        p = self.options.get("controlnet")
-        p0 = self.options.get("controlnet0")
-        p1 = self.options.get("controlnet1")
-        p2 = self.options.get("controlnet2")
-        p3 = self.options.get("controlnet3")
-        if not p0 and p:
-            p0 = p
-        return [p0, p1, p2, p3]
-
-    def get_control_net_server_ifaces(self) -> list[str]:
-        """
-        Retrieve control net server interfaces.
-
-        :return: list of control net server interfaces
-        """
-        d0 = self.options.get("controlnetif0")
-        if d0:
-            logger.error("controlnet0 cannot be assigned with a host interface")
-        d1 = self.options.get("controlnetif1")
-        d2 = self.options.get("controlnetif2")
-        d3 = self.options.get("controlnetif3")
-        return [None, d1, d2, d3]
-
-    def get_control_net_index(self, dev: str) -> int:
-        """
-        Retrieve control net index.
-
-        :param dev: device to get control net index for
-        :return: control net index, -1 otherwise
-        """
-        if dev[0:4] == "ctrl" and int(dev[4]) in [0, 1, 2, 3]:
-            index = int(dev[4])
-            if index == 0:
-                return index
-            if index < 4 and self.get_control_net_prefixes()[index] is not None:
-                return index
-        return -1
-
-    def get_control_net(self, net_index: int) -> CtrlNet:
-        """
-        Retrieve a control net based on index.
-
-        :param net_index: control net index
-        :return: control net
-        :raises CoreError: when control net is not found
-        """
-        return self.get_node(CTRL_NET_ID + net_index, CtrlNet)
-
-    def add_remove_control_net(
-        self, net_index: int, remove: bool = False, conf_required: bool = True
-    ) -> Optional[CtrlNet]:
-        """
-        Create a control network bridge as necessary.
-        When the remove flag is True, remove the bridge that connects control
-        interfaces. The conf_reqd flag, when False, causes a control network
-        bridge to be added even if one has not been configured.
-
-        :param net_index: network index
-        :param remove: flag to check if it should be removed
-        :param conf_required: flag to check if conf is required
-        :return: control net node
-        """
-        logger.debug(
-            "add/remove control net: index(%s) remove(%s) conf_required(%s)",
-            net_index,
-            remove,
-            conf_required,
-        )
-        prefix_spec_list = self.get_control_net_prefixes()
-        prefix_spec = prefix_spec_list[net_index]
-        if not prefix_spec:
-            if conf_required:
-                # no controlnet needed
-                return None
-            else:
-                prefix_spec = CtrlNet.DEFAULT_PREFIX_LIST[net_index]
-        logger.debug("prefix spec: %s", prefix_spec)
-        server_iface = self.get_control_net_server_ifaces()[net_index]
-
-        # return any existing controlnet bridge
-        try:
-            control_net = self.get_control_net(net_index)
-            if remove:
-                self.delete_node(control_net.id)
-                return None
-            return control_net
-        except CoreError:
-            if remove:
-                return None
-
-        # build a new controlnet bridge
-        _id = CTRL_NET_ID + net_index
-
-        # use the updown script for control net 0 only.
-        updown_script = None
-        if net_index == 0:
-            updown_script = self.options.get("controlnet_updown_script") or None
-            if not updown_script:
-                logger.debug("controlnet updown script not configured")
-
-        prefixes = prefix_spec.split()
-        if len(prefixes) > 1:
-            # a list of per-host prefixes is provided
-            try:
-                # split first (master) entry into server and prefix
-                prefix = prefixes[0].split(":", 1)[1]
-            except IndexError:
-                # no server name. possibly only one server
-                prefix = prefixes[0]
-        else:
-            prefix = prefixes[0]
-
-        logger.info(
-            "controlnet(%s) prefix(%s) updown(%s) serverintf(%s)",
-            _id,
-            prefix,
-            updown_script,
-            server_iface,
-        )
-        options = CtrlNet.create_options()
-        options.prefix = prefix
-        options.updown_script = updown_script
-        options.serverintf = server_iface
-        control_net = self.create_node(CtrlNet, False, _id, options=options)
-        control_net.brname = f"ctrl{net_index}.{self.short_session_id()}"
-        control_net.startup()
-        return control_net
-
-    def add_remove_control_iface(
-        self,
-        node: CoreNode,
-        net_index: int = 0,
-        remove: bool = False,
-        conf_required: bool = True,
-    ) -> None:
-        """
-        Add a control interface to a node when a 'controlnet' prefix is
-        listed in the config file or session options. Uses
-        addremovectrlnet() to build or remove the control bridge.
-        If conf_reqd is False, the control network may be built even
-        when the user has not configured one (e.g. for EMANE.)
-
-        :param node: node to add or remove control interface
-        :param net_index: network index
-        :param remove: flag to check if it should be removed
-        :param conf_required: flag to check if conf is required
-        :return: nothing
-        """
-        control_net = self.add_remove_control_net(net_index, remove, conf_required)
-        if not control_net:
-            return
-        if not node:
-            return
-        # ctrl# already exists
-        if node.ifaces.get(control_net.CTRLIF_IDX_BASE + net_index):
-            return
-        try:
-            ip4 = control_net.prefix[node.id]
-            ip4_mask = control_net.prefix.prefixlen
-            iface_data = InterfaceData(
-                id=control_net.CTRLIF_IDX_BASE + net_index,
-                name=f"ctrl{net_index}",
-                mac=utils.random_mac(),
-                ip4=ip4,
-                ip4_mask=ip4_mask,
-                mtu=DEFAULT_MTU,
-            )
-            iface = node.create_iface(iface_data)
-            control_net.attach(iface)
-            iface.control = True
-        except ValueError:
-            msg = f"Control interface not added to node {node.id}. "
-            msg += f"Invalid control network prefix ({control_net.prefix}). "
-            msg += "A longer prefix length may be required for this many nodes."
-            logger.exception(msg)
-
-    def update_control_iface_hosts(
-        self, net_index: int = 0, remove: bool = False
-    ) -> None:
-        """
-        Add the IP addresses of control interfaces to the /etc/hosts file.
-
-        :param net_index: network index to update
-        :param remove: flag to check if it should be removed
-        :return: nothing
-        """
-        if not self.options.get_bool("update_etc_hosts", False):
-            return
-
-        try:
-            control_net = self.get_control_net(net_index)
-        except CoreError:
-            logger.exception("error retrieving control net node")
-            return
-
-        header = f"CORE session {self.id} host entries"
-        if remove:
-            logger.info("Removing /etc/hosts file entries.")
-            utils.file_demunge("/etc/hosts", header)
-            return
-
-        entries = []
-        for iface in control_net.get_ifaces():
-            name = iface.node.name
-            for ip in iface.ips():
-                entries.append(f"{ip.ip} {name}")
-
-        logger.info("Adding %d /etc/hosts file entries.", len(entries))
-        utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 
     def runtime(self) -> float:
         """
@@ -1451,3 +1176,11 @@ class Session:
         :return: True if in the runtime state, False otherwise
         """
         return self.state == EventTypes.RUNTIME_STATE
+
+    def parse_options(self) -> None:
+        """
+        Update configurations from latest session options.
+
+        :return: nothing
+        """
+        self.control_net_manager.parse_options(self.options)

@@ -24,22 +24,22 @@ from core.api.grpc.wrappers import (
     MobilityAction,
     MoveNodesRequest,
     Node,
-    NodeServiceData,
     NodeType,
     Position,
     ServiceAction,
-    ServiceValidationMode,
+    ServiceData,
     SessionLocation,
     SessionState,
 )
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
-from core.emulator.data import EventData, IpPrefixes, NodeData
-from core.emulator.enumerations import EventTypes, ExceptionLevels, MessageFlags
+from core.emulator.data import IpPrefixes, NodeData
+from core.emulator.enumerations import AlertLevels, EventTypes, MessageFlags
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode, WlanNode
+from core.services.defaults.utilservices.services import DefaultRouteService
 from core.xml.corexml import CoreXmlWriter
 
 
@@ -93,25 +93,13 @@ class TestGrpc:
         wlan_node.set_mobility({mobility_config_key: mobility_config_value})
 
         # setup service config
-        service_name = "DefaultRoute"
-        service_validate = ["echo hello"]
-        node1.service_configs[service_name] = NodeServiceData(
-            executables=[],
-            dependencies=[],
-            dirs=[],
-            configs=[],
-            startup=[],
-            validate=service_validate,
-            validation_mode=ServiceValidationMode.NON_BLOCKING,
-            validation_timer=0,
-            shutdown=[],
-            meta="",
+        service_name = DefaultRouteService.name
+        file_name = DefaultRouteService.files[0]
+        file_data = "hello world"
+        service_data = ServiceData(
+            templates={file_name: file_data},
         )
-
-        # setup service file config
-        service_file = "defaultroute.sh"
-        service_file_data = "echo hello"
-        node1.service_file_configs[service_name] = {service_file: service_file_data}
+        node1.service_configs[service_name] = service_data
 
         # setup session option
         option_key = "controlnet"
@@ -135,9 +123,9 @@ class TestGrpc:
         assert wlan_node.id in real_session.nodes
         assert iface1_id in real_session.nodes[node1.id].ifaces
         assert iface2_id in real_session.nodes[node2.id].ifaces
-        hook_file, hook_data = real_session.hooks[EventTypes.RUNTIME_STATE][0]
-        assert hook_file == hook.file
-        assert hook_data == hook.data
+        hooks = real_session.hook_manager.script_hooks[EventTypes.RUNTIME_STATE]
+        real_hook = hooks[hook.file]
+        assert real_hook == hook.data
         assert real_session.location.refxyz == (location_x, location_y, location_z)
         assert real_session.location.refgeo == (
             location_lat,
@@ -153,16 +141,11 @@ class TestGrpc:
             wlan_node.id, Ns2ScriptedMobility.name
         )
         assert set_mobility_config[mobility_config_key] == mobility_config_value
-        service = real_session.services.get_service(
-            node1.id, service_name, default_service=True
-        )
-        assert service.validate == tuple(service_validate)
         real_node1 = real_session.get_node(node1.id, CoreNode)
-        service_file = real_session.services.get_service_file(
-            real_node1, service_name, service_file
-        )
-        assert service_file.data == service_file_data
-        assert option_value == real_session.options.get(option_key)
+        real_service = real_node1.services[service_name]
+        real_templates = real_service.get_templates()
+        real_template_data = real_templates[file_name]
+        assert file_data == real_template_data
 
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(
@@ -628,89 +611,16 @@ class TestGrpc:
         # then
         assert result is True
 
-    def test_get_service_defaults(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            defaults = client.get_service_defaults(session.id)
-
-        # then
-        assert len(defaults) > 0
-
-    def test_set_service_defaults(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        model = "test"
-        services = ["SSH"]
-
-        # then
-        with client.context_connect():
-            result = client.set_service_defaults(session.id, {model: services})
-
-        # then
-        assert result is True
-        assert session.services.default_services[model] == services
-
-    def test_get_node_service(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-
-        # then
-        with client.context_connect():
-            service = client.get_node_service(session.id, node.id, "DefaultRoute")
-
-        # then
-        assert len(service.configs) > 0
-
-    def test_get_node_service_file(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-
-        # then
-        with client.context_connect():
-            data = client.get_node_service_file(
-                session.id, node.id, "DefaultRoute", "defaultroute.sh"
-            )
-
-        # then
-        assert data is not None
-
     def test_service_action(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        options = CoreNode.create_options()
-        options.legacy = True
-        node = session.add_node(CoreNode, options=options)
+        node = session.add_node(CoreNode)
         service_name = "DefaultRoute"
 
         # then
         with client.context_connect():
             result = client.service_action(
-                session.id, node.id, service_name, ServiceAction.STOP
-            )
-
-        # then
-        assert result is True
-
-    def test_config_service_action(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-        service_name = "DefaultRoute"
-
-        # then
-        with client.context_connect():
-            result = client.config_service_action(
                 session.id, node.id, service_name, ServiceAction.STOP
             )
 
@@ -808,63 +718,36 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            event_data = EventData(
-                event_type=EventTypes.RUNTIME_STATE, time=str(time.monotonic())
-            )
-            session.broadcast_event(event_data)
+            session.broadcast_event(EventTypes.RUNTIME_STATE)
 
             # then
             queue.get(timeout=5)
 
-    def test_exception_events(self, grpc_server: CoreGrpcServer):
+    def test_alert_events(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         queue = Queue()
-        exception_level = ExceptionLevels.FATAL
+        alert_level = AlertLevels.FATAL
         source = "test"
         node_id = None
-        text = "exception message"
+        text = "alert message"
 
         def handle_event(event: Event) -> None:
             assert event.session_id == session.id
-            assert event.exception_event is not None
-            exception_event = event.exception_event
-            assert exception_event.level.value == exception_level.value
-            assert exception_event.node_id == 0
-            assert exception_event.source == source
-            assert exception_event.text == text
+            assert event.alert_event is not None
+            alert_event = event.alert_event
+            assert alert_event.level.value == alert_level.value
+            assert alert_event.node_id == 0
+            assert alert_event.source == source
+            assert alert_event.text == text
             queue.put(event)
 
         # then
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.exception(exception_level, source, text, node_id)
-
-            # then
-            queue.get(timeout=5)
-
-    def test_file_events(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-        queue = Queue()
-
-        def handle_event(event: Event) -> None:
-            assert event.session_id == session.id
-            assert event.file_event is not None
-            queue.put(event)
-
-        # then
-        with client.context_connect():
-            client.events(session.id, handle_event)
-            time.sleep(0.1)
-            file_data = session.services.get_service_file(
-                node, "DefaultRoute", "defaultroute.sh"
-            )
-            session.broadcast_file(file_data)
+            session.broadcast_alert(alert_level, source, text, node_id)
 
             # then
             queue.get(timeout=5)
@@ -905,7 +788,7 @@ class TestGrpc:
             assert n.position.alt == alt
             queue.put(node_data)
 
-        session.node_handlers.append(node_handler)
+        session.broadcast_manager.add_handler(NodeData, node_handler)
 
         # then
         with client.context_connect():

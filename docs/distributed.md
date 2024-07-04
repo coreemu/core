@@ -13,7 +13,7 @@ distributed CORE package and some configuration to allow SSH as root.
 
 CORE configuration settings required for using distributed functionality.
 
-Edit **/etc/core/core.conf** or specific configuration file being used.
+Edit **/opt/core/etc/core.conf** or specific configuration file being used.
 
 ```shell
 # uncomment and set this to the address that remote servers
@@ -58,14 +58,16 @@ First the distributed servers must be configured to allow passwordless root
 login over SSH.
 
 On distributed server:
-
 ```shelll
 # install openssh-server
 sudo apt install openssh-server
 
 # open sshd config
 vi /etc/ssh/sshd_config
+```
 
+Modify the following settings:
+```
 # verify these configurations in file
 PermitRootLogin yes
 PasswordAuthentication yes
@@ -74,7 +76,13 @@ PasswordAuthentication yes
 # accept all env variables
 AcceptEnv *
 
-# restart sshd
+# if you are going to need more than 10 nodes on the server
+# change this setting, as it defaults to 10
+MaxSessions 10
+```
+
+Restart the sshd daemon:
+```
 sudo systemctl restart sshd
 ```
 

@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Optional
 
-from core.api.grpc.wrappers import ExceptionEvent, ExceptionLevel
+from core.api.grpc.wrappers import AlertEvent, AlertLevel
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText
@@ -19,7 +19,7 @@ class AlertsDialog(Dialog):
         super().__init__(app, "Alerts")
         self.tree: Optional[ttk.Treeview] = None
         self.codetext: Optional[CodeText] = None
-        self.alarm_map: dict[int, ExceptionEvent] = {}
+        self.alarm_map: dict[int, AlertEvent] = {}
         self.draw()
 
     def draw(self) -> None:
@@ -67,13 +67,13 @@ class AlertsDialog(Dialog):
             )
             self.alarm_map[insert_id] = exception
 
-        error_name = ExceptionLevel.ERROR.name
+        error_name = AlertLevel.ERROR.name
         self.tree.tag_configure(error_name, background="#ff6666")
-        fatal_name = ExceptionLevel.FATAL.name
+        fatal_name = AlertLevel.FATAL.name
         self.tree.tag_configure(fatal_name, background="#d9d9d9")
-        warning_name = ExceptionLevel.WARNING.name
+        warning_name = AlertLevel.WARNING.name
         self.tree.tag_configure(warning_name, background="#ffff99")
-        notice_name = ExceptionLevel.NOTICE.name
+        notice_name = AlertLevel.NOTICE.name
         self.tree.tag_configure(notice_name, background="#85e085")
 
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)

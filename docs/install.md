@@ -6,12 +6,16 @@
 
 ## Overview
 
-CORE currently supports and provides the following installation options, with the package
-option being preferred.
+This page will provide details on various options that can be used
+when installing CORE.
 
-* [Package based install (rpm/deb)](#package-based-install)
-* [Script based install](#script-based-install)
-* [Dockerfile based install](#dockerfile-based-install)
+### Complete Examples
+
+For complete examples installing CORE, OSPF MDR, EMANE, and the EMANE python
+bindings, see the pages below.
+
+* [Installing on Ubuntu 22.04](install_ubuntu.md)
+* [Installing on Rocky Linux 8](install_rocky.md)
 
 ### Requirements
 
@@ -19,6 +23,7 @@ Any computer capable of running Linux should be able to run CORE. Since the phys
 containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
 * Linux Kernel v3.3+
+* Python 3.9+
 * iproute2 4.5+ is a requirement for bridge related commands
 * nftables compatible kernel and nft command line tool
 
@@ -46,7 +51,9 @@ The following is a list of files that would be installed after installation.
         * virtualenv `/opt/core/venv/bin`
         * local `/usr/local/bin`
 * configuration files
-    * `/etc/core/{core.conf, logging.conf}`
+    * `/opt/core/etc/{core.conf, logging.conf}`
+* examples, tutorials, and data files
+    * `/opt/core/share`
 * ospf mdr repository files when using script based install
     * `<repo>/../ospf-mdr`
 
@@ -94,15 +101,6 @@ sudo yum remove core
 # ubuntu
 sudo apt remove core
 ```
-
-## Installation Examples
-
-The below links will take you to sections providing complete examples for installing
-CORE and related utilities on fresh installations. Otherwise, a breakdown for installing
-different components and the options available are detailed below.
-
-* [Ubuntu 22.04](install_ubuntu.md)
-* [CentOS 7](install_centos.md)
 
 ## Package Based Install
 
@@ -265,29 +263,6 @@ an installation to your use case.
 inv install --dry -v -p <prefix> -i <install type>
 ```
 
-## Dockerfile Based Install
-
-You can leverage one of the provided Dockerfiles, to run and launch CORE within a Docker container.
-
-Since CORE nodes will leverage software available within the system for a given use case,
-make sure to update and build the Dockerfile with desired software.
-
-```shell
-# clone core
-git clone https://github.com/coreemu/core.git
-cd core
-# build image
-sudo docker build -t core -f dockerfiles/Dockerfile.<centos,ubuntu> .
-# start container
-sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core
-# enable xhost access to the root user
-xhost +local:root
-# launch core-gui
-sudo docker exec -it core core-gui
-```
-
-When done see [Post Install](#post-install).
-
 ## Installing EMANE
 
 !!! note
@@ -360,38 +335,13 @@ Place the file contents below in **/etc/docker/docker.json**
 }
 ```
 
-### Resolving Path Issues
-
-One problem running CORE you may run into, using the virtual environment or locally
-can be issues related to your path.
-
-To add support for your user to run scripts from the virtual environment:
-
-```shell
-# can add to ~/.bashrc
-export PATH=$PATH:/opt/core/venv/bin
-```
-
-This will not solve the path issue when running as sudo, so you can do either
-of the following to compensate.
-
-```shell
-# run command passing in the right PATH to pickup from the user running the command
-sudo env PATH=$PATH core-daemon
-
-# add an alias to ~/.bashrc or something similar
-alias sudop='sudo env PATH=$PATH'
-# now you can run commands like so
-sudop core-daemon
-```
-
 ### Running CORE
 
-The following assumes I have resolved PATH issues and setup the `sudop` alias.
+In typical usage CORE is made up of two parts, the **core-daemon** (server) and the **core-gui** (client).
 
 ```shell
-# in one terminal run the server daemon using the alias above
-sudop core-daemon
+# in one terminal run the server daemon
+sudo core-daemon
 # in another terminal run the gui client
 core-gui
 ```
