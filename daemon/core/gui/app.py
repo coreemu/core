@@ -28,7 +28,7 @@ HEIGHT: int = 800
 
 
 class Application(ttk.Frame):
-    def __init__(self, proxy: bool, session_id: int = None) -> None:
+    def __init__(self, proxy: bool, grpc_address: str, grpc_port: int, session_id: int = None) -> None:
         super().__init__()
         # load node icons
         nutils.setup()
@@ -55,7 +55,7 @@ class Application(ttk.Frame):
         self.setup_scaling()
         self.style: ttk.Style = ttk.Style()
         self.setup_theme()
-        self.core: CoreClient = CoreClient(self, proxy)
+        self.core: CoreClient = CoreClient(self, proxy, grpc_address, grpc_port)
         self.setup_app()
         self.draw()
         self.core.setup(session_id)

@@ -64,13 +64,19 @@ def to_dict(config: dict[str, ConfigOption]) -> dict[str, str]:
 
 
 class CoreClient:
-    def __init__(self, app: "Application", proxy: bool) -> None:
+    def __init__(self, app: "Application", proxy: bool, grpc_address: str, grpc_port: int) -> None:
         """
         Create a CoreGrpc instance
         """
         self.app: "Application" = app
         self.master: tk.Tk = app.master
-        self._client: client.CoreGrpcClient = client.CoreGrpcClient(proxy=proxy)
+
+        #Check for input validity
+        grpc_address = "localhost" if grpc_address == None else grpc_address
+        grpc_port = "50051" if grpc_port == None else grpc_port
+        
+        #Start client, session, user
+        self._client: client.CoreGrpcClient = client.CoreGrpcClient(proxy=proxy, address = f"{grpc_address}:{grpc_port}")
         self.session: Optional[Session] = None
         self.user = getpass.getuser()
 

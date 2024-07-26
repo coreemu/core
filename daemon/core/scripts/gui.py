@@ -22,6 +22,16 @@ def main() -> None:
     parser.add_argument(
         "--create-dir", action="store_true", help="create gui directory and exit"
     )
+    parser.add_argument(
+        "--grpc-port",
+        dest="grpcport",
+        help="override grpc port to listen on",
+    )
+    parser.add_argument(
+        "--grpc-address",
+        dest="grpcaddress",
+        help="override grpc address to listen on",
+    )
     args = parser.parse_args()
 
     # check home directory exists and create if necessary
@@ -46,8 +56,9 @@ def main() -> None:
         utils.cmd("xhost +SI:localuser:root")
 
     # start app
+    print(args.proxy, args.grpcaddress, args.grpcport, args.session)
     images.load_all()
-    app = Application(args.proxy, args.session)
+    app = Application(args.proxy, args.grpcaddress, args.grpcport, args.session)
     app.mainloop()
 
 
