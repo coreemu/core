@@ -56,7 +56,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         if not nem_id:
             logger.error("could not find nem for interface")
             return
-        service = self.session.emane.nem_service.get(nem_id)
+        service = self.session.emane.event_manager.get_service(nem_id)
         if service:
             device = service.device
             logger.info(
