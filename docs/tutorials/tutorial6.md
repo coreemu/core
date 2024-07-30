@@ -8,10 +8,14 @@ This tutorial will cover changing the node icons, changing the background, and c
 
 Below is the list of files used for this tutorial.
 
-* drone.png - icon for a drone
-* demo.py - a mobility script for a node
-* terrain.png - a background
-* completed-scenario.xml - the scenario after making all changes below
+* a mobility script for a node
+    * /opt/core/share/tutorials/tutorial6/demo.py
+* drone icon
+    * /opt/core/share/tutorials/tutorial6/drone.png
+* background image
+    * /opt/core/share/tutorials/tutorial6/terrain.png
+* the scenario after making all changes below
+    * /opt/core/share/tutorials/tutorial6/completed-scenario.xml
 
 ## Running this Tutorial
 

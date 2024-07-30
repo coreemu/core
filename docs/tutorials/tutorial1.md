@@ -14,11 +14,11 @@ scenario in CORE.
 Below is the list of files used for this tutorial.
 
 * 2 node wired scenario
-    * scenario.xml
-    * scenario.py
+    * /opt/core/share/tutorials/tutorial1/scenario.xml
+    * /opt/core/share/tutorials/tutorial1/scenario.py
 * 2 node wired scenario, with **n1** running the "Chat App Server" service
-    * scenario_service.xml
-    * scenario_service.py
+    * /opt/core/share/tutorials/tutorial1/scenario_service.xml
+    * /opt/core/share/tutorials/tutorial1/scenario_service.py
 
 ## Running this Tutorial
 

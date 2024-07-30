@@ -10,8 +10,10 @@ send a simple message and the server will log receipt of the message.
 
 Below is the list of files used for this tutorial.
 
-* scenario.xml - 3 node CORE xml scenario file  (wireless)
-* scenario.py - 3 node CORE gRPC python script (wireless)
+* 3 node CORE xml scenario file  (wireless)
+    * /opt/core/share/tutorials/tutorial2/scenario.xml
+* 3 node CORE gRPC python script (wireless)
+    * /opt/core/share/tutorials/tutorial2/scenario.py
 
 ## Running with the XML Scenario File
 

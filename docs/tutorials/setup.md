@@ -4,6 +4,17 @@
 
 We assume the prior installation of CORE, using a virtual environment.
 
+```shell
+# location of all core files
+/opt/core
+
+# location of the virtual environment
+/opt/core/venv
+
+# convenience command for using core's python virtual environment
+core-python
+```
+
 ## Setup for Chat App
 
 There is a simple TCP chat app provided as example software to use and run within
@@ -15,6 +26,7 @@ The following will install chatapp and its scripts into **/usr/local**, which yo
 may need to add to PATH within node to be able to use command directly.
 
 ``` shell
+cd /opt/core/share/tutorials/chatapp
 sudo python3 -m pip install .
 ```
 
@@ -66,7 +78,7 @@ optional arguments:
     ``` shell
     custom_services_dir = <path for service>
     ```
-2. Then you will need to copy/move **chatapp/chatapp_service.py** to the directory
+2. Then you will need to copy/move **/opt/core/share/tutorials/chatapp/chatapp_service.py** to the directory
    configured above
 3. Then you will need to restart the **core-daemon** to pick up this new service
 4. Now the service will be an available option under the group **ChatApp** with
