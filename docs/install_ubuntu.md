@@ -31,7 +31,7 @@ sudo apt-get install -y \
 
 # install ospf mdr
 cd ~/Documents
-apt-get install -y \
+sudo apt-get install -y \
     automake \
     gawk \
     g++ \
