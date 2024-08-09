@@ -528,7 +528,7 @@ class Session:
         Import a session from the EmulationScript XML format.
 
         :param file_path: xml file to load session from
-        :param start: instantiate session if true, false otherwise
+        :param start: instantiate session if true, false for a definition state
         :return: nothing
         """
         logger.info("opening xml: %s", file_path)

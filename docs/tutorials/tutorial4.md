@@ -19,9 +19,12 @@ A directory is used for containing your tests. Within this directory we need a
 **conftest.py**, which pytest will pick up to help define and provide
 test fixtures, which will be leveraged within our tests.
 
-* tests
-    * conftest.py - file used by pytest to define fixtures, which can be shared across tests
-    * test_ping.py - defines test classes/functions to run
+* tests directory
+    * /opt/core/share/tutorials/tutorial4/tests
+* file used by pytest to define fixtures, which can be shared across tests
+    * /opt/core/share/tutorials/tutorial4/conftest.py
+* defines test classes/functions to run
+    * /opt/core/share/tutorials/tutorial4/test_ping.py
 
 ## Test Fixtures
 

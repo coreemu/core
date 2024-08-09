@@ -369,13 +369,11 @@ class CoreService(abc.ABC):
         """
         start = time.monotonic()
         cmds = self.validate[:]
-        index = 0
         while cmds:
-            cmd = cmds[index]
+            cmd = cmds[0]
             try:
                 self.node.cmd(cmd, shell=True)
-                del cmds[index]
-                index += 1
+                del cmds[0]
             except CoreCommandError:
                 logger.debug(
                     f"node({self.node.name}) service({self.name}) "

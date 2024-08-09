@@ -150,7 +150,7 @@ class ExampleService(CoreService):
     validate: list[str] = []
     # commands to run to stop this service
     shutdown: list[str] = []
-    # validation mode, blocking, non-blocking, and timer
+    # validation mode BLOCKING, NON_BLOCKING, and TIMER
     validation_mode: ServiceMode = ServiceMode.BLOCKING
     # configurable values that this service can use, for file generation
     default_configs: list[Configuration] = [
@@ -191,9 +191,9 @@ class ExampleService(CoreService):
 
 Validation modes are used to determine if a service has started up successfully.
 
-* blocking - startup commands are expected to run til completion and return 0 exit code
-* non-blocking - startup commands are ran, but do not wait for completion
-* timer - startup commands are ran, and an arbitrary amount of time is waited to consider started
+* `BLOCKING` - startup commands are expected to run til completion and return 0 exit code
+* `NON_BLOCKING` - startup commands are ran, but do not wait for completion
+* `TIMER` - startup commands are ran, and an arbitrary amount of time is waited to consider started
 
 #### Shadow Directories
 
