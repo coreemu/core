@@ -830,7 +830,7 @@ class CoreGrpcClient:
         Load a local scenario XML file to open as a new session.
 
         :param file_path: path of scenario XML file
-        :param start: tuple of result and session id when successful
+        :param start: instantiate session if true, false for a definition state
         :return: tuple of result and session id
         """
         with file_path.open("r") as f:
