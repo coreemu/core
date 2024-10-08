@@ -475,11 +475,12 @@ class NodeConfigDialog(Dialog):
         self.canvas_node.image = self.image
 
         # update node interface data
-        for iface in self.canvas_node.ifaces.values():
-            data = self.ifaces[iface.id]
-            error = not data.validate(self, iface)
-            if error:
-                break
+        if nutils.is_container(self.node):
+            for iface in self.canvas_node.ifaces.values():
+                data = self.ifaces[iface.id]
+                error = not data.validate(self, iface)
+                if error:
+                    break
 
         # save custom network for wireless node types
         if nutils.is_wireless(self.node):
