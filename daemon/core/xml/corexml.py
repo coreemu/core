@@ -540,6 +540,7 @@ class CoreXmlReader:
             xml_config[name] = value
         logger.info("reading session options: %s", xml_config)
         self.session.options.update(xml_config)
+        self.session.parse_options()
 
     def read_session_hooks(self) -> None:
         session_hooks = self.scenario.find("session_hooks")
