@@ -88,7 +88,7 @@ This section covers using a gRPC script to create and provide scenario movement.
    ```
 * From another terminal run the **scenario.py** script
    ```shell
-   /opt/core/venv/bin/python scenario.py
+   /opt/core/venv/bin/python /opt/core/share/tutorials/tutorial3/scenario.py
    ```
 * In another terminal run the GUI
     ```shell
@@ -150,7 +150,7 @@ API.
 * Double click on **n2** to get a terminal window
 * From the terminal window for **n2**, run the script
    ```shell
-   /opt/core/venv/bin/python move-node2.py
+   /opt/core/venv/bin/python /opt/core/share/tutorials/tutorial3/move-node2.py
    ```
 * Observe that node 2 moves and continues to move
 
