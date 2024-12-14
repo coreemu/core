@@ -357,8 +357,13 @@ class Menubar(tk.Menu):
         result = True
         if self.core.is_runtime():
             result = messagebox.askyesnocancel("Exit", "Stop the running session?")
+        # cancel was clicked, avoid doing anything
+        if result is None:
+            return
+        # exit was selected, delete session
         if result:
             self.core.delete_session()
+        # we want to exist the app
         if quit_app:
             self.app.quit()
 
