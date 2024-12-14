@@ -1,8 +1,5 @@
 from core.api.grpc import client
-from core.api.grpc.wrappers import NodeType, Position
-
-# interface helper
-iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
+from core.api.grpc.wrappers import NodeType, Position, Interface
 
 # create grpc client and connect
 core = client.CoreGrpcClient()
@@ -20,9 +17,9 @@ position = Position(x=300, y=100)
 node2 = session.add_node(3, model="mdr", position=position)
 
 # create links
-iface1 = iface_helper.create_iface(node1.id, 0)
+iface1 = Interface(id=0, ip4="10.0.0.1", ip4_mask=24, ip6="2001::1", ip6_mask=128)
 session.add_link(node1=node1, node2=wlan, iface1=iface1)
-iface1 = iface_helper.create_iface(node2.id, 0)
+iface1 = Interface(id=0, ip4="10.0.0.2", ip4_mask=24, ip6="2001::2", ip6_mask=128)
 session.add_link(node1=node2, node2=wlan, iface1=iface1)
 
 # start session

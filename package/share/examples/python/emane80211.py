@@ -2,12 +2,9 @@
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes
+from core.emulator.data import InterfaceData
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode, Position
-
-# ip nerator for example
-ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
 
 # create emulator instance for creating sessions and utility methods
 coreemu = CoreEmu()
@@ -45,9 +42,9 @@ session.emane.set_config(
 )
 
 # link nodes to emane
-iface1 = ip_prefixes.create_iface(n1)
+iface1 = InterfaceData(ip4="10.0.0.1", ip4_mask=32)
 session.add_link(n1.id, emane.id, iface1)
-iface1 = ip_prefixes.create_iface(n2)
+iface1 = InterfaceData(ip4="10.0.0.2", ip4_mask=32)
 session.add_link(n2.id, emane.id, iface1)
 
 # start session
