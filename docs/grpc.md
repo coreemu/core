@@ -167,6 +167,9 @@ iface1 = iface_helper.create_iface(node1.id, 0)
 iface2 = iface_helper.create_iface(node2.id, 0)
 link = session.add_link(node1=node1, node2=node2, iface1=iface1, iface2=iface2)
 
+# start session
+core.start_session(session)
+
 # configuring during runtime
 link.options.loss = 10.0
 core.edit_link(session.id, link)
