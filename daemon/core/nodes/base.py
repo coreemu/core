@@ -592,9 +592,6 @@ class CoreNode(CoreNodeBase):
         services = options.services
         if not services:
             services = self.session.service_manager.defaults.get(self.model, [])
-        logger.info(
-            "setting node(%s) model(%s) services: %s", self.name, self.model, services
-        )
         for name in services:
             service_class = self.session.service_manager.get_service(name)
             self.add_service(service_class)

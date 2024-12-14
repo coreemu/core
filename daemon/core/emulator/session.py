@@ -395,7 +395,7 @@ class Session:
             iface2 = node2.delete_iface(iface2_id)
         core_link = self.link_manager.delete(node1, iface1, node2, iface2)
         if core_link.ptp:
-            self.delete_node(core_link.ptp.id)
+            self.delete_ptp(core_link.ptp.id)
         self.sdt.delete_link(node1_id, node2_id)
 
     def update_link(
@@ -826,6 +826,19 @@ class Session:
             node.startup()
         return node
 
+    def delete_ptp(self, _id: int) -> None:
+        """
+        Deletes node used to link wired nodes together.
+
+        :param _id: id of ptp node to delete
+        :return: nothing
+        """
+        with self.nodes_lock:
+            try:
+                self.ptp_nodes.pop(_id)
+            except KeyError:
+                raise CoreError(f"failure deleting expected ptp node({_id})")
+
     def create_control_net(
         self,
         _id: int,
@@ -891,13 +904,23 @@ class Session:
                 node.shutdown()
                 raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
-        logger.info(
-            "created node(%s) id(%s) name(%s) start(%s)",
-            _class.__name__,
-            node.id,
-            node.name,
-            start,
-        )
+        if isinstance(node, CoreNode):
+            logger.info(
+                "created node(%s) id(%s) name(%s) start(%s) services(%s)",
+                _class.__name__,
+                node.id,
+                node.name,
+                start,
+                ",".join(sorted(node.services)),
+            )
+        else:
+            logger.info(
+                "created node(%s) id(%s) name(%s) start(%s)",
+                _class.__name__,
+                node.id,
+                node.name,
+                start,
+            )
         if start:
             node.startup()
         return node
