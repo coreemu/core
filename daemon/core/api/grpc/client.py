@@ -133,6 +133,10 @@ class EmaneEventsStreamer:
 class InterfaceHelper:
     """
     Convenience class to help generate IP4 and IP6 addresses for gRPC clients.
+
+    This is not a requirement to use, as interfaces can be created manually as
+    desired. Node IDs are used to index into a subnet, so if the subnet is tool small
+    of a pool of addresses and the node ID is too high, there will be a failure.
     """
 
     def __init__(self, ip4_prefix: str = None, ip6_prefix: str = None) -> None:
