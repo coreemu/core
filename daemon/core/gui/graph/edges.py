@@ -56,7 +56,7 @@ def node_label_positions(
     src_x: int, src_y: int, dst_x: int, dst_y: int
 ) -> tuple[tuple[float, float], tuple[float, float]]:
     v_x, v_y = dst_x - src_x, dst_y - src_y
-    v_len = math.sqrt(v_x ** 2 + v_y ** 2)
+    v_len = math.sqrt(v_x**2 + v_y**2)
     if v_len == 0:
         u_x, u_y = 0.0, 0.0
     else:
@@ -147,7 +147,7 @@ class Edge:
         perp_m = -1 / m
         b = mp_y - (perp_m * mp_x)
         # get arc x and y
-        offset = math.sqrt(self.arc ** 2 / (1 + (1 / m ** 2)))
+        offset = math.sqrt(self.arc**2 / (1 + (1 / m**2)))
         arc_x = mp_x
         if self.arc >= 0:
             arc_x += offset
