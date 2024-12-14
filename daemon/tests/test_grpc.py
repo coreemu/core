@@ -96,9 +96,7 @@ class TestGrpc:
         service_name = DefaultRouteService.name
         file_name = DefaultRouteService.files[0]
         file_data = "hello world"
-        service_data = ServiceData(
-            templates={file_name: file_data},
-        )
+        service_data = ServiceData(templates={file_name: file_data})
         node1.service_configs[service_name] = service_data
 
         # setup session option

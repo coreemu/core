@@ -16,11 +16,7 @@ if TYPE_CHECKING:
 NODES: list["NodeDraw"] = []
 NETWORK_NODES: list["NodeDraw"] = []
 NODE_ICONS = {}
-CONTAINER_NODES: set[NodeType] = {
-    NodeType.DEFAULT,
-    NodeType.DOCKER,
-    NodeType.PODMAN,
-}
+CONTAINER_NODES: set[NodeType] = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.PODMAN}
 IMAGE_NODES: set[NodeType] = {NodeType.DOCKER, NodeType.PODMAN}
 WIRELESS_NODES: set[NodeType] = {
     NodeType.WIRELESS_LAN,

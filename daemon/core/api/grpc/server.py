@@ -230,10 +230,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             )
             services.append(service_proto)
         emane_models = [x.name for x in EmaneModelManager.models.values()]
-        return core_pb2.GetConfigResponse(
-            services=services,
-            emane_models=emane_models,
-        )
+        return core_pb2.GetConfigResponse(services=services, emane_models=emane_models)
 
     def StartSession(
         self, request: core_pb2.StartSessionRequest, context: ServicerContext
@@ -1305,9 +1302,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return GetWirelessConfigResponse(config=config_options)
 
     def EmaneEvents(
-        self,
-        request_iterator: Iterable[EmaneEventsRequest],
-        context: ServicerContext,
+        self, request_iterator: Iterable[EmaneEventsRequest], context: ServicerContext
     ) -> EmaneEventsResponse:
         for request in request_iterator:
             session = self.get_session(request.session_id, context)
@@ -1396,10 +1391,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                         session, node, antenna.iface_id, context
                     )
                 session.emane.event_manager.publish_antenna_profile(
-                    nem_id,
-                    antenna.profile,
-                    antenna.azimuth,
-                    antenna.elevation,
+                    nem_id, antenna.profile, antenna.azimuth, antenna.elevation
                 )
             elif request.HasField("fading"):
                 fading = request.fading
@@ -1416,9 +1408,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return EmaneEventsResponse()
 
     def CreateService(
-        self,
-        request: CreateServiceRequest,
-        context: ServicerContext,
+        self, request: CreateServiceRequest, context: ServicerContext
     ) -> CreateServiceResponse:
         service = request.service
         class_name = f"{service.name.capitalize()}Class"

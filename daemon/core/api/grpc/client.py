@@ -1073,9 +1073,7 @@ class CoreGrpcClient:
         recreate: bool = False,
     ) -> bool:
         request = CreateServiceRequest(
-            service=service.to_proto(),
-            templates=templates,
-            recreate=recreate,
+            service=service.to_proto(), templates=templates, recreate=recreate
         )
         response = self.stub.CreateService(request)
         return response.result

@@ -160,10 +160,7 @@ class MobilityManager(ModelManager):
         end_time = int(model.endtime)
         data = f"start={start_time} end={end_time}"
         self.session.broadcast_event(
-            event_type,
-            node_id=model.id,
-            name=f"mobility:{model.name}",
-            data=data,
+            event_type, node_id=model.id, name=f"mobility:{model.name}", data=data
         )
 
 
@@ -420,10 +417,7 @@ class BasicRangeModel(WirelessModel):
             iface2=iface2.get_data(),
             network_id=self.wlan.id,
             options=LinkOptions(
-                bandwidth=self.bw,
-                delay=self.delay,
-                loss=self.loss,
-                jitter=self.jitter,
+                bandwidth=self.bw, delay=self.delay, loss=self.loss, jitter=self.jitter
             ),
             color=color,
         )

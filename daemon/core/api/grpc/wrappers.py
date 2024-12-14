@@ -854,10 +854,7 @@ class CoreConfig:
     @classmethod
     def from_proto(cls, proto: core_pb2.GetConfigResponse) -> "CoreConfig":
         services = [Service.from_proto(x) for x in proto.services]
-        return CoreConfig(
-            services=services,
-            emane_models=list(proto.emane_models),
-        )
+        return CoreConfig(services=services, emane_models=list(proto.emane_models))
 
 
 @dataclass

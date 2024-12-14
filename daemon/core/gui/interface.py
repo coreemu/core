@@ -31,11 +31,7 @@ def get_index(iface: Interface) -> Optional[int]:
 
 class Subnets:
     def __init__(
-        self,
-        ip4: IPNetwork,
-        ip4_mask: int,
-        ip6: IPNetwork,
-        ip6_mask: int,
+        self, ip4: IPNetwork, ip4_mask: int, ip6: IPNetwork, ip6_mask: int
     ) -> None:
         self.ip4 = ip4
         self.ip4_mask = ip4_mask

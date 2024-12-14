@@ -30,7 +30,7 @@ class NrlNhdp(CoreService):
     executables: list[str] = ["nrlnhdp"]
     startup: list[str] = ["bash nrlnhdp.sh"]
     validate: list[str] = ["pidof nrlnhdp"]
-    shutdown: list[str] = ["killall nrlnhdp"]
+    shutdown: list[str] = ["pkill -f nrlnhdp"]
 
     def data(self) -> dict[str, Any]:
         has_smf = "SMF" in self.node.services
@@ -44,10 +44,10 @@ class NrlSmf(CoreService):
     name: str = "SMF"
     group: str = GROUP
     files: list[str] = ["startsmf.sh"]
-    executables: list[str] = ["nrlsmf", "killall"]
+    executables: list[str] = ["nrlsmf"]
     startup: list[str] = ["bash startsmf.sh"]
     validate: list[str] = ["pidof nrlsmf"]
-    shutdown: list[str] = ["killall nrlsmf"]
+    shutdown: list[str] = ["pkill -f nrlsmf"]
 
     def data(self) -> dict[str, Any]:
         has_nhdp = "NHDP" in self.node.services
@@ -72,7 +72,7 @@ class NrlOlsr(CoreService):
     executables: list[str] = ["nrlolsrd"]
     startup: list[str] = ["bash nrlolsrd.sh"]
     validate: list[str] = ["pidof nrlolsrd"]
-    shutdown: list[str] = ["killall nrlolsrd"]
+    shutdown: list[str] = ["pkill -f nrlolsrd"]
 
     def data(self) -> dict[str, Any]:
         has_smf = "SMF" in self.node.services
@@ -91,7 +91,7 @@ class NrlOlsrv2(CoreService):
     executables: list[str] = ["nrlolsrv2"]
     startup: list[str] = ["bash nrlolsrv2.sh"]
     validate: list[str] = ["pidof nrlolsrv2"]
-    shutdown: list[str] = ["killall nrlolsrv2"]
+    shutdown: list[str] = ["pkill -f nrlolsrv2"]
 
     def data(self) -> dict[str, Any]:
         has_smf = "SMF" in self.node.services
@@ -109,7 +109,7 @@ class OlsrOrg(CoreService):
     executables: list[str] = ["olsrd"]
     startup: list[str] = ["bash olsrd.sh"]
     validate: list[str] = ["pidof olsrd"]
-    shutdown: list[str] = ["killall olsrd"]
+    shutdown: list[str] = ["pkill -f olsrd"]
 
     def data(self) -> dict[str, Any]:
         has_smf = "SMF" in self.node.services
@@ -126,4 +126,4 @@ class MgenActor(CoreService):
     executables: list[str] = ["mgen"]
     startup: list[str] = ["bash start_mgen_actor.sh"]
     validate: list[str] = ["pidof mgen"]
-    shutdown: list[str] = ["killall mgen"]
+    shutdown: list[str] = ["pkill -f mgen"]

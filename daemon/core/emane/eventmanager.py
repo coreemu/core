@@ -107,12 +107,7 @@ class EmaneEventManager:
         self.nem_service.clear()
 
     def create_service(
-        self,
-        nem_id: int,
-        device: str,
-        group: str,
-        port: int,
-        should_start: bool,
+        self, nem_id: int, device: str, group: str, port: int, should_start: bool
     ) -> None:
         # initialize emane event services
         service = self.services.get(device)
@@ -159,13 +154,7 @@ class EmaneEventManager:
         )
         args = {k: v for k, v in args.items() if v is not None}
         event = LocationEvent()
-        event.append(
-            nem_id,
-            latitude=lat,
-            longitude=lon,
-            altitude=alt,
-            **args,
-        )
+        event.append(nem_id, latitude=lat, longitude=lon, altitude=alt, **args)
         self._publish_event(nem_id, event, 0)
 
     def publish_locations(
@@ -226,11 +215,7 @@ class EmaneEventManager:
         self._publish_event(nem2_id, event)
 
     def publish_antenna_profile(
-        self,
-        nem_id: int,
-        profile: int,
-        azimuth: float,
-        elevation: float,
+        self, nem_id: int, profile: int, azimuth: float, elevation: float
     ) -> None:
         event = AntennaProfileEvent()
         event.append(nem_id, profile=profile, azimuth=azimuth, elevation=elevation)

@@ -92,7 +92,7 @@ class Zebra(CoreService):
     executables: list[str] = ["zebra"]
     startup: list[str] = ["bash quaggaboot.sh zebra"]
     validate: list[str] = ["pidof zebra"]
-    shutdown: list[str] = ["killall zebra"]
+    shutdown: list[str] = ["pkill -f zebra"]
 
     def data(self) -> dict[str, Any]:
         quagga_bin_search = self.node.session.options.get(
@@ -170,7 +170,7 @@ class Ospfv2(QuaggaService, CoreService):
 
     name: str = "OSPFv2"
     validate: list[str] = ["pidof ospfd"]
-    shutdown: list[str] = ["killall ospfd"]
+    shutdown: list[str] = ["pkill -f ospfd"]
     ipv4_routing: bool = True
 
     def quagga_iface_config(self, iface: CoreInterface) -> str:
@@ -220,7 +220,7 @@ class Ospfv3(QuaggaService, CoreService):
     """
 
     name: str = "OSPFv3"
-    shutdown: list[str] = ["killall ospf6d"]
+    shutdown: list[str] = ["pkill -f ospf6d"]
     validate: list[str] = ["pidof ospf6d"]
     ipv4_routing: bool = True
     ipv6_routing: bool = True
@@ -286,7 +286,7 @@ class Bgp(QuaggaService, CoreService):
     """
 
     name: str = "BGP"
-    shutdown: list[str] = ["killall bgpd"]
+    shutdown: list[str] = ["pkill -f bgpd"]
     validate: list[str] = ["pidof bgpd"]
     ipv4_routing: bool = True
     ipv6_routing: bool = True
@@ -315,7 +315,7 @@ class Rip(QuaggaService, CoreService):
     """
 
     name: str = "RIP"
-    shutdown: list[str] = ["killall ripd"]
+    shutdown: list[str] = ["pkill -f ripd"]
     validate: list[str] = ["pidof ripd"]
     ipv4_routing: bool = True
 
@@ -340,7 +340,7 @@ class Ripng(QuaggaService, CoreService):
     """
 
     name: str = "RIPNG"
-    shutdown: list[str] = ["killall ripngd"]
+    shutdown: list[str] = ["pkill -f ripngd"]
     validate: list[str] = ["pidof ripngd"]
     ipv6_routing: bool = True
 
@@ -366,7 +366,7 @@ class Babel(QuaggaService, CoreService):
     """
 
     name: str = "Babel"
-    shutdown: list[str] = ["killall babeld"]
+    shutdown: list[str] = ["pkill -f babeld"]
     validate: list[str] = ["pidof babeld"]
     ipv6_routing: bool = True
 
@@ -406,7 +406,7 @@ class Xpimd(QuaggaService, CoreService):
     """
 
     name: str = "Xpimd"
-    shutdown: list[str] = ["killall xpimd"]
+    shutdown: list[str] = ["pkill -f xpimd"]
     validate: list[str] = ["pidof xpimd"]
     ipv4_routing: bool = True
 

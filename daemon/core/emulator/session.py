@@ -1057,9 +1057,7 @@ class Session:
         :return: nothing
         """
         logger.info(
-            "booting node(%s): services(%s)",
-            node.name,
-            ", ".join(node.services.keys()),
+            "booting node(%s): services(%s)", node.name, ", ".join(node.services.keys())
         )
         self.control_net_manager.setup_ifaces(node)
         with self.nodes_lock:

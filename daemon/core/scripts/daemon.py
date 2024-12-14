@@ -134,19 +134,13 @@ def main():
         help="CORE logging configuration file",
     )
     parser.add_argument(
-        "--grpc-port",
-        dest="grpcport",
-        help="override grpc port to listen on",
+        "--grpc-port", dest="grpcport", help="override grpc port to listen on"
     )
     parser.add_argument(
-        "--grpc-address",
-        dest="grpcaddress",
-        help="override grpc address to listen on",
+        "--grpc-address", dest="grpcaddress", help="override grpc address to listen on"
     )
     parser.add_argument(
-        "--ovs",
-        action="store_true",
-        help="enable experimental ovs mode",
+        "--ovs", action="store_true", help="enable experimental ovs mode"
     )
     args = parser.parse_args()
     # convert ovs to internal format

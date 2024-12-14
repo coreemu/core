@@ -348,8 +348,7 @@ def get_node_proto(
             if not service.custom_templates and not service.custom_config:
                 continue
             service_configs[service.name] = services_pb2.ServiceConfig(
-                templates=service.custom_templates,
-                config=service.custom_config,
+                templates=service.custom_templates, config=service.custom_config
             )
     return core_pb2.Node(
         id=node.id,

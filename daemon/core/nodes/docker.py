@@ -230,8 +230,7 @@ class DockerNode(CoreNode):
                 compose_path = self.directory / "docker-compose.yml"
                 self.host_cmd(f'printf "{rendered}" >> {compose_path}', shell=True)
                 self.host_cmd(
-                    f"{DOCKER_COMPOSE} up -d {self.compose_name}",
-                    cwd=self.directory,
+                    f"{DOCKER_COMPOSE} up -d {self.compose_name}", cwd=self.directory
                 )
             else:
                 # setup commands for creating bind/volume mounts

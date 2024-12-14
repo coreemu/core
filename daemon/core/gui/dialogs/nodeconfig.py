@@ -511,10 +511,7 @@ class NodeConfigDialog(Dialog):
             parent=self,
             initialdir=str(Path.home()),
             title="Select Compose File",
-            filetypes=(
-                ("yaml", "*.yml *.yaml ..."),
-                ("All Files", "*"),
-            ),
+            filetypes=(("yaml", "*.yml *.yaml ..."), ("All Files", "*")),
         )
         if file_path:
             self.compose_file.set(file_path)

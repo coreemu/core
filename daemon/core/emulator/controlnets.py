@@ -131,9 +131,7 @@ class ControlNetManager:
         :return: control net node
         """
         logger.info(
-            "checking to add control net(%s) conf_required(%s)",
-            _id,
-            conf_required,
+            "checking to add control net(%s) conf_required(%s)", _id, conf_required
         )
         # check for valid id
         if not (0 <= _id <= 3):

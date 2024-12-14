@@ -52,11 +52,7 @@ if TYPE_CHECKING:
 
 GUI_SOURCE: str = "gui"
 CPU_USAGE_DELAY: int = 3
-MOBILITY_ACTIONS: dict[int, str] = {
-    7: "PLAY",
-    8: "STOP",
-    9: "PAUSE",
-}
+MOBILITY_ACTIONS: dict[int, str] = {7: "PLAY", 8: "STOP", 9: "PAUSE"}
 
 
 def to_dict(config: dict[str, ConfigOption]) -> dict[str, str]:
@@ -176,17 +172,11 @@ class CoreClient:
             if session_event.event <= SessionState.SHUTDOWN.value:
                 self.session.state = SessionState(session_event.event)
                 logger.info(
-                    "session(%s) state(%s)",
-                    event.session_id,
-                    self.session.state,
+                    "session(%s) state(%s)", event.session_id, self.session.state
                 )
             elif session_event.event in MOBILITY_ACTIONS:
                 action = MOBILITY_ACTIONS[session_event.event]
-                logger.info(
-                    "session(%s) mobility action(%s)",
-                    event.session_id,
-                    action,
-                )
+                logger.info("session(%s) mobility action(%s)", event.session_id, action)
                 node_id = session_event.node_id
                 dialog = self.mobility_players.get(node_id)
                 if dialog:

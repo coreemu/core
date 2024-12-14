@@ -65,10 +65,7 @@ def create_node_file(
         f'<!DOCTYPE {doc_name} SYSTEM "file:///usr/share/emane/dtd/{doc_name}.dtd">'
     )
     xml_data = etree.tostring(
-        xml_element,
-        pretty_print=True,
-        encoding="unicode",
-        doctype=doctype,
+        xml_element, pretty_print=True, encoding="unicode", doctype=doctype
     )
     if isinstance(node, CoreNode):
         file_path = Path(file_name)

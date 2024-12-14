@@ -121,9 +121,7 @@ class NodeServiceDialog(Dialog):
                 self.draw_current_services()
         else:
             messagebox.showinfo(
-                "Service Configuration",
-                "Select a service to configure",
-                parent=self,
+                "Service Configuration", "Select a service to configure", parent=self
             )
 
     def draw_current_services(self) -> None:

@@ -27,11 +27,7 @@ def _run_callback(state: EventTypes, hook: Callable[[EventTypes], None]) -> None
 
 
 def _run_script(
-    state: EventTypes,
-    directory: Path,
-    file_name: str,
-    data: str,
-    env: dict[str, str],
+    state: EventTypes, directory: Path, file_name: str, data: str, env: dict[str, str]
 ) -> None:
     """
     Run a script hook.
