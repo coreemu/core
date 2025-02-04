@@ -193,14 +193,6 @@ def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> 
                 sys.exit(1)
 
 
-def install_grpcio(c: Context, hide: bool) -> None:
-    python_bin = get_env_python()
-    c.run(
-        f"{python_bin} -m pip install --user grpcio==1.54.2 grpcio-tools==1.54.2",
-        hide=hide,
-    )
-
-
 def build_core(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
     c.run("./bootstrap.sh", hide=hide)
     c.run(f"./configure --prefix={prefix}", hide=hide)
@@ -311,7 +303,7 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         core_scripts = CORE_VENV_PATH / "bin/core-*"
         c.run(f"sudo ln -s {core_scripts} {bin_dir}")
     # install core configuration file
-    c.run(f"sudo cp -r -n package/etc {CORE_PATH}", hide=hide)
+    c.run(f"sudo cp -r --update=none package/etc {CORE_PATH}", hide=hide)
     # install examples
     c.run(f"sudo cp -r package/share {CORE_PATH}", hide=hide)
 
@@ -337,8 +329,6 @@ def build(
     os_info = get_os(install_type)
     with p.start("installing system dependencies"):
         install_system(c, os_info, hide, no_python)
-    with p.start("installing system grpcio-tools"):
-        install_grpcio(c, hide)
     with p.start("building core"):
         build_core(c, hide)
     with p.start(f"building rpm/deb packages"):
@@ -384,8 +374,6 @@ def install(
             check_existing_core(c, hide)
     with p.start("installing system dependencies"):
         install_system(c, os_info, hide, no_python)
-    with p.start("installing system grpcio-tools"):
-        install_grpcio(c, hide)
     with p.start("building core"):
         build_core(c, hide, prefix)
     with p.start("installing vnoded/vcmd"):
