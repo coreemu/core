@@ -1,7 +1,6 @@
 import time
 from pathlib import Path
 from queue import Queue
-from tempfile import TemporaryFile
 from typing import Optional
 
 import grpc
@@ -359,29 +358,33 @@ class TestGrpc:
         # then
         assert terminal is not None
 
-    def test_save_xml(self, grpc_server: CoreGrpcServer, tmpdir: TemporaryFile):
+    def test_save_xml(self, grpc_server: CoreGrpcServer, tmp_path: Path):
         # given
+        xml_dir = tmp_path / "xml"
+        xml_dir.mkdir()
+        xml_file = xml_dir / "text.xml"
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        tmp = tmpdir.join("text.xml")
 
         # then
         with client.context_connect():
-            client.save_xml(session.id, str(tmp))
+            client.save_xml(session.id, str(xml_file))
 
         # then
-        assert tmp.exists()
+        assert xml_file.exists()
 
-    def test_open_xml_hook(self, grpc_server: CoreGrpcServer, tmpdir: TemporaryFile):
+    def test_open_xml_hook(self, grpc_server: CoreGrpcServer, tmp_path: Path):
         # given
+        xml_dir = tmp_path / "xml"
+        xml_dir.mkdir()
+        xml_file = xml_dir / "text.xml"
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        tmp = Path(tmpdir.join("text.xml"))
-        session.save_xml(tmp)
+        session.save_xml(xml_file)
 
         # then
         with client.context_connect():
-            result, session_id = client.open_xml(tmp)
+            result, session_id = client.open_xml(xml_file)
 
         # then
         assert result is True
