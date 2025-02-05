@@ -41,7 +41,7 @@ pytest = "8.3.4"
 grpcio-tools = "1.69.0"
 black = "22.12.0"
 flake8 = "7.1.1"
-isort = "4.3.21"
+isort = {version = "5.13.2", extras = ["pyproject"]}
 mock = "4.0.2"
 pre-commit = "4.1.0"
 
