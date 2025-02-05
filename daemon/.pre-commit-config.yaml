@@ -5,7 +5,7 @@ repos:
     name: isort
     stages: [pre-commit]
     language: system
-    entry: bash -c 'cd daemon && poetry run isort --atomic -y .'
+    entry: bash -c 'cd daemon && poetry run isort --atomic .'
     types: [python]
 
   - id: black

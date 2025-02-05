@@ -7,9 +7,8 @@ from core.gui.utils import bandwidth_text
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.edges import CanvasEdge
+    from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
     from core.gui.graph.node import CanvasNode
-    from core.gui.graph.edges import CanvasWirelessEdge
 
 
 def get_iface(canvas_node: "CanvasNode", net_id: int) -> Optional[Interface]:

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
-    from core.location.mobility import WirelessModel, WayPointMobility
+    from core.location.mobility import WayPointMobility, WirelessModel
 
 LEARNING_DISABLED: int = 0
 

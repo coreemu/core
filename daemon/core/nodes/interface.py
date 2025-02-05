@@ -19,8 +19,8 @@ from core.nodes.netclient import LinuxNetClient, get_net_client
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from core.emulator.session import Session
     from core.emulator.distributed import DistributedServer
+    from core.emulator.session import Session
     from core.nodes.base import CoreNetworkBase, CoreNode, NodeBase
 
 DEFAULT_MTU: int = 1500

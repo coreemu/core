@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.manager import CanvasManager
     from core.gui.coreclient import CoreClient
+    from core.gui.graph.manager import CanvasManager
 
 ZOOM_IN: float = 1.1
 ZOOM_OUT: float = 0.9

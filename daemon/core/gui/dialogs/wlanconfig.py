@@ -11,8 +11,8 @@ from core.gui.widgets import ConfigFrame
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.node import CanvasNode
     from core.gui.graph.graph import CanvasGraph
+    from core.gui.graph.node import CanvasNode
 
 RANGE_COLOR: str = "#009933"
 RANGE_WIDTH: int = 3

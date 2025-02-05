@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 try:
     from emane.events import (
-        EventService,
         AntennaProfileEvent,
         CommEffectEvent,
+        EventService,
         FadingSelectionEvent,
         LocationEvent,
         PathlossEvent,
@@ -19,9 +19,9 @@ try:
 except ImportError:
     try:
         from emanesh.events import (
-            EventService,
             AntennaProfileEvent,
             CommEffectEvent,
+            EventService,
             FadingSelectionEvent,
             LocationEvent,
             PathlossEvent,
