@@ -22,7 +22,7 @@ jobs:
       - name: isort
         run: |
           cd daemon
-          poetry run isort -c -df
+          poetry run isort -c -df .
       - name: black
         run: |
           cd daemon
@@ -30,7 +30,7 @@ jobs:
       - name: flake8
         run: |
           cd daemon
-          poetry run flake8
+          poetry run flake8 .
       - name: grpc
         run: |
           cd daemon/proto
