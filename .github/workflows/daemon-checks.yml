@@ -22,7 +22,7 @@ jobs:
       - name: isort
         run: |
           cd daemon
-          poetry run isort -c -df .
+          poetry run isort -c --df .
       - name: black
         run: |
           cd daemon
