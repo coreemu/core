@@ -314,7 +314,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "netaddr"
-version = "0.7.19"
+version = "0.10.1"
 description = "A network address manipulation library for Python"
 category = "main"
 optional = false
@@ -556,7 +556,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "bc4e19196000f88ef5f2db0a418a3eba978c65d6b7ff29079d12b90f240b8d95"
+content-hash = "36c96f618948c515690953e494b9c41dcdcdbe14d01ac1395068723ee18de22d"
 
 [metadata.files]
 bcrypt = [
@@ -1096,8 +1096,8 @@ mypy-extensions = [
     {file = "mypy_extensions-1.0.0.tar.gz", hash = "sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782"},
 ]
 netaddr = [
-    {file = "netaddr-0.7.19-py2.py3-none-any.whl", hash = "sha256:56b3558bd71f3f6999e4c52e349f38660e54a7a8a9943335f73dfc96883e08ca"},
-    {file = "netaddr-0.7.19.tar.gz", hash = "sha256:38aeec7cdd035081d3a4c306394b19d677623bf76fa0913f6695127c7753aefd"},
+    {file = "netaddr-0.10.1-py2.py3-none-any.whl", hash = "sha256:9822305b42ea1020d54fee322d43cee5622b044c07a1f0130b459bb467efcf88"},
+    {file = "netaddr-0.10.1.tar.gz", hash = "sha256:f4da4222ca8c3f43c8e18a8263e5426c750a3a837fdfeccf74c68d0408eaa3bf"},
 ]
 nodeenv = [
     {file = "nodeenv-1.9.1-py2.py3-none-any.whl", hash = "sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9"},
