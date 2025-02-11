@@ -1,3 +1,24 @@
+## 2025-02-11 CORE 9.2.0
+
+* Installation
+    * python3.10+ now required
+    * updated various dependencies to help avoid the need to build them from source
+* Documentation
+    * docker run examples updated
+    * gRPC edit link examples corrected
+    * updated install examples
+    * updated tutorials to use absolute paths
+    * updated custom service example
+* core-daemon
+    * removed use of killall in provided services
+    * \#860 - fixed core-cli xml --start to run control network
+    * \#881 - EMANE TDMA fails to start
+    * \#888 - fixed service start validation
+    * \#902 - link deletion removing incorrect nodes
+* core-gui
+    * fixed bug when changing icons on a loaded scenario
+    * \#897 - fixed to properly exit when closing on a running session
+
 ## 2024-07-04 CORE 9.1.0
 
 * Installation

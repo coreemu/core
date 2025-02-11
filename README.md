@@ -2,7 +2,7 @@
 
 CORE: Common Open Research Emulator
 
-Copyright (c)2005-2023 the Boeing Company.
+Copyright (c)2005-2025 the Boeing Company.
 
 See the LICENSE file included in this distribution.
 

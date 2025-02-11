@@ -12,10 +12,11 @@ when installing CORE.
 ### Complete Examples
 
 For complete examples installing CORE, OSPF MDR, EMANE, and the EMANE python
-bindings, see the pages below.
+bindings, see the pages below. The distros below are targeted to align with provided
+EMANE built packages.
 
 * [Installing on Ubuntu 22.04](install_ubuntu.md)
-* [Installing on Rocky Linux 8](install_rocky.md)
+* [Installing on Rocky Linux 8.10](install_rocky.md)
 
 ### Requirements
 
@@ -23,18 +24,9 @@ Any computer capable of running Linux should be able to run CORE. Since the phys
 containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
 * Linux Kernel v3.3+
-* Python 3.9+
+* Python 3.10+
 * iproute2 4.5+ is a requirement for bridge related commands
 * nftables compatible kernel and nft command line tool
-
-### Supported Linux Distributions
-
-Plan is to support recent Ubuntu and CentOS LTS releases.
-
-Verified:
-
-* Ubuntu - 18.04, 20.04, 22.04
-* CentOS - 7.8
 
 ### Files
 
