@@ -24,10 +24,7 @@ git clone https://github.com/coreemu/core.git
 cd core
 # first you must build EMANE python bindings
 sudo docker build -t emane-python -f dockerfiles/Dockerfile.emane-python .
-# build ospf packages
-sudo docker build -t ospf-rpm -f dockerfiles/Dockerfile.ospf-mdr-rpm .
-sudo docker build -t ospf-deb -f dockerfiles/Dockerfile.ospf-mdr-deb .
-# build desired CORE image
+# build desired CORE image, OSPF is a build stage dependency within the file
 sudo docker build -t core -f dockerfiles/<Dockerfile> .
 ```
 

@@ -79,7 +79,7 @@ if test "x$enable_daemon" = "xyes"; then
   want_python=yes
   want_linux_netns=yes
 
-  AM_PATH_PYTHON(3.12)
+  AM_PATH_PYTHON(3.10)
   AS_IF([./venv/bin/python -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([grpc tools must be setup in venv, try setup.sh])])
 
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)
