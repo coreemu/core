@@ -108,21 +108,21 @@ class CoreInterface:
         self.id: int = _id
         self.node: Optional["NodeBase"] = node
         # id of interface for network, used by wlan/emane
-        self.net_id: Optional[int] = None
+        self.net_id: int | None = None
         self.name: str = name
         self.localname: str = localname
         self.up: bool = False
         self.mtu: int = mtu
-        self.net: Optional[CoreNetworkBase] = None
+        self.net: CoreNetworkBase | None = None
         self.ip4s: list[netaddr.IPNetwork] = []
         self.ip6s: list[netaddr.IPNetwork] = []
-        self.mac: Optional[netaddr.EUI] = None
+        self.mac: netaddr.EUI | None = None
         # placeholder position hook
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
         # used with EMANE
         self.transport_type: TransportType = TransportType.VIRTUAL
         # id used to find flow data
-        self.flow_id: Optional[int] = None
+        self.flow_id: int | None = None
         self.server: Optional["DistributedServer"] = server
         self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
         self.control: bool = False
@@ -219,7 +219,7 @@ class CoreInterface:
         except (netaddr.AddrFormatError, ValueError) as e:
             raise CoreError(f"deleting invalid address {ip}: {e}")
 
-    def get_ip4(self) -> Optional[netaddr.IPNetwork]:
+    def get_ip4(self) -> netaddr.IPNetwork | None:
         """
         Looks for the first ip4 address.
 
@@ -227,7 +227,7 @@ class CoreInterface:
         """
         return next(iter(self.ip4s), None)
 
-    def get_ip6(self) -> Optional[netaddr.IPNetwork]:
+    def get_ip6(self) -> netaddr.IPNetwork | None:
         """
         Looks for the first ip6 address.
 
@@ -243,7 +243,7 @@ class CoreInterface:
         """
         return self.ip4s + self.ip6s
 
-    def set_mac(self, mac: Optional[str]) -> None:
+    def set_mac(self, mac: str | None) -> None:
         """
         Set mac address.
 
@@ -398,8 +398,8 @@ class GreTap(CoreInterface):
         self.transport_type: TransportType = TransportType.RAW
         self.remote_ip: str = remoteip
         self.ttl: int = ttl
-        self.key: Optional[int] = key
-        self.local_ip: Optional[str] = localip
+        self.key: int | None = key
+        self.local_ip: str | None = localip
 
     def startup(self) -> None:
         """

@@ -3,7 +3,7 @@ check engine light
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.api.grpc.wrappers import AlertEvent, AlertLevel
 from core.gui.dialogs.dialog import Dialog
@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 class AlertsDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "Alerts")
-        self.tree: Optional[ttk.Treeview] = None
-        self.codetext: Optional[CodeText] = None
+        self.tree: ttk.Treeview | None = None
+        self.codetext: CodeText | None = None
         self.alarm_map: dict[int, AlertEvent] = {}
         self.draw()
 

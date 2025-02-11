@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from PIL import Image
 from PIL.Image import Resampling
@@ -49,8 +49,8 @@ class CanvasGraph(tk.Canvas):
         self.manager: "CanvasManager" = manager
         self.core: "CoreClient" = core
         self.selection: dict[int, int] = {}
-        self.select_box: Optional[Shape] = None
-        self.selected: Optional[int] = None
+        self.select_box: Shape | None = None
+        self.selected: int | None = None
         self.nodes: dict[int, CanvasNode] = {}
         self.shadow_nodes: dict[int, ShadowNode] = {}
         self.shapes: dict[int, Shape] = {}
@@ -59,8 +59,8 @@ class CanvasGraph(tk.Canvas):
         # map wireless/EMANE node to the set of MDRs connected to that node
         self.wireless_network: dict[int, set[int]] = {}
 
-        self.drawing_edge: Optional[CanvasEdge] = None
-        self.rect: Optional[int] = None
+        self.drawing_edge: CanvasEdge | None = None
+        self.rect: int | None = None
         self.shape_drawing: bool = False
         self.current_dimensions: tuple[int, int] = dimensions
         self.ratio: float = 1.0
@@ -69,9 +69,9 @@ class CanvasGraph(tk.Canvas):
         self.to_copy: list[CanvasNode] = []
 
         # background related
-        self.wallpaper_id: Optional[int] = None
-        self.wallpaper: Optional[Image.Image] = None
-        self.wallpaper_drawn: Optional[PhotoImage] = None
+        self.wallpaper_id: int | None = None
+        self.wallpaper: Image.Image | None = None
+        self.wallpaper_drawn: PhotoImage | None = None
         self.wallpaper_file: str = ""
         self.scale_option: tk.IntVar = tk.IntVar(value=1)
         self.adjust_to_dim: tk.BooleanVar = tk.BooleanVar(value=False)
@@ -646,7 +646,7 @@ class CanvasGraph(tk.Canvas):
         for tag in tags.ORGANIZE_TAGS:
             self.tag_raise(tag)
 
-    def set_wallpaper(self, filename: Optional[str]) -> None:
+    def set_wallpaper(self, filename: str | None) -> None:
         logger.info("setting canvas(%s) background: %s", self.id, filename)
         if filename:
             img = Image.open(filename)

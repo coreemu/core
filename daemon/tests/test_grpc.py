@@ -1,7 +1,6 @@
 import time
 from pathlib import Path
 from queue import Queue
-from typing import Optional
 
 import grpc
 import pytest
@@ -145,9 +144,7 @@ class TestGrpc:
         assert file_data == real_template_data
 
     @pytest.mark.parametrize("session_id", [None, 6013])
-    def test_create_session(
-        self, grpc_server: CoreGrpcServer, session_id: Optional[int]
-    ):
+    def test_create_session(self, grpc_server: CoreGrpcServer, session_id: int | None):
         # given
         client = CoreGrpcClient()
 
@@ -165,7 +162,7 @@ class TestGrpc:
 
     @pytest.mark.parametrize("session_id, expected", [(None, True), (6013, False)])
     def test_delete_session(
-        self, grpc_server: CoreGrpcServer, session_id: Optional[int], expected: bool
+        self, grpc_server: CoreGrpcServer, session_id: int | None, expected: bool
     ):
         # given
         client = CoreGrpcClient()

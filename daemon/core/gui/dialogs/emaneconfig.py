@@ -4,7 +4,7 @@ emane configuration
 import tkinter as tk
 import webbrowser
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -32,7 +32,7 @@ class EmaneModelDialog(Dialog):
         self.node: Node = node
         self.model: str = f"emane_{model}"
         self.iface_id: int = iface_id
-        self.config_frame: Optional[ConfigFrame] = None
+        self.config_frame: ConfigFrame | None = None
         self.enabled: bool = not self.app.core.is_runtime()
         self.has_error: bool = False
         try:
@@ -90,7 +90,7 @@ class EmaneConfigDialog(Dialog):
         ]
         model = self.node.emane.split("_")[1]
         self.emane_model: tk.StringVar = tk.StringVar(value=model)
-        self.emane_model_button: Optional[ttk.Button] = None
+        self.emane_model_button: ttk.Button | None = None
         self.enabled: bool = not self.app.core.is_runtime()
         self.draw()
 

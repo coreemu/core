@@ -3,7 +3,7 @@ link configuration
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.api.grpc.wrappers import Interface, Link, LinkOptions
 from core.gui import validation
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasEdge
 
 
-def get_int(var: tk.StringVar) -> Optional[int]:
+def get_int(var: tk.StringVar) -> int | None:
     value = var.get()
     if value != "":
         return int(value)
@@ -24,7 +24,7 @@ def get_int(var: tk.StringVar) -> Optional[int]:
         return 0
 
 
-def get_float(var: tk.StringVar) -> Optional[float]:
+def get_float(var: tk.StringVar) -> float | None:
     value = var.get()
     if value != "":
         return float(value)
@@ -59,12 +59,12 @@ class LinkConfigurationDialog(Dialog):
         self.down_buffer: tk.StringVar = tk.StringVar()
 
         self.color: tk.StringVar = tk.StringVar(value=self.edge.color)
-        self.color_button: Optional[tk.Button] = None
+        self.color_button: tk.Button | None = None
         self.width: tk.DoubleVar = tk.DoubleVar(value=self.edge.width)
 
         self.load_link_config()
-        self.symmetric_frame: Optional[ttk.Frame] = None
-        self.asymmetric_frame: Optional[ttk.Frame] = None
+        self.symmetric_frame: ttk.Frame | None = None
+        self.asymmetric_frame: ttk.Frame | None = None
 
         self.draw()
 

@@ -6,7 +6,7 @@ import heapq
 import threading
 import time
 from functools import total_ordering
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 
 class Timer(threading.Thread):
@@ -137,9 +137,9 @@ class EventLoop:
         self.lock: threading.RLock = threading.RLock()
         self.queue: list[Event] = []
         self.eventnum: int = 0
-        self.timer: Optional[Timer] = None
+        self.timer: Timer | None = None
         self.running: bool = False
-        self.start: Optional[float] = None
+        self.start: float | None = None
 
     def _run_events(self) -> None:
         """

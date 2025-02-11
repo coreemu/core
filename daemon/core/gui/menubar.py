@@ -4,7 +4,7 @@ import webbrowser
 from functools import partial
 from pathlib import Path
 from tkinter import filedialog, messagebox
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui import images
 from core.gui.coreclient import CoreClient
@@ -49,10 +49,10 @@ class Menubar(tk.Menu):
         self.app: "Application" = app
         self.core: CoreClient = app.core
         self.manager: CanvasManager = app.manager
-        self.recent_menu: Optional[tk.Menu] = None
-        self.edit_menu: Optional[tk.Menu] = None
-        self.canvas_menu: Optional[tk.Menu] = None
-        self.observers_menu: Optional[ObserversMenu] = None
+        self.recent_menu: tk.Menu | None = None
+        self.edit_menu: tk.Menu | None = None
+        self.canvas_menu: tk.Menu | None = None
+        self.observers_menu: ObserversMenu | None = None
         self.draw()
 
     def draw(self) -> None:

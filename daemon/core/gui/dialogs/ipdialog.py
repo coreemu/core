@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import netaddr
 
@@ -19,10 +19,10 @@ class IpConfigDialog(Dialog):
         self.ip6: str = self.app.guiconfig.ips.ip6
         self.ip4s: list[str] = self.app.guiconfig.ips.ip4s
         self.ip6s: list[str] = self.app.guiconfig.ips.ip6s
-        self.ip4_entry: Optional[ttk.Entry] = None
-        self.ip4_listbox: Optional[ListboxScroll] = None
-        self.ip6_entry: Optional[ttk.Entry] = None
-        self.ip6_listbox: Optional[ListboxScroll] = None
+        self.ip4_entry: ttk.Entry | None = None
+        self.ip4_listbox: ListboxScroll | None = None
+        self.ip6_entry: ttk.Entry | None = None
+        self.ip6_listbox: ListboxScroll | None = None
         self.enable_ip4 = tk.BooleanVar(value=self.app.guiconfig.ips.enable_ip4)
         self.enable_ip6 = tk.BooleanVar(value=self.app.guiconfig.ips.enable_ip6)
         self.draw()

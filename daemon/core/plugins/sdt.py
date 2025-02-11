@@ -5,7 +5,7 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 import logging
 import socket
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from core.constants import CORE_CONF_DIR
@@ -85,11 +85,11 @@ class Sdt:
         :param session: session this manager is tied to
         """
         self.session: "Session" = session
-        self.sock: Optional[socket.socket] = None
+        self.sock: socket.socket | None = None
         self.connected: bool = False
         self.url: str = self.DEFAULT_SDT_URL
-        self.address: Optional[tuple[Optional[str], Optional[int]]] = None
-        self.protocol: Optional[str] = None
+        self.address: tuple[str | None, int | None] | None = None
+        self.protocol: str | None = None
         self.network_layers: set[str] = set()
         self.session.broadcast_manager.add_handler(NodeData, self.handle_node_update)
         self.session.broadcast_manager.add_handler(LinkData, self.handle_link_update)
@@ -245,7 +245,7 @@ class Sdt:
                 for link_data in net.links(MessageFlags.ADD):
                     self.handle_link_update(link_data)
 
-    def get_node_position(self, node: NodeBase) -> Optional[str]:
+    def get_node_position(self, node: NodeBase) -> str | None:
         """
         Convenience to generate an SDT position string, given a node.
 

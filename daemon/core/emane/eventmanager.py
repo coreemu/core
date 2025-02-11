@@ -1,6 +1,6 @@
 import logging
 import threading
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
 from core.errors import CoreError
 
@@ -51,7 +51,7 @@ class EmaneEventService:
         self.port: int = port
         self.location_handler: Callable[[LocationEvent], None] = location_handler
         self.running: bool = False
-        self.thread: Optional[threading.Thread] = None
+        self.thread: threading.Thread | None = None
         logger.info("starting emane event service %s %s:%s", device, group, port)
         self.events: EventService = EventService(
             eventchannel=(group, port, device), otachannel=None
@@ -125,7 +125,7 @@ class EmaneEventManager:
         else:
             self.nem_service[nem_id] = service
 
-    def get_service(self, nem_id: int) -> Optional[EmaneEventService]:
+    def get_service(self, nem_id: int) -> EmaneEventService | None:
         service = self.nem_service.get(nem_id)
         if not service:
             logger.error("failure to find event service for nem(%s)", nem_id)

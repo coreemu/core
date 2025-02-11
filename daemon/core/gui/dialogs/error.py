@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui import images
 from core.gui.dialogs.dialog import Dialog
@@ -19,7 +19,7 @@ class ErrorDialog(Dialog):
         super().__init__(app, title)
         self.message: str = message
         self.details: str = details
-        self.error_message: Optional[CodeText] = None
+        self.error_message: CodeText | None = None
         self.draw()
 
     def draw(self) -> None:

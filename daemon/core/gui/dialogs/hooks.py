@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.api.grpc.wrappers import Hook, SessionState
 from core.gui.dialogs.dialog import Dialog
@@ -15,8 +15,8 @@ class HookDialog(Dialog):
     def __init__(self, master: tk.BaseWidget, app: "Application") -> None:
         super().__init__(app, "Hook", master=master)
         self.name: tk.StringVar = tk.StringVar()
-        self.codetext: Optional[CodeText] = None
-        self.hook: Optional[Hook] = None
+        self.codetext: CodeText | None = None
+        self.hook: Hook | None = None
         self.state: tk.StringVar = tk.StringVar()
         self.editing: bool = False
         self.draw()
@@ -105,11 +105,11 @@ class HookDialog(Dialog):
 class HooksDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "Hooks")
-        self.listbox: Optional[tk.Listbox] = None
-        self.edit_button: Optional[ttk.Button] = None
-        self.delete_button: Optional[ttk.Button] = None
-        self.selected: Optional[str] = None
-        self.selected_index: Optional[int] = None
+        self.listbox: tk.Listbox | None = None
+        self.edit_button: ttk.Button | None = None
+        self.delete_button: ttk.Button | None = None
+        self.selected: str | None = None
+        self.selected_index: int | None = None
         self.draw()
 
     def draw(self) -> None:

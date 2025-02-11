@@ -13,7 +13,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Optional, TypeVar, Union
+from typing import Callable, TypeVar
 
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager, EmaneState
@@ -107,10 +107,10 @@ class Session:
         if mkdir:
             self.directory.mkdir()
 
-        self.name: Optional[str] = None
-        self.file_path: Optional[Path] = None
-        self.thumbnail: Optional[Path] = None
-        self.user: Optional[str] = None
+        self.name: str | None = None
+        self.file_path: Path | None = None
+        self.thumbnail: Path | None = None
+        self.user: str | None = None
         self.event_loop: EventLoop = EventLoop()
         self.link_colors: dict[int, str] = {}
 
@@ -142,7 +142,7 @@ class Session:
         self.location: GeoLocation = GeoLocation()
         self.mobility: MobilityManager = MobilityManager(self)
         self.emane: EmaneManager = EmaneManager(self)
-        self.service_manager: Optional[ServiceManager] = None
+        self.service_manager: ServiceManager | None = None
         self.sdt: Sdt = Sdt(self)
 
     @classmethod
@@ -221,7 +221,7 @@ class Session:
         iface1_data: InterfaceData = None,
         iface2_data: InterfaceData = None,
         options: LinkOptions = None,
-    ) -> tuple[Optional[CoreInterface], Optional[CoreInterface]]:
+    ) -> tuple[CoreInterface | None, CoreInterface | None]:
         """
         Add a link between nodes.
 
@@ -284,7 +284,7 @@ class Session:
         self,
         node: NodeBase,
         iface_data: InterfaceData,
-        net: Union[WlanNode, WirelessNode],
+        net: WlanNode | WirelessNode,
     ) -> CoreInterface:
         """
         Create a wlan link.
@@ -843,8 +843,8 @@ class Session:
         self,
         _id: int,
         prefix: str,
-        updown_script: Optional[str],
-        server_iface: Optional[str],
+        updown_script: str | None,
+        server_iface: str | None,
     ) -> CtrlNet:
         """
         Create a control net node, used to provide a common network between

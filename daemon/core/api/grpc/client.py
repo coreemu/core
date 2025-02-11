@@ -8,7 +8,7 @@ from collections.abc import Callable, Generator, Iterable
 from contextlib import contextmanager
 from pathlib import Path
 from queue import Queue
-from typing import Any, Optional
+from typing import Any
 
 import grpc
 
@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 class MoveNodesStreamer:
     def __init__(self, session_id: int, source: str = None) -> None:
         self.session_id: int = session_id
-        self.source: Optional[str] = source
+        self.source: str | None = source
         self.queue: SetQueue = SetQueue()
 
     def send_position(self, node_id: int, x: float, y: float) -> None:
@@ -83,8 +83,8 @@ class MoveNodesStreamer:
     def stop(self) -> None:
         self.queue.put(None)
 
-    def next(self) -> Optional[core_pb2.MoveNodesRequest]:
-        request: Optional[wrappers.MoveNodesRequest] = self.queue.get()
+    def next(self) -> core_pb2.MoveNodesRequest | None:
+        request: wrappers.MoveNodesRequest | None = self.queue.get()
         if request:
             return request.to_proto()
         else:
@@ -98,11 +98,11 @@ class EmanePathlossesStreamer:
     def __init__(self) -> None:
         self.queue: Queue = Queue()
 
-    def send(self, request: Optional[wrappers.EmanePathlossesRequest]) -> None:
+    def send(self, request: wrappers.EmanePathlossesRequest | None) -> None:
         self.queue.put(request)
 
-    def next(self) -> Optional[emane_pb2.EmanePathlossesRequest]:
-        request: Optional[wrappers.EmanePathlossesRequest] = self.queue.get()
+    def next(self) -> emane_pb2.EmanePathlossesRequest | None:
+        request: wrappers.EmanePathlossesRequest | None = self.queue.get()
         if request:
             return request.to_proto()
         else:
@@ -116,11 +116,11 @@ class EmaneEventsStreamer:
     def __init__(self) -> None:
         self.queue: Queue = Queue()
 
-    def send(self, request: Optional[wrappers.EmaneEventsRequest]) -> None:
+    def send(self, request: wrappers.EmaneEventsRequest | None) -> None:
         self.queue.put(request)
 
-    def next(self) -> Optional[emane_pb2.EmaneEventsRequest]:
-        request: Optional[wrappers.EmaneEventsRequest] = self.queue.get()
+    def next(self) -> emane_pb2.EmaneEventsRequest | None:
+        request: wrappers.EmaneEventsRequest | None = self.queue.get()
         if request:
             return request.to_proto()
         else:
@@ -246,8 +246,8 @@ class CoreGrpcClient:
         :param address: grpc server address to connect to
         """
         self.address: str = address
-        self.stub: Optional[core_pb2_grpc.CoreApiStub] = None
-        self.channel: Optional[grpc.Channel] = None
+        self.stub: core_pb2_grpc.CoreApiStub | None = None
+        self.channel: grpc.Channel | None = None
         self.proxy: bool = proxy
 
     def start_session(
@@ -938,7 +938,7 @@ class CoreGrpcClient:
         response = self.stub.GetEmaneEventChannel(request)
         return wrappers.EmaneEventChannel.from_proto(response)
 
-    def execute_script(self, script: str, args: str) -> Optional[int]:
+    def execute_script(self, script: str, args: str) -> int | None:
         """
         Executes a python script given context of the current CoreEmu object.
 

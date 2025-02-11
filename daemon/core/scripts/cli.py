@@ -8,7 +8,7 @@ from argparse import (
 )
 from functools import wraps
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import grpc
 import netaddr
@@ -32,7 +32,9 @@ NODE_TYPES = [x.name for x in NodeType if x != NodeType.PEER_TO_PEER]
 
 def protobuf_to_json(message: Any) -> dict[str, Any]:
     return MessageToDict(
-        message, including_default_value_fields=True, preserving_proto_field_name=True
+        message,
+        always_print_fields_with_no_presence=True,
+        preserving_proto_field_name=True,
     )
 
 
@@ -113,7 +115,7 @@ def file_type(value: str) -> Path:
     return path
 
 
-def get_current_session(core: CoreGrpcClient, session_id: Optional[int]) -> int:
+def get_current_session(core: CoreGrpcClient, session_id: int | None) -> int:
     if session_id:
         return session_id
     sessions = core.get_sessions()

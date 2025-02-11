@@ -19,7 +19,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from queue import Queue
 from subprocess import PIPE, STDOUT, Popen
-from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
 import netaddr
 
@@ -74,7 +74,7 @@ def execute_file(
     exec(data, exec_globals, exec_locals)
 
 
-def hashkey(value: Union[str, int]) -> int:
+def hashkey(value: str | int) -> int:
     """
     Provide a consistent hash that can be used in place
     of the builtin hash, that no longer behaves consistently
@@ -146,7 +146,7 @@ def close_onexec(fd: int) -> None:
     fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
 
-def which(command: str, required: bool) -> Optional[str]:
+def which(command: str, required: bool) -> str | None:
     """
     Find location of desired executable within current PATH.
 
@@ -161,7 +161,7 @@ def which(command: str, required: bool) -> Optional[str]:
     return found_path
 
 
-def make_tuple_fromstr(s: str, value_type: Callable[[str], T]) -> tuple[T]:
+def make_tuple_fromstr(s: str, value_type: Callable[[str], T]) -> tuple[T, ...]:
     """
     Create a tuple from a string.
 
@@ -322,7 +322,7 @@ def expand_corepath(
     return Path(pathname)
 
 
-def sysctl_devname(devname: str) -> Optional[str]:
+def sysctl_devname(devname: str) -> str | None:
     """
     Translate a device name to the name used with sysctl.
 
@@ -545,7 +545,7 @@ def iface_config_id(node_id: int, iface_id: int = None) -> int:
         return node_id
 
 
-def parse_iface_config_id(config_id: int) -> tuple[int, Optional[int]]:
+def parse_iface_config_id(config_id: int) -> tuple[int, int | None]:
     """
     Parses configuration id, that may be potentially derived from an interface for a
     node.

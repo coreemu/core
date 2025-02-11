@@ -3,7 +3,7 @@ throughput dialog
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
@@ -27,7 +27,7 @@ class ThroughputDialog(Dialog):
         )
         self.width: tk.IntVar = tk.IntVar(value=self.manager.throughput_width)
         self.color: str = self.manager.throughput_color
-        self.color_button: Optional[tk.Button] = None
+        self.color_button: tk.Button | None = None
         self.top.columnconfigure(0, weight=1)
         self.draw()
 

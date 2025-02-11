@@ -9,7 +9,6 @@ from collections.abc import Iterable
 from concurrent import futures
 from pathlib import Path
 from re import Pattern
-from typing import Optional
 
 import grpc
 from grpc import ServicerContext
@@ -107,7 +106,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         super().__init__()
         self.coreemu: CoreEmu = coreemu
         self.running: bool = True
-        self.server: Optional[grpc.Server] = None
+        self.server: grpc.Server | None = None
         # catch signals
         signal.signal(signal.SIGHUP, self._signal_handler)
         signal.signal(signal.SIGINT, self._signal_handler)

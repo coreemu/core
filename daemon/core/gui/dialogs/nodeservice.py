@@ -4,7 +4,7 @@ core node services
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.api.grpc.wrappers import Node
 from core.gui.dialogs.dialog import Dialog
@@ -25,9 +25,9 @@ class NodeServiceDialog(Dialog):
         title = f"{node.name} Services"
         super().__init__(app, title)
         self.node: Node = node
-        self.groups: Optional[ListboxScroll] = None
-        self.services: Optional[CheckboxList] = None
-        self.current: Optional[ListboxScroll] = None
+        self.groups: ListboxScroll | None = None
+        self.services: CheckboxList | None = None
+        self.current: ListboxScroll | None = None
         if services is None:
             services = set(node.services)
         self.current_services: set[str] = services

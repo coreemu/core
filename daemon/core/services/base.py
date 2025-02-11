@@ -5,7 +5,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -50,7 +50,7 @@ class ServiceTemplateError(Exception):
 @dataclass
 class ShadowDir:
     path: str
-    src: Optional[str] = None
+    src: str | None = None
     templates: bool = False
     has_node_paths: bool = False
 
@@ -61,9 +61,9 @@ class CoreService(abc.ABC):
     """
 
     # globally unique name for service
-    name: Optional[str] = None
+    name: str | None = None
     # group to categorize service within
-    group: Optional[str] = None
+    group: str | None = None
     # directories to create unique mount points for
     directories: list[str] = []
     # files to create for service

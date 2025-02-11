@@ -3,7 +3,7 @@ mobility configuration
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -20,7 +20,7 @@ class MobilityConfigDialog(Dialog):
     def __init__(self, app: "Application", node: Node) -> None:
         super().__init__(app, f"{node.name} Mobility Configuration")
         self.node: Node = node
-        self.config_frame: Optional[ConfigFrame] = None
+        self.config_frame: ConfigFrame | None = None
         self.has_error: bool = False
         try:
             config = self.node.mobility_config

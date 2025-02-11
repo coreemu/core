@@ -3,7 +3,7 @@ status bar
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.api.grpc.wrappers import AlertEvent, AlertLevel
 from core.gui.dialogs.alerts import AlertsDialog
@@ -17,11 +17,11 @@ class StatusBar(ttk.Frame):
     def __init__(self, master: tk.Widget, app: "Application") -> None:
         super().__init__(master)
         self.app: "Application" = app
-        self.status: Optional[ttk.Label] = None
+        self.status: ttk.Label | None = None
         self.statusvar: tk.StringVar = tk.StringVar()
-        self.zoom: Optional[ttk.Label] = None
-        self.cpu_label: Optional[ttk.Label] = None
-        self.alerts_button: Optional[ttk.Button] = None
+        self.zoom: ttk.Label | None = None
+        self.cpu_label: ttk.Label | None = None
+        self.alerts_button: ttk.Button | None = None
         self.alert_style = Styles.no_alert
         self.running: bool = False
         self.core_alarms: list[AlertEvent] = []

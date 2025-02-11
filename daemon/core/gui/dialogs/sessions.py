@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -22,11 +22,11 @@ class SessionsDialog(Dialog):
     def __init__(self, app: "Application", is_start_app: bool = False) -> None:
         super().__init__(app, "Sessions")
         self.is_start_app: bool = is_start_app
-        self.selected_session: Optional[int] = None
-        self.selected_id: Optional[int] = None
-        self.tree: Optional[ttk.Treeview] = None
-        self.connect_button: Optional[ttk.Button] = None
-        self.delete_button: Optional[ttk.Button] = None
+        self.selected_session: int | None = None
+        self.selected_id: int | None = None
+        self.tree: ttk.Treeview | None = None
+        self.connect_button: ttk.Button | None = None
+        self.delete_button: ttk.Button | None = None
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.draw()
 

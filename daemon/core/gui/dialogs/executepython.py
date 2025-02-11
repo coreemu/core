@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import filedialog, ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.appconfig import SCRIPT_PATH
 from core.gui.dialogs.dialog import Dialog
@@ -18,8 +18,8 @@ class ExecutePythonDialog(Dialog):
         super().__init__(app, "Execute Python Script")
         self.with_options: tk.IntVar = tk.IntVar(value=0)
         self.options: tk.StringVar = tk.StringVar(value="")
-        self.option_entry: Optional[ttk.Entry] = None
-        self.file_entry: Optional[ttk.Entry] = None
+        self.option_entry: ttk.Entry | None = None
+        self.file_entry: ttk.Entry | None = None
         self.draw()
 
     def draw(self) -> None:

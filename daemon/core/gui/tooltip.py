@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import Optional
 
 from core.gui.themes import Styles
 
@@ -16,8 +15,8 @@ class Tooltip:
         self.widget.bind("<Enter>", self.on_enter)
         self.widget.bind("<Leave>", self.on_leave)
         self.waittime: int = 400
-        self.id: Optional[str] = None
-        self.tw: Optional[tk.Toplevel] = None
+        self.id: str | None = None
+        self.tw: tk.Toplevel | None = None
 
     def on_enter(self, event: tk.Event = None) -> None:
         self.schedule()

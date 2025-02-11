@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 from PIL import Image
 from PIL.Image import Resampling
@@ -106,7 +105,7 @@ TYPE_MAP: dict[tuple[NodeType, str], ImageEnum] = {
 }
 
 
-def from_node(node: Node, *, scale: float) -> Optional[PhotoImage]:
+def from_node(node: Node, *, scale: float) -> PhotoImage | None:
     image = None
     image_enum = TYPE_MAP.get((node.type, node.model))
     if image_enum:

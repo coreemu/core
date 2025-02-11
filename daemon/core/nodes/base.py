@@ -9,7 +9,7 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import netaddr
 
@@ -144,7 +144,7 @@ class NodeBase(abc.ABC):
         self.id: int = _id
         self.name: str = name or f"{self.__class__.__name__}{self.id}"
         self.server: "DistributedServer" = server
-        self.model: Optional[str] = None
+        self.model: str | None = None
         self.ifaces: dict[int, CoreInterface] = {}
         self.iface_id: int = 0
         self.position: Position = Position()
@@ -155,8 +155,8 @@ class NodeBase(abc.ABC):
         )
         self.node_net_client: LinuxNetClient = self._get_node_net_client()
         options = options if options else NodeOptions()
-        self.canvas: Optional[int] = options.canvas
-        self.icon: Optional[str] = options.icon
+        self.canvas: int | None = options.canvas
+        self.icon: str | None = options.icon
 
     def _get_node_net_client(self) -> LinuxNetClient:
         """
@@ -398,7 +398,7 @@ class CoreNodeBase(NodeBase):
         """
         super().__init__(session, _id, name, server, options)
         self.services: dict[str, "CoreService"] = {}
-        self.directory: Optional[Path] = None
+        self.directory: Path | None = None
         self.tmpnodedir: bool = False
 
     @abc.abstractmethod
@@ -582,12 +582,12 @@ class CoreNode(CoreNodeBase):
         """
         options = options or CoreNodeOptions()
         super().__init__(session, _id, name, server, options)
-        self.directory: Optional[Path] = options.directory
+        self.directory: Path | None = options.directory
         self.ctrlchnlname: Path = self.session.directory / self.name
-        self.pid: Optional[int] = None
+        self.pid: int | None = None
         self._mounts: list[tuple[Path, Path]] = []
         options = options or CoreNodeOptions()
-        self.model: Optional[str] = options.model
+        self.model: str | None = options.model
         # add services
         services = options.services
         if not services:
@@ -811,7 +811,7 @@ class CoreNode(CoreNodeBase):
         self.cmd(f"{MOUNT} -n --bind {src_path} {target_path}")
         self._mounts.append((src_path, target_path))
 
-    def _find_parent_path(self, path: Path) -> Optional[Path]:
+    def _find_parent_path(self, path: Path) -> Path | None:
         """
         Check if there is a mounted parent directory created for this node.
 
@@ -957,7 +957,7 @@ class CoreNetworkBase(NodeBase):
         super().__init__(session, _id, name, server, options)
         mtu = self.session.options.get_int("mtu")
         self.mtu: int = mtu if mtu > 0 else DEFAULT_MTU
-        self.brname: Optional[str] = None
+        self.brname: str | None = None
         self.linked: dict[CoreInterface, dict[CoreInterface, bool]] = {}
         self.linked_lock: threading.Lock = threading.Lock()
 

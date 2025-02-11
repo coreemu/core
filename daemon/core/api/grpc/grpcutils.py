@@ -1,7 +1,7 @@
 import logging
 import time
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import grpc
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
@@ -248,7 +248,7 @@ def convert_session_options(session: Session) -> dict[str, common_pb2.ConfigOpti
 
 def get_config_options(
     config: dict[str, str],
-    configurable_options: Union[ConfigurableOptions, type[ConfigurableOptions]],
+    configurable_options: ConfigurableOptions | type[ConfigurableOptions],
 ) -> dict[str, common_pb2.ConfigOption]:
     """
     Retrieve configuration options in a form that is used by the grpc server.
@@ -524,9 +524,9 @@ def convert_options_proto(options: core_pb2.LinkOptions) -> LinkOptions:
 
 def convert_link(
     node1: NodeBase,
-    iface1: Optional[CoreInterface],
+    iface1: CoreInterface | None,
     node2: NodeBase,
-    iface2: Optional[CoreInterface],
+    iface2: CoreInterface | None,
     options: LinkOptions,
     unidirectional: bool,
 ) -> core_pb2.Link:
@@ -709,7 +709,7 @@ def get_hooks(session: Session) -> list[core_pb2.Hook]:
 
 def get_mobility_node(
     session: Session, node_id: int, context: ServicerContext
-) -> Union[WlanNode, EmaneNet]:
+) -> WlanNode | EmaneNet:
     """
     Get mobility node.
 
@@ -819,5 +819,5 @@ def configure_node(
                 service.set_template(name, template)
 
 
-def get_optional(message: Message, name: str) -> Optional[Any]:
+def get_optional(message: Message, name: str) -> Any | None:
     return getattr(message, name) if message.HasField(name) else None

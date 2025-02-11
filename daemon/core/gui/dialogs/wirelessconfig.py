@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -18,7 +18,7 @@ class WirelessConfigDialog(Dialog):
     def __init__(self, app: "Application", canvas_node: "CanvasNode"):
         super().__init__(app, f"Wireless Configuration - {canvas_node.core_node.name}")
         self.node: Node = canvas_node.core_node
-        self.config_frame: Optional[ConfigFrame] = None
+        self.config_frame: ConfigFrame | None = None
         self.config: dict[str, ConfigOption] = {}
         try:
             config = self.node.wireless_config

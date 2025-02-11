@@ -1,7 +1,6 @@
 import logging
 from collections.abc import Iterable
 from queue import Empty, Queue
-from typing import Optional
 
 from core.api.grpc import core_pb2, grpcutils
 from core.api.grpc.grpcutils import convert_link_data
@@ -113,7 +112,7 @@ class EventStreamer:
         if core_pb2.EventType.SESSION in self.event_types:
             self.session.broadcast_manager.add_handler(EventData, self.queue.put)
 
-    def process(self) -> Optional[core_pb2.Event]:
+    def process(self) -> core_pb2.Event | None:
         """
         Process the next event in the queue.
 

@@ -9,7 +9,7 @@ import tkinter as tk
 from collections.abc import Iterable
 from pathlib import Path
 from tkinter import messagebox
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -67,7 +67,7 @@ class CoreClient:
         self.app: "Application" = app
         self.master: tk.Tk = app.master
         self._client: client.CoreGrpcClient = client.CoreGrpcClient(proxy=proxy)
-        self.session: Optional[Session] = None
+        self.session: Session | None = None
         self.user = getpass.getuser()
 
         # menu options
@@ -88,15 +88,15 @@ class CoreClient:
         # helpers
         self.iface_to_edge: dict[tuple[int, ...], CanvasEdge] = {}
         self.ifaces_manager: InterfaceManager = InterfaceManager(self.app)
-        self.observer: Optional[str] = None
+        self.observer: str | None = None
 
         # session data
         self.mobility_players: dict[int, MobilityPlayer] = {}
         self.canvas_nodes: dict[int, CanvasNode] = {}
         self.links: dict[str, CanvasEdge] = {}
-        self.handling_throughputs: Optional[grpc.Future] = None
-        self.handling_cpu_usage: Optional[grpc.Future] = None
-        self.handling_events: Optional[grpc.Future] = None
+        self.handling_throughputs: grpc.Future | None = None
+        self.handling_cpu_usage: grpc.Future | None = None
+        self.handling_events: grpc.Future | None = None
 
     @property
     def client(self) -> client.CoreGrpcClient:
@@ -137,7 +137,7 @@ class CoreClient:
         for mobility_player in self.mobility_players.values():
             mobility_player.close()
 
-    def set_observer(self, value: Optional[str]) -> None:
+    def set_observer(self, value: str | None) -> None:
         self.observer = value
 
     def read_config(self) -> None:
@@ -582,7 +582,7 @@ class CoreClient:
 
     def create_node(
         self, x: float, y: float, node_type: NodeType, model: str
-    ) -> Optional[Node]:
+    ) -> Node | None:
         """
         Add node, with information filled in, to grpc manager
         """

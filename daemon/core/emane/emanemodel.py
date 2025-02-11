@@ -3,7 +3,6 @@ Defines Emane Models used within CORE.
 """
 import logging
 from pathlib import Path
-from typing import Optional
 
 from core.config import ConfigBool, ConfigGroup, ConfigString, Configuration
 from core.emane import emanemanifest
@@ -37,13 +36,13 @@ class EmaneModel(WirelessModel):
     platform_config: list[Configuration] = []
 
     # default mac configuration settings
-    mac_library: Optional[str] = None
-    mac_xml: Optional[str] = None
+    mac_library: str | None = None
+    mac_xml: str | None = None
     mac_defaults: dict[str, str] = {}
     mac_config: list[Configuration] = []
 
     # default phy configuration settings, using the universal model
-    phy_library: Optional[str] = None
+    phy_library: str | None = None
     phy_xml: str = "emanephy.xml"
     phy_defaults: dict[str, str] = {
         "subid": "1",

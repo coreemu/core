@@ -1,5 +1,5 @@
 import tkinter as tk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.api.grpc.wrappers import Interface
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from core.gui.graph.node import CanvasNode
 
 
-def get_iface(canvas_node: "CanvasNode", net_id: int) -> Optional[Interface]:
+def get_iface(canvas_node: "CanvasNode", net_id: int) -> Interface | None:
     iface = None
     for edge in canvas_node.edges:
         link = edge.link

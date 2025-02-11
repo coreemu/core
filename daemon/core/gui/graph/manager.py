@@ -4,7 +4,7 @@ import tkinter as tk
 from collections.abc import ValuesView
 from copy import deepcopy
 from tkinter import BooleanVar, messagebox, ttk
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from core.api.grpc.wrappers import Link, LinkType, Node, Session, ThroughputsEvent
 from core.gui import nodeutils as nutils
@@ -77,8 +77,8 @@ class CanvasManager:
 
         # canvas interactions
         self.mode: GraphMode = GraphMode.SELECT
-        self.annotation_type: Optional[ShapeType] = None
-        self.node_draw: Optional[NodeDraw] = None
+        self.annotation_type: ShapeType | None = None
+        self.node_draw: NodeDraw | None = None
         self.canvases: dict[int, CanvasGraph] = {}
 
         # global edge management
@@ -111,7 +111,7 @@ class CanvasManager:
         self.throughput_color: str = "#FF0000"
 
         # widget
-        self.notebook: Optional[ttk.Notebook] = None
+        self.notebook: ttk.Notebook | None = None
         self.canvas_ids: dict[str, int] = {}
         self.unique_ids: dict[int, str] = {}
         self.draw()

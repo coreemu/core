@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import netaddr
 from netaddr import EUI, IPNetwork
@@ -20,7 +20,7 @@ WIRELESS_IP4_MASK: int = 32
 WIRELESS_IP6_MASK: int = 128
 
 
-def get_index(iface: Interface) -> Optional[int]:
+def get_index(iface: Interface) -> int | None:
     if not iface.ip4:
         return None
     net = netaddr.IPNetwork(f"{iface.ip4}/{iface.ip4_mask}")
@@ -64,8 +64,8 @@ class InterfaceManager:
         self.wireless_subnets: dict[int, Subnets] = {}
         mac = self.app.guiconfig.mac
         self.mac: EUI = EUI(mac, dialect=netaddr.mac_unix_expanded)
-        self.current_mac: Optional[EUI] = None
-        self.current_subnets: Optional[Subnets] = None
+        self.current_mac: EUI | None = None
+        self.current_subnets: Subnets | None = None
         self.used_subnets: dict[tuple[IPNetwork, IPNetwork], Subnets] = {}
         self.used_macs: set[str] = set()
 
@@ -168,7 +168,7 @@ class InterfaceManager:
             index += 1
         return index
 
-    def get_ips(self, node: Node, subnets: Subnets) -> [Optional[str], Optional[str]]:
+    def get_ips(self, node: Node, subnets: Subnets) -> [str | None, str | None]:
         enable_ip4 = self.app.guiconfig.ips.enable_ip4
         enable_ip6 = self.app.guiconfig.ips.enable_ip6
         ip4, ip6 = None, None
@@ -200,7 +200,7 @@ class InterfaceManager:
         canvas_src_node: CanvasNode,
         canvas_dst_node: CanvasNode,
         wireless_link: bool,
-    ) -> Optional[Subnets]:
+    ) -> Subnets | None:
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
         is_src_container = nutils.is_container(src_node)
@@ -239,7 +239,7 @@ class InterfaceManager:
 
     def find_subnets(
         self, canvas_node: CanvasNode, visited: set[int] = None
-    ) -> Optional[IPNetwork]:
+    ) -> IPNetwork | None:
         logger.info("finding subnet for node: %s", canvas_node.core_node.name)
         subnets = None
         if not visited:

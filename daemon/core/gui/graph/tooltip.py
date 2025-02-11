@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.themes import Styles
 
@@ -38,8 +38,8 @@ class CanvasTooltip:
         self.canvas: "CanvasGraph" = canvas
         self.text: tk.StringVar = tk.StringVar()
         self.pad: tuple[int, int, int, int] = pad
-        self.id: Optional[str] = None
-        self.tw: Optional[tk.Toplevel] = None
+        self.id: str | None = None
+        self.tw: tk.Toplevel | None = None
 
     def on_enter(self, event: tk.Event = None) -> None:
         self.schedule()

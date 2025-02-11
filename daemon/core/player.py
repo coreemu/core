@@ -57,8 +57,8 @@ class CorePlayerWriter:
         """
         self._time: float = 0.0
         self._file_path: str = file_path
-        self._file: Optional[IO] = None
-        self._csv_file: Optional[csv.writer] = None
+        self._file: IO | None = None
+        self._csv_file: Optional[csv.writer, None] = None
 
     def open(self) -> None:
         """
@@ -226,9 +226,9 @@ class CorePlayer:
         """
         self.file_path: Path = file_path
         self.core: CoreGrpcClient = CoreGrpcClient()
-        self.session_id: Optional[int] = None
-        self.node_streamer: Optional[MoveNodesStreamer] = None
-        self.node_streamer_thread: Optional[Thread] = None
+        self.session_id: int | None = None
+        self.node_streamer: MoveNodesStreamer | None = None
+        self.node_streamer_thread: Thread | None = None
         self.scheduler: sched.scheduler = sched.scheduler()
         self.handlers: dict[PlayerEvents, Callable] = {
             PlayerEvents.XY: self.handle_xy,
@@ -239,7 +239,7 @@ class CorePlayer:
             PlayerEvents.WICONFIG: self.handle_wireless_config,
         }
 
-    def init(self, session_id: Optional[int]) -> bool:
+    def init(self, session_id: int | None) -> bool:
         """
         Initialize core connections, settings to or retrieving session to use.
         Also setup node streamer for xy/geo movements.

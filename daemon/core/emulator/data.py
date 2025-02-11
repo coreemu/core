@@ -2,7 +2,7 @@
 CORE data objects.
 """
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import netaddr
 
@@ -55,7 +55,7 @@ class NodeOptions:
     """
 
     name: str = None
-    model: Optional[str] = "PC"
+    model: str | None = "PC"
     canvas: int = None
     icon: str = None
     services: list[str] = field(default_factory=list)

@@ -5,7 +5,7 @@ import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from mako.template import Template
 
@@ -86,8 +86,8 @@ class PodmanNode(CoreNode):
         options = options or PodmanOptions()
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
-        self.compose: Optional[str] = options.compose
-        self.compose_name: Optional[str] = options.compose_name
+        self.compose: str | None = options.compose
+        self.compose_name: str | None = options.compose_name
         self.binds: list[tuple[str, str]] = options.binds
         self.volumes: dict[str, VolumeMount] = {}
         for src, dst, unique, delete in options.volumes:

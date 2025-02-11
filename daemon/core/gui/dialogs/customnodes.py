@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PIL.ImageTk import PhotoImage
 
@@ -24,9 +24,9 @@ class ServicesSelectDialog(Dialog):
         self, master: tk.BaseWidget, app: "Application", current_services: set[str]
     ) -> None:
         super().__init__(app, "Node Services", master=master)
-        self.groups: Optional[ListboxScroll] = None
-        self.services: Optional[CheckboxList] = None
-        self.current: Optional[ListboxScroll] = None
+        self.groups: ListboxScroll | None = None
+        self.services: CheckboxList | None = None
+        self.current: ListboxScroll | None = None
         self.current_services: set[str] = current_services
         self.draw()
 
@@ -107,16 +107,16 @@ class ServicesSelectDialog(Dialog):
 class CustomNodesDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "Custom Nodes")
-        self.edit_button: Optional[ttk.Button] = None
-        self.delete_button: Optional[ttk.Button] = None
-        self.nodes_list: Optional[ListboxScroll] = None
+        self.edit_button: ttk.Button | None = None
+        self.delete_button: ttk.Button | None = None
+        self.nodes_list: ListboxScroll | None = None
         self.name: tk.StringVar = tk.StringVar()
-        self.image_button: Optional[ttk.Button] = None
-        self.image: Optional[PhotoImage] = None
-        self.image_file: Optional[str] = None
+        self.image_button: ttk.Button | None = None
+        self.image: PhotoImage | None = None
+        self.image_file: str | None = None
         self.services: set[str] = set()
-        self.selected: Optional[str] = None
-        self.selected_index: Optional[int] = None
+        self.selected: str | None = None
+        self.selected_index: int | None = None
         self.draw()
 
     def draw(self) -> None:

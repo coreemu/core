@@ -1,5 +1,3 @@
-from typing import Optional
-
 from core.config import ConfigBool, ConfigInt, ConfigString, Configuration
 from core.errors import CoreError
 from core.plugins.sdt import Sdt
@@ -64,7 +62,7 @@ class SessionConfig:
         """
         self._config[name] = value
 
-    def get(self, name: str, default: str = None) -> Optional[str]:
+    def get(self, name: str, default: str = None) -> str | None:
         """
         Retrieve configuration value.
 

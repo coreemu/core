@@ -5,7 +5,7 @@ Common support for configurable CORE objects.
 import logging
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import ConfigDataTypes
@@ -119,7 +119,7 @@ class ConfigurableOptions:
     Provides a base for defining configuration options within CORE.
     """
 
-    name: Optional[str] = None
+    name: str | None = None
     options: list[Configuration] = []
 
     @classmethod
@@ -252,7 +252,7 @@ class ConfigurableManager:
 
     def get_configs(
         self, node_id: int = _default_node, config_type: str = _default_type
-    ) -> Optional[dict[str, str]]:
+    ) -> dict[str, str] | None:
         """
         Retrieve configurations for a node and configuration type.
 
@@ -342,7 +342,7 @@ class ModelManager(ConfigurableManager):
 
     def set_model(
         self,
-        node: Union[WlanNode, EmaneNet],
+        node: WlanNode | EmaneNet,
         model_class: "WirelessModelType",
         config: dict[str, str] = None,
     ) -> None:
@@ -362,7 +362,7 @@ class ModelManager(ConfigurableManager):
         node.setmodel(model_class, config)
 
     def get_models(
-        self, node: Union[WlanNode, EmaneNet]
+        self, node: WlanNode | EmaneNet
     ) -> list[tuple[type, dict[str, str]]]:
         """
         Return a list of model classes and values for a net if one has been

@@ -5,7 +5,7 @@ import re
 import tkinter as tk
 from re import Pattern
 from tkinter import ttk
-from typing import Any, Optional
+from typing import Any
 
 SMALLEST_SCALE: float = 0.5
 LARGEST_SCALE: float = 5.0
@@ -13,7 +13,7 @@ HEX_REGEX: Pattern = re.compile("^([#]([0-9]|[a-f])+)$|^[#]$")
 
 
 class ValidationEntry(ttk.Entry):
-    empty: Optional[str] = None
+    empty: str | None = None
 
     def __init__(
         self,

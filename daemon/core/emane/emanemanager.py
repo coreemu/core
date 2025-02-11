@@ -5,7 +5,7 @@ Implements configuration and control of an EMANE emulation.
 import logging
 import threading
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core import utils
 from core.emane.emanemodel import EmaneModel
@@ -72,7 +72,7 @@ class EmaneManager:
             "emane_transform_port", 8200
         )
         self.doeventloop: bool = False
-        self.eventmonthread: Optional[threading.Thread] = None
+        self.eventmonthread: threading.Thread | None = None
 
         # model for global EMANE configuration options
         self.node_configs: dict[int, dict[str, dict[str, str]]] = {}
@@ -96,7 +96,7 @@ class EmaneManager:
 
     def get_config(
         self, key: int, model: str, default: bool = True
-    ) -> Optional[dict[str, str]]:
+    ) -> dict[str, str] | None:
         """
         Get the current or default configuration for an emane model.
 
@@ -326,10 +326,10 @@ class EmaneManager:
         if eventgroup != otagroup:
             node.node_net_client.create_route(eventgroup, eventdev)
 
-    def get_iface(self, nem_id: int) -> Optional[CoreInterface]:
+    def get_iface(self, nem_id: int) -> CoreInterface | None:
         return self.nems_to_ifaces.get(nem_id)
 
-    def get_nem_id(self, iface: CoreInterface) -> Optional[int]:
+    def get_nem_id(self, iface: CoreInterface) -> int | None:
         return self.ifaces_to_nems.get(iface)
 
     def get_nem_port(self, iface: CoreInterface) -> int:
@@ -338,7 +338,7 @@ class EmaneManager:
 
     def get_nem_position(
         self, iface: CoreInterface
-    ) -> Optional[tuple[int, float, float, int]]:
+    ) -> tuple[int, float, float, int] | None:
         """
         Retrieves nem position for a given interface.
 
@@ -480,7 +480,7 @@ class EmaneManager:
 
     def get_nem_link(
         self, nem1: int, nem2: int, flags: MessageFlags = MessageFlags.NONE
-    ) -> Optional[LinkData]:
+    ) -> LinkData | None:
         iface1 = self.get_iface(nem1)
         if not iface1:
             logger.error("invalid nem: %s", nem1)
