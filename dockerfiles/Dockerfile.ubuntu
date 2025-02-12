@@ -1,8 +1,39 @@
 # syntax=docker/dockerfile:1
+FROM ubuntu:22.04 AS ospf-deb
+WORKDIR /opt
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    git \
+    ca-certificates \
+    automake \
+    make \
+    libtool \
+    pkg-config \
+    gawk \
+    g++ \
+    dpkg-dev \
+    debhelper \
+    libreadline-dev \
+    texinfo \
+    imagemagick \
+    groff \
+    build-essential:native \
+    texlive-latex-recommended \
+    texlive-plain-generic && \
+    git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+    cd ospf-mdr && \
+    ./bootstrap.sh && \
+    ./configure && \
+    (make -f quagga.deb.mk build || make -f quagga.deb.mk build) && \
+    mv quagga-mr_0.99*.deb /opt/ && \
+    cd /opt && \
+    rm -rf ospf-mdr && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /opt
-
 # install system dependencies
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -11,23 +42,47 @@ RUN apt-get update -y && \
     psmisc \
     python3 \
     python3-tk \
-    python3-pip \
     python3-venv \
+    python3-pip \
     wget \
     iproute2 \
     iputils-ping \
+    curl \
     tcpdump && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
-
-# install ospf mdr
-COPY --from=ospf-deb /opt/quagga-mr_0.99*.deb .
+# install core
+ARG CORE_PACKAGE=core_9.2.0_amd64.deb
+ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends \
-    ./quagga-mr_0.99*.deb && \
+    wget -q ${PACKAGE_URL} && \
+    apt-get install -y --no-install-recommends ./${CORE_PACKAGE} && \
+    rm -f ${CORE_PACKAGE} && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
-
+# install ospf mdr
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    automake \
+    make \
+    gawk \
+    git \
+    g++ \
+    libreadline-dev \
+    libtool \
+    pkg-config && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+    cd ospf-mdr && \
+    ./bootstrap.sh && \
+    ./configure --disable-doc --enable-user=root --enable-group=root \
+    --with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
+    --localstatedir=/var/run/quagga && \
+    make -j$(nproc) && \
+    make install && \
+    cd .. && \
+    rm -rf ospf-mdr
 # install emane
 ARG EMANE_RELEASE=emane-1.5.1-release-1
 ARG EMANE_PACKAGE=${EMANE_RELEASE}.ubuntu-22_04.amd64.tar.gz
@@ -43,20 +98,9 @@ RUN apt-get update -y && \
     rm -rf ${EMANE_RELEASE} && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
-
-# install core
-ARG CORE_PACKAGE=core_9.1.0_amd64.deb
-ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
-RUN apt-get update -y && \
-    wget -q ${PACKAGE_URL} && \
-    apt-get install -y --no-install-recommends ./${CORE_PACKAGE} && \
-    rm -f ${CORE_PACKAGE} && \
-    apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
-
 # install emane python bindings
 ARG VENV_PATH=/opt/core/venv
 COPY --from=emane-python /opt/emane-*.whl .
 RUN ${VENV_PATH}/bin/python -m pip install ./emane-*.whl
-
+# set default directory
 WORKDIR /root

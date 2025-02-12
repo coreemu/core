@@ -1,0 +1,48 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:20.04
+ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /opt
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    automake \
+    pkg-config \
+    libev-dev \
+    nftables \
+    iproute2 \
+    ethtool \
+    tk \
+    bash \
+    gem \
+    curl \
+    rpm \
+    ruby \
+    ca-certificates \
+    build-essential \
+    git && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# clone and build core
+ARG BRANCH=master
+ARG PIPX_VERSION=1.7.1
+ARG GRPC_VERSION=1.69.0
+ARG INVOKE_VERSION=2.2.0
+ARG POETRY_VERSION=1.2.1
+ENV PATH="/root/.local/bin:${PATH}"
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    git clone https://github.com/coreemu/core.git && \
+    cd core && \
+    uv self update && \
+    uv python install 3.10 && \
+    uv venv venv && \
+    uv pip install --python ./venv/bin/python pipx==${PIPX_VERSION} grpcio==${GRPC_VERSION} grpcio-tools==${GRPC_VERSION} && \
+    ./venv/bin/python -m pipx ensurepath && \
+    ./venv/bin/python -m pipx install invoke==${INVOKE_VERSION} && \
+    ./venv/bin/python -m pipx install poetry==${POETRY_VERSION} && \
+    gem install dotenv -v 2.8.1 && \
+    gem install fpm && \
+    git checkout ${BRANCH} && \
+    ./bootstrap.sh && \
+    PYTHON=./venv/bin/python ./configure --prefix=/usr && \
+    make -j$(nproc) && \
+    make fpm
