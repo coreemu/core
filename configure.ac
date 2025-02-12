@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 9.1.0)
+AC_INIT(core, 9.2.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -79,8 +79,8 @@ if test "x$enable_daemon" = "xyes"; then
   want_python=yes
   want_linux_netns=yes
 
-  AM_PATH_PYTHON(3.9)
-  AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
+  AM_PATH_PYTHON(3.10)
+  AS_IF([./venv/bin/python -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([grpc tools must be setup in venv, try setup.sh])])
 
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)
   if test "x$sysctl_path" = "xno" ; then

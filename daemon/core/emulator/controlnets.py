@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core import utils
 from core.emulator.data import InterfaceData
@@ -30,9 +30,9 @@ class ControlNetManager:
         self.session: "Session" = session
         self.etc_hosts_header: str = f"CORE session {self.session.id} host entries"
         self.etc_hosted_enabled: bool = False
-        self.net_prefixes: dict[int, Optional[str]] = {}
-        self.net_ifaces: dict[int, Optional[str]] = {}
-        self.updown_script: Optional[str] = None
+        self.net_prefixes: dict[int, str | None] = {}
+        self.net_ifaces: dict[int, str | None] = {}
+        self.updown_script: str | None = None
         self.parse_options(session.options)
 
     def parse_options(self, options: SessionConfig) -> None:
@@ -101,7 +101,7 @@ class ControlNetManager:
                 return _id
         return -1
 
-    def get_net(self, _id: int) -> Optional[CtrlNet]:
+    def get_net(self, _id: int) -> CtrlNet | None:
         """
         Retrieve a control net based on id.
 
@@ -120,7 +120,7 @@ class ControlNetManager:
             if prefix:
                 self.add_net(_id)
 
-    def add_net(self, _id: int, conf_required: bool = True) -> Optional[CtrlNet]:
+    def add_net(self, _id: int, conf_required: bool = True) -> CtrlNet | None:
         """
         Create a control network bridge as necessary. The conf_reqd flag,
         when False, causes a control network bridge to be added even if
@@ -131,9 +131,7 @@ class ControlNetManager:
         :return: control net node
         """
         logger.info(
-            "checking to add control net(%s) conf_required(%s)",
-            _id,
-            conf_required,
+            "checking to add control net(%s) conf_required(%s)", _id, conf_required
         )
         # check for valid id
         if not (0 <= _id <= 3):

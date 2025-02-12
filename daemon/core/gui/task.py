@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 import tkinter as tk
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class ProgressTask:
         if args is None:
             args = ()
         self.args: tuple[Any] = args
-        self.time: Optional[float] = None
+        self.time: float | None = None
 
     def start(self) -> None:
         self.app.progress.grid(sticky=tk.EW, columnspan=2)

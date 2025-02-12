@@ -6,7 +6,7 @@ import logging
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import netaddr
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
-    from core.location.mobility import WirelessModel, WayPointMobility
+    from core.location.mobility import WayPointMobility, WirelessModel
 
 LEARNING_DISABLED: int = 0
 
@@ -47,7 +47,7 @@ class NftablesQueue:
         until a WLAN is instantiated.
         """
         self.running: bool = False
-        self.run_thread: Optional[threading.Thread] = None
+        self.run_thread: threading.Thread | None = None
         # this lock protects cmds and updates lists
         self.lock: threading.Lock = threading.Lock()
         # list of pending nftables commands
@@ -404,16 +404,17 @@ class GreTapBridge(CoreNetwork):
         :param server: remote server node
             will run on, default is None for localhost
         """
-        CoreNetwork.__init__(self, session, _id, name, server, policy)
+        options = NetworkOptions(policy=policy)
+        CoreNetwork.__init__(self, session, _id, name, server, options)
         if key is None:
             key = self.session.id ^ self.id
         self.grekey: int = key
-        self.localnum: Optional[int] = None
-        self.remotenum: Optional[int] = None
-        self.remoteip: Optional[str] = remoteip
-        self.localip: Optional[str] = localip
+        self.localnum: int | None = None
+        self.remotenum: int | None = None
+        self.remoteip: str | None = remoteip
+        self.localip: str | None = localip
         self.ttl: int = ttl
-        self.gretap: Optional[GreTap] = None
+        self.gretap: GreTap | None = None
         if self.remoteip is not None:
             self.gretap = GreTap(
                 session,
@@ -532,10 +533,10 @@ class CtrlNet(CoreNetwork):
         options = options or CtrlNetOptions()
         super().__init__(session, _id, name, server, options)
         self.prefix: netaddr.IPNetwork = netaddr.IPNetwork(options.prefix).cidr
-        self.hostid: Optional[int] = options.hostid
+        self.hostid: int | None = options.hostid
         self.assign_address: bool = options.assign_address
-        self.updown_script: Optional[str] = options.updown_script
-        self.serverintf: Optional[str] = options.serverintf
+        self.updown_script: str | None = options.updown_script
+        self.serverintf: str | None = options.serverintf
         self.brname = f"ctrl{_id}.{self.session.short_session_id()}"
 
     @classmethod
@@ -708,8 +709,8 @@ class WlanNode(CoreNetwork):
         """
         super().__init__(session, _id, name, server, options)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
-        self.wireless_model: Optional[WirelessModel] = None
-        self.mobility: Optional[WayPointMobility] = None
+        self.wireless_model: WirelessModel | None = None
+        self.mobility: WayPointMobility | None = None
 
     def startup(self) -> None:
         """

@@ -1,6 +1,6 @@
 import logging
 import threading
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
 from core.errors import CoreError
 
@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 try:
     from emane.events import (
-        EventService,
         AntennaProfileEvent,
         CommEffectEvent,
+        EventService,
         FadingSelectionEvent,
         LocationEvent,
         PathlossEvent,
@@ -19,9 +19,9 @@ try:
 except ImportError:
     try:
         from emanesh.events import (
-            EventService,
             AntennaProfileEvent,
             CommEffectEvent,
+            EventService,
             FadingSelectionEvent,
             LocationEvent,
             PathlossEvent,
@@ -51,7 +51,7 @@ class EmaneEventService:
         self.port: int = port
         self.location_handler: Callable[[LocationEvent], None] = location_handler
         self.running: bool = False
-        self.thread: Optional[threading.Thread] = None
+        self.thread: threading.Thread | None = None
         logger.info("starting emane event service %s %s:%s", device, group, port)
         self.events: EventService = EventService(
             eventchannel=(group, port, device), otachannel=None
@@ -107,12 +107,7 @@ class EmaneEventManager:
         self.nem_service.clear()
 
     def create_service(
-        self,
-        nem_id: int,
-        device: str,
-        group: str,
-        port: int,
-        should_start: bool,
+        self, nem_id: int, device: str, group: str, port: int, should_start: bool
     ) -> None:
         # initialize emane event services
         service = self.services.get(device)
@@ -130,7 +125,7 @@ class EmaneEventManager:
         else:
             self.nem_service[nem_id] = service
 
-    def get_service(self, nem_id: int) -> Optional[EmaneEventService]:
+    def get_service(self, nem_id: int) -> EmaneEventService | None:
         service = self.nem_service.get(nem_id)
         if not service:
             logger.error("failure to find event service for nem(%s)", nem_id)
@@ -159,13 +154,7 @@ class EmaneEventManager:
         )
         args = {k: v for k, v in args.items() if v is not None}
         event = LocationEvent()
-        event.append(
-            nem_id,
-            latitude=lat,
-            longitude=lon,
-            altitude=alt,
-            **args,
-        )
+        event.append(nem_id, latitude=lat, longitude=lon, altitude=alt, **args)
         self._publish_event(nem_id, event, 0)
 
     def publish_locations(
@@ -226,11 +215,7 @@ class EmaneEventManager:
         self._publish_event(nem2_id, event)
 
     def publish_antenna_profile(
-        self,
-        nem_id: int,
-        profile: int,
-        azimuth: float,
-        elevation: float,
+        self, nem_id: int, profile: int, azimuth: float, elevation: float
     ) -> None:
         event = AntennaProfileEvent()
         event.append(nem_id, profile=profile, azimuth=azimuth, elevation=elevation)

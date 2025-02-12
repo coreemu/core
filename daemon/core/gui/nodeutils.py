@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PIL.ImageTk import PhotoImage
 
@@ -16,11 +16,7 @@ if TYPE_CHECKING:
 NODES: list["NodeDraw"] = []
 NETWORK_NODES: list["NodeDraw"] = []
 NODE_ICONS = {}
-CONTAINER_NODES: set[NodeType] = {
-    NodeType.DEFAULT,
-    NodeType.DOCKER,
-    NodeType.PODMAN,
-}
+CONTAINER_NODES: set[NodeType] = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.PODMAN}
 IMAGE_NODES: set[NodeType] = {NodeType.DOCKER, NodeType.PODMAN}
 WIRELESS_NODES: set[NodeType] = {
     NodeType.WIRELESS_LAN,
@@ -33,7 +29,7 @@ IGNORE_NODES: set[NodeType] = {NodeType.CONTROL_NET}
 MOBILITY_NODES: set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
 NODE_MODELS: set[str] = {"router", "PC", "mdr", "prouter"}
 ROUTER_NODES: set[str] = {"router", "mdr"}
-ANTENNA_ICON: Optional[PhotoImage] = None
+ANTENNA_ICON: PhotoImage | None = None
 
 
 def setup() -> None:
@@ -117,7 +113,7 @@ def get_custom_services(gui_config: GuiConfig, name: str) -> list[str]:
     return []
 
 
-def _get_custom_file(config: GuiConfig, name: str) -> Optional[str]:
+def _get_custom_file(config: GuiConfig, name: str) -> str | None:
     for custom_node in config.nodes:
         if custom_node.name == name:
             return custom_node.image
@@ -153,13 +149,13 @@ def get_icon(node: Node, app: "Application") -> PhotoImage:
 class NodeDraw:
     def __init__(self) -> None:
         self.custom: bool = False
-        self.image: Optional[PhotoImage] = None
-        self.image_enum: Optional[ImageEnum] = None
-        self.image_file: Optional[str] = None
-        self.node_type: Optional[NodeType] = None
-        self.model: Optional[str] = None
+        self.image: PhotoImage | None = None
+        self.image_enum: ImageEnum | None = None
+        self.image_file: str | None = None
+        self.node_type: NodeType | None = None
+        self.model: str | None = None
         self.services: set[str] = set()
-        self.label: Optional[str] = None
+        self.label: str | None = None
 
     @classmethod
     def from_setup(

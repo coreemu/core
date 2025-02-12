@@ -3,7 +3,7 @@ import tkinter as tk
 from functools import partial
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import netaddr
 from netaddr import AddrFormatError, IPNetwork
@@ -183,8 +183,8 @@ class NodeConfigDialog(Dialog):
         self.canvas_node: "CanvasNode" = canvas_node
         self.node: Node = canvas_node.core_node
         self.image: PhotoImage = canvas_node.image
-        self.image_file: Optional[str] = None
-        self.image_button: Optional[ttk.Button] = None
+        self.image_file: str | None = None
+        self.image_button: ttk.Button | None = None
         self.name: tk.StringVar = tk.StringVar(value=self.node.name)
         self.type: tk.StringVar = tk.StringVar(value=self.node.model)
         self.container_image: tk.StringVar = tk.StringVar(value=self.node.image)
@@ -475,11 +475,12 @@ class NodeConfigDialog(Dialog):
         self.canvas_node.image = self.image
 
         # update node interface data
-        for iface in self.canvas_node.ifaces.values():
-            data = self.ifaces[iface.id]
-            error = not data.validate(self, iface)
-            if error:
-                break
+        if nutils.is_container(self.node):
+            for iface in self.canvas_node.ifaces.values():
+                data = self.ifaces[iface.id]
+                error = not data.validate(self, iface)
+                if error:
+                    break
 
         # save custom network for wireless node types
         if nutils.is_wireless(self.node):
@@ -510,10 +511,7 @@ class NodeConfigDialog(Dialog):
             parent=self,
             initialdir=str(Path.home()),
             title="Select Compose File",
-            filetypes=(
-                ("yaml", "*.yml *.yaml ..."),
-                ("All Files", "*"),
-            ),
+            filetypes=(("yaml", "*.yml *.yaml ..."), ("All Files", "*")),
         )
         if file_path:
             self.compose_file.set(file_path)

@@ -18,8 +18,8 @@ from core.nodes.base import CoreNetworkBase, NodeOptions
 from core.nodes.interface import CoreInterface
 
 if TYPE_CHECKING:
-    from core.emulator.session import Session
     from core.emulator.distributed import DistributedServer
+    from core.emulator.session import Session
 
 logger = logging.getLogger(__name__)
 CONFIG_ENABLED: bool = True

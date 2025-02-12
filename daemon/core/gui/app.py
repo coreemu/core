@@ -3,7 +3,7 @@ import math
 import tkinter as tk
 from tkinter import PhotoImage, font, messagebox, ttk
 from tkinter.ttk import Progressbar
-from typing import Any, Optional
+from typing import Any
 
 import grpc
 
@@ -34,20 +34,20 @@ class Application(ttk.Frame):
         nutils.setup()
 
         # widgets
-        self.menubar: Optional[Menubar] = None
-        self.toolbar: Optional[Toolbar] = None
-        self.right_frame: Optional[ttk.Frame] = None
-        self.manager: Optional[CanvasManager] = None
-        self.statusbar: Optional[StatusBar] = None
-        self.progress: Optional[Progressbar] = None
-        self.infobar: Optional[ttk.Frame] = None
-        self.info_frame: Optional[InfoFrameBase] = None
+        self.menubar: Menubar | None = None
+        self.toolbar: Toolbar | None = None
+        self.right_frame: ttk.Frame | None = None
+        self.manager: CanvasManager | None = None
+        self.statusbar: StatusBar | None = None
+        self.progress: Progressbar | None = None
+        self.infobar: ttk.Frame | None = None
+        self.info_frame: InfoFrameBase | None = None
         self.show_infobar: tk.BooleanVar = tk.BooleanVar(value=False)
 
         # fonts
         self.fonts_size: dict[str, int] = {}
-        self.icon_text_font: Optional[font.Font] = None
-        self.edge_font: Optional[font.Font] = None
+        self.icon_text_font: font.Font | None = None
+        self.edge_font: font.Font | None = None
 
         # setup
         self.guiconfig: GuiConfig = appconfig.read()

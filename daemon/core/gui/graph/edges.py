@@ -102,21 +102,21 @@ class Edge:
     ) -> None:
         self.app: "Application" = app
         self.manager: CanvasManager = app.manager
-        self.id: Optional[int] = None
-        self.id2: Optional[int] = None
+        self.id: int | None = None
+        self.id2: int | None = None
         self.src: "CanvasNode" = src
-        self.src_shadow: Optional[ShadowNode] = None
+        self.src_shadow: ShadowNode | None = None
         self.dst: Optional["CanvasNode"] = dst
-        self.dst_shadow: Optional[ShadowNode] = None
-        self.link: Optional[Link] = None
+        self.dst_shadow: ShadowNode | None = None
+        self.link: Link | None = None
         self.arc: int = 0
-        self.token: Optional[str] = None
-        self.src_label: Optional[int] = None
-        self.src_label2: Optional[int] = None
-        self.middle_label: Optional[int] = None
-        self.middle_label2: Optional[int] = None
-        self.dst_label: Optional[int] = None
-        self.dst_label2: Optional[int] = None
+        self.token: str | None = None
+        self.src_label: int | None = None
+        self.src_label2: int | None = None
+        self.middle_label: int | None = None
+        self.middle_label2: int | None = None
+        self.dst_label: int | None = None
+        self.dst_label2: int | None = None
         self.color: str = EDGE_COLOR
         self.width: int = EDGE_WIDTH
         self.linked_wireless: bool = False
@@ -464,7 +464,7 @@ class Edge:
         else:
             raise ValueError(f"node({node.core_node.name}) does not belong to edge")
 
-    def other_iface(self, node: "CanvasNode") -> Optional[Interface]:
+    def other_iface(self, node: "CanvasNode") -> Interface | None:
         if self.src == node:
             return self.link.iface2 if self.link else None
         elif self.dst == node:
@@ -472,7 +472,7 @@ class Edge:
         else:
             raise ValueError(f"node({node.core_node.name}) does not belong to edge")
 
-    def iface(self, node: "CanvasNode") -> Optional[Interface]:
+    def iface(self, node: "CanvasNode") -> Interface | None:
         if self.src == node:
             return self.link.iface1 if self.link else None
         elif self.dst == node:
@@ -542,10 +542,10 @@ class CanvasEdge(Edge):
         Create an instance of canvas edge object
         """
         super().__init__(app, src, dst)
-        self.text_src: Optional[int] = None
-        self.text_dst: Optional[int] = None
-        self.asymmetric_link: Optional[Link] = None
-        self.throughput: Optional[float] = None
+        self.text_src: int | None = None
+        self.text_dst: int | None = None
+        self.asymmetric_link: Link | None = None
+        self.throughput: float | None = None
         self.draw(tk.NORMAL, organize)
 
     def is_customized(self) -> bool:

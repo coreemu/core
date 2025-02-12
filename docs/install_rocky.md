@@ -2,9 +2,8 @@
 
 ## Overview
 
-This helps provide an example for installation into a RHEL 8 like
-environment. Below is a detailed example for installing CORE and related tooling on a fresh
-Rocky Linux 8 install. Both of the examples below will install CORE into its
+This helps provide an example for installation into a Rocky Linux 8.10
+environment. Both of the examples below will install CORE into its
 own virtual environment located at **/opt/core/venv**. Both examples below
 also assume using **~/Documents** as the working directory.
 
@@ -16,18 +15,18 @@ the package based installation path. This will require downloading a package fro
 
 ``` shell
 # install system packages
-sudo yum -y update
-sudo yum install -y \
+sudo dnf -y update
+sudo dnf install -y \
     xterm \
     wget \
     tcpdump \
-    python39 \
-    python39-tkinter \
+    python3.12 \
+    python3.12-tkinter \
     iproute-tc
 
 # install ospf mdr
 cd ~/Documents
-sudo yum install -y \
+sudo dnf install -y \
     automake \
     gcc-c++ \
     libtool \
@@ -46,7 +45,7 @@ sudo make install
 
 # install emane
 cd ~/Documents
-EMANE_VERSION=1.5.1
+EMANE_VERSION=1.5.2
 EMANE_RELEASE=emane-${EMANE_VERSION}-release-1
 EMANE_PACKAGE=${EMANE_RELEASE}.el8.x86_64.tar.gz
 wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE}
@@ -54,21 +53,21 @@ tar xf ${EMANE_PACKAGE}
 cd ${EMANE_RELEASE}/rpms/el8/x86_64
 rm emane-spectrum-tools-*.rpm emane-model-lte*.rpm
 rm *devel*.rpm
-sudo yum install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el8.noarch.rpm
+sudo dnf install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el8.noarch.rpm
 
 # install core
 cd ~/Documents
-CORE_PACKAGE=core_9.1.0_x86_64.rpm
+CORE_PACKAGE=core_9.2.0_x86_64.rpm
 PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 wget -q ${PACKAGE_URL}
-PYTHON=python3.9 yum install -y ./${CORE_PACKAGE}
+PYTHON=python3.12 dnf install -y ./${CORE_PACKAGE}
 
 # install emane python bindings into CORE virtual environment
 cd ~/Documents
-sudo yum install -y dnf-plugins-core
-sudo yum config-manager --set-enabled devel
-sudo yum update -y
-sudo yum install -y \
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --set-enabled devel
+sudo dnf update -y
+sudo dnf install -y \
     protobuf-devel \
     libxml2-devel \
     pcre-devel \

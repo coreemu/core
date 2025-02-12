@@ -19,11 +19,11 @@ For more detailed information on EMANE see the following:
 Below is a list of the files used for this tutorial.
 
 * 2 node EMANE ieee80211abg scenario
-    * scenario.xml
-    * scenario.py
+    * /opt/core/share/tutorials/tutorial7/scenario.xml
+    * /opt/core/share/tutorials/tutorial7/scenario.py
 * 2 node EMANE ieee80211abg scenario, with **n2** running the "Chat App Server" service
-    * scenario_service.xml
-    * scenario_service.py
+    * /opt/core/share/tutorials/tutorial7/scenario_service.xml
+    * /opt/core/share/tutorials/tutorial7/scenario_service.py
 
 ## Running this Tutorial
 

@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.appconfig import NodeCommand
 from core.gui.dialogs.dialog import Dialog
@@ -14,11 +14,11 @@ if TYPE_CHECKING:
 class NodeCommandsDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "Node Commands")
-        self.commands: Optional[tk.Listbox] = None
-        self.save_button: Optional[ttk.Button] = None
-        self.delete_button: Optional[ttk.Button] = None
-        self.selected: Optional[str] = None
-        self.selected_index: Optional[int] = None
+        self.commands: tk.Listbox | None = None
+        self.save_button: ttk.Button | None = None
+        self.delete_button: ttk.Button | None = None
+        self.selected: str | None = None
+        self.selected_index: int | None = None
         self.name: tk.StringVar = tk.StringVar()
         self.cmd: tk.StringVar = tk.StringVar()
         self.draw()

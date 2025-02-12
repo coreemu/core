@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -19,8 +19,8 @@ class MobilityPlayer:
     def __init__(self, app: "Application", node: Node) -> None:
         self.app: "Application" = app
         self.node: Node = node
-        self.dialog: Optional[MobilityPlayerDialog] = None
-        self.state: Optional[MobilityAction] = None
+        self.dialog: MobilityPlayerDialog | None = None
+        self.state: MobilityAction | None = None
 
     def show(self) -> None:
         if self.dialog:
@@ -62,10 +62,10 @@ class MobilityPlayerDialog(Dialog):
         self.resizable(False, False)
         self.geometry("")
         self.node: Node = node
-        self.play_button: Optional[ttk.Button] = None
-        self.pause_button: Optional[ttk.Button] = None
-        self.stop_button: Optional[ttk.Button] = None
-        self.progressbar: Optional[ttk.Progressbar] = None
+        self.play_button: ttk.Button | None = None
+        self.pause_button: ttk.Button | None = None
+        self.stop_button: ttk.Button | None = None
+        self.progressbar: ttk.Progressbar | None = None
         self.draw()
 
     def draw(self) -> None:

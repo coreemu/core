@@ -8,9 +8,12 @@ This tutorial will cover connecting CORE VM to a Windows host machine using a RJ
 
 Below is the list of files used for this tutorial.
 
-* scenario.xml - the scenario with RJ45 unassigned
-* scenario.py- grpc script to create the RJ45 in simple CORE scenario
-* client_for_windows.py - chat app client modified for windows
+* the scenario with RJ45 unassigned
+    * /opt/core/share/tutorials/tutorial5/scenario.xml
+* grpc script to create the RJ45 in simple CORE scenario
+    * /opt/core/share/tutorials/tutorial5/scenario.py
+* chat app client modified for windows
+    * /opt/core/share/tutorials/tutorial5/client_for_windows.py
 
 ## Running with the Saved XML File
 

@@ -15,12 +15,12 @@ from core.services.defaults.utilservices.services import DefaultRouteService
 
 
 class TestXml:
-    def test_xml_hooks(self, session: Session, tmpdir: TemporaryFile):
+    def test_xml_hooks(self, session: Session, tmp_path: Path):
         """
         Test save/load hooks in xml.
 
         :param session: session for test
-        :param tmpdir: tmpdir to create data in
+        :param tmp_path: temp path to create data within
         """
         # create hooks
         file_name = "runtime_hook.sh"
@@ -34,34 +34,31 @@ class TestXml:
         session.add_hook(state, file_name, data)
 
         # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = Path(xml_file.strpath)
-        session.save_xml(file_path)
+        xml_file = tmp_path / "session.xml"
+        session.save_xml(xml_file)
 
         # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
+        assert xml_file.is_file()
+        assert ElementTree.parse(xml_file)
 
         # stop current session, clearing data
         session.shutdown()
 
         # load saved xml
         session.directory.mkdir()
-        session.open_xml(file_path, start=True)
+        session.open_xml(xml_file, start=True)
 
         # verify nodes have been recreated
         hooks = session.hook_manager.script_hooks[state]
         runtime_data = hooks[file_name]
         assert runtime_data == data
 
-    def test_xml_ptp(
-        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
-    ):
+    def test_xml_ptp(self, session: Session, tmp_path: Path, ip_prefixes: IpPrefixes):
         """
         Test xml client methods for a ptp network.
 
         :param session: session for test
-        :param tmpdir: tmpdir to create data in
+        :param tmp_path: temp path to create data within
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
@@ -77,13 +74,12 @@ class TestXml:
         session.instantiate()
 
         # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = Path(xml_file.strpath)
-        session.save_xml(file_path)
+        xml_file = tmp_path / "session.xml"
+        session.save_xml(xml_file)
 
         # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
+        assert xml_file.is_file()
+        assert ElementTree.parse(xml_file)
 
         # stop current session, clearing data
         session.shutdown()
@@ -98,7 +94,7 @@ class TestXml:
 
         # load saved xml
         session.directory.mkdir()
-        session.open_xml(file_path, start=True)
+        session.open_xml(xml_file, start=True)
 
         # verify nodes have been recreated
         assert session.get_node(node1.id, CoreNode)
@@ -106,13 +102,13 @@ class TestXml:
         assert len(session.link_manager.links()) == 1
 
     def test_xml_ptp_services(
-        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+        self, session: Session, tmp_path: Path, ip_prefixes: IpPrefixes
     ):
         """
-        Test xml client methods for a ptp neetwork.
+        Test xml client methods for a ptp network.
 
         :param session: session for test
-        :param tmpdir: tmpdir to create data in
+        :param tmp_path: temp path to create data within
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
@@ -134,13 +130,12 @@ class TestXml:
         session.instantiate()
 
         # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = Path(xml_file.strpath)
-        session.save_xml(file_path)
+        xml_file = tmp_path / "session.xml"
+        session.save_xml(xml_file)
 
         # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
+        assert xml_file.is_file()
+        assert ElementTree.parse(xml_file)
 
         # stop current session, clearing data
         session.shutdown()
@@ -153,7 +148,7 @@ class TestXml:
 
         # load saved xml
         session.directory.mkdir()
-        session.open_xml(file_path, start=True)
+        session.open_xml(xml_file, start=True)
 
         # retrieve custom service
         node1_xml = session.get_node(node1.id, CoreNode)
@@ -166,13 +161,13 @@ class TestXml:
         assert file_data == templates[file_name]
 
     def test_xml_mobility(
-        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+        self, session: Session, tmp_path: Path, ip_prefixes: IpPrefixes
     ):
         """
         Test xml client methods for mobility.
 
         :param session: session for test
-        :param tmpdir: tmpdir to create data in
+        :param tmp_path: temp path to create data within
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create wlan
@@ -194,13 +189,12 @@ class TestXml:
         session.instantiate()
 
         # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = Path(xml_file.strpath)
-        session.save_xml(file_path)
+        xml_file = tmp_path / "session.xml"
+        session.save_xml(xml_file)
 
         # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
+        assert xml_file.is_file()
+        assert ElementTree.parse(xml_file)
 
         # stop current session, clearing data
         session.shutdown()
@@ -213,7 +207,7 @@ class TestXml:
 
         # load saved xml
         session.directory.mkdir()
-        session.open_xml(file_path, start=True)
+        session.open_xml(xml_file, start=True)
 
         # retrieve configuration we set originally
         value = str(session.mobility.get_config("test", wlan.id, BasicRangeModel.name))
@@ -224,12 +218,12 @@ class TestXml:
         assert session.get_node(wlan.id, WlanNode)
         assert value == "1"
 
-    def test_network_to_network(self, session: Session, tmpdir: TemporaryFile):
+    def test_network_to_network(self, session: Session, tmp_path: Path):
         """
         Test xml generation when dealing with network to network nodes.
 
         :param session: session for test
-        :param tmpdir: tmpdir to create data in
+        :param tmp_path: temp path to create data within
         """
         # create nodes
         switch1 = session.add_node(SwitchNode)
@@ -242,13 +236,12 @@ class TestXml:
         session.instantiate()
 
         # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = Path(xml_file.strpath)
-        session.save_xml(file_path)
+        xml_file = tmp_path / "session.xml"
+        session.save_xml(xml_file)
 
         # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
+        assert xml_file.is_file()
+        assert ElementTree.parse(xml_file)
 
         # stop current session, clearing data
         session.shutdown()
@@ -261,7 +254,7 @@ class TestXml:
 
         # load saved xml
         session.directory.mkdir()
-        session.open_xml(file_path, start=True)
+        session.open_xml(xml_file, start=True)
 
         # verify nodes have been recreated
         switch1 = session.get_node(switch1.id, SwitchNode)
@@ -271,13 +264,13 @@ class TestXml:
         assert len(session.link_manager.links()) == 1
 
     def test_link_options(
-        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+        self, session: Session, tmp_path: Path, ip_prefixes: IpPrefixes
     ):
         """
         Test xml client methods for a ptp network.
 
         :param session: session for test
-        :param tmpdir: tmpdir to create data in
+        :param tmp_path: temp path to create data within
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
@@ -299,13 +292,12 @@ class TestXml:
         session.instantiate()
 
         # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = Path(xml_file.strpath)
-        session.save_xml(file_path)
+        xml_file = tmp_path / "session.xml"
+        session.save_xml(xml_file)
 
         # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
+        assert xml_file.is_file()
+        assert ElementTree.parse(xml_file)
 
         # stop current session, clearing data
         session.shutdown()
@@ -318,7 +310,7 @@ class TestXml:
 
         # load saved xml
         session.directory.mkdir()
-        session.open_xml(file_path, start=True)
+        session.open_xml(xml_file, start=True)
 
         # verify nodes have been recreated
         assert session.get_node(node1.id, CoreNode)
@@ -334,13 +326,13 @@ class TestXml:
         assert options.buffer == link_options.buffer
 
     def test_link_options_ptp(
-        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+        self, session: Session, tmp_path: Path, ip_prefixes: IpPrefixes
     ):
         """
         Test xml client methods for a ptp network.
 
         :param session: session for test
-        :param tmpdir: tmpdir to create data in
+        :param tmp_path: temp path to create data within
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
@@ -363,13 +355,12 @@ class TestXml:
         session.instantiate()
 
         # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = Path(xml_file.strpath)
-        session.save_xml(file_path)
+        xml_file = tmp_path / "session.xml"
+        session.save_xml(xml_file)
 
         # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
+        assert xml_file.is_file()
+        assert ElementTree.parse(xml_file)
 
         # stop current session, clearing data
         session.shutdown()
@@ -382,7 +373,7 @@ class TestXml:
 
         # load saved xml
         session.directory.mkdir()
-        session.open_xml(file_path, start=True)
+        session.open_xml(xml_file, start=True)
 
         # verify nodes have been recreated
         assert session.get_node(node1.id, CoreNode)

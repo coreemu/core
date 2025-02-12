@@ -4,7 +4,7 @@ PhysicalNode class for including real systems in the emulated network.
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import netaddr
 
@@ -52,7 +52,7 @@ class Rj45Node(CoreNodeBase):
         )
         self.iface.transport_type = TransportType.RAW
         self.old_up: bool = False
-        self.old_addrs: list[tuple[str, Optional[str]]] = []
+        self.old_addrs: list[tuple[str, str | None]] = []
 
     def startup(self) -> None:
         """
@@ -137,7 +137,7 @@ class Rj45Node(CoreNodeBase):
             raise CoreError(f"node({self.name}) interface({iface_id}) does not exist")
         return self.iface
 
-    def get_iface_id(self, iface: CoreInterface) -> Optional[int]:
+    def get_iface_id(self, iface: CoreInterface) -> int | None:
         """
         Retrieve network interface index.
 
@@ -159,7 +159,7 @@ class Rj45Node(CoreNodeBase):
         """
         # TODO: save/restore the PROMISC flag
         self.old_up = False
-        self.old_addrs: list[tuple[str, Optional[str]]] = []
+        self.old_addrs: list[tuple[str, str | None]] = []
         localname = self.iface.localname
         output = self.net_client.address_show(localname)
         for line in output.split("\n"):

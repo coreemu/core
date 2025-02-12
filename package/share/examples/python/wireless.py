@@ -2,16 +2,13 @@
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes
+from core.emulator.data import InterfaceData
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode, Position
 from core.nodes.network import WlanNode
 
 # enable info logging
 logging.basicConfig(level=logging.INFO)
-
-# ip nerator for example
-ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
 
 # create emulator instance for creating sessions and utility methods
 coreemu = CoreEmu()
@@ -35,9 +32,9 @@ position = Position(x=300, y=100)
 n2 = session.add_node(CoreNode, position=position, options=options)
 
 # link nodes to wireless
-iface1 = ip_prefixes.create_iface(n1)
+iface1 = InterfaceData(ip4="10.0.0.1", ip4_mask=32, ip6="2001::1", ip6_mask=128)
 session.add_link(n1.id, wireless.id, iface1)
-iface1 = ip_prefixes.create_iface(n2)
+iface1 = InterfaceData(ip4="10.0.0.2", ip4_mask=32, ip6="2001::2", ip6_mask=128)
 session.add_link(n2.id, wireless.id, iface1)
 
 # start session

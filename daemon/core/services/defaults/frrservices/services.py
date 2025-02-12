@@ -91,7 +91,7 @@ class FRRZebra(CoreService):
     executables: list[str] = ["zebra"]
     startup: list[str] = ["bash frrboot.sh zebra"]
     validate: list[str] = ["pidof zebra"]
-    shutdown: list[str] = ["killall zebra"]
+    shutdown: list[str] = ["pkill -f zebra"]
 
     def data(self) -> dict[str, Any]:
         frr_conf = self.files[0]
@@ -162,7 +162,7 @@ class FRROspfv2(FrrService, CoreService):
     """
 
     name: str = "FRROSPFv2"
-    shutdown: list[str] = ["killall ospfd"]
+    shutdown: list[str] = ["pkill -f ospfd"]
     validate: list[str] = ["pidof ospfd"]
     ipv4_routing: bool = True
 
@@ -214,7 +214,7 @@ class FRROspfv3(FrrService, CoreService):
     """
 
     name: str = "FRROSPFv3"
-    shutdown: list[str] = ["killall ospf6d"]
+    shutdown: list[str] = ["pkill -f ospf6d"]
     validate: list[str] = ["pidof ospf6d"]
     ipv4_routing: bool = True
     ipv6_routing: bool = True
@@ -251,7 +251,7 @@ class FRRBgp(FrrService, CoreService):
     """
 
     name: str = "FRRBGP"
-    shutdown: list[str] = ["killall bgpd"]
+    shutdown: list[str] = ["pkill -f bgpd"]
     validate: list[str] = ["pidof bgpd"]
     custom_needed: bool = True
     ipv4_routing: bool = True
@@ -281,7 +281,7 @@ class FRRRip(FrrService, CoreService):
     """
 
     name: str = "FRRRIP"
-    shutdown: list[str] = ["killall ripd"]
+    shutdown: list[str] = ["pkill -f ripd"]
     validate: list[str] = ["pidof ripd"]
     ipv4_routing: bool = True
 
@@ -306,7 +306,7 @@ class FRRRipng(FrrService, CoreService):
     """
 
     name: str = "FRRRIPNG"
-    shutdown: list[str] = ["killall ripngd"]
+    shutdown: list[str] = ["pkill -f ripngd"]
     validate: list[str] = ["pidof ripngd"]
     ipv6_routing: bool = True
 
@@ -332,7 +332,7 @@ class FRRBabel(FrrService, CoreService):
     """
 
     name: str = "FRRBabel"
-    shutdown: list[str] = ["killall babeld"]
+    shutdown: list[str] = ["pkill -f babeld"]
     validate: list[str] = ["pidof babeld"]
     ipv6_routing: bool = True
 
@@ -372,7 +372,7 @@ class FRRpimd(FrrService, CoreService):
     """
 
     name: str = "FRRpimd"
-    shutdown: list[str] = ["killall pimd"]
+    shutdown: list[str] = ["pkill -f pimd"]
     validate: list[str] = ["pidof pimd"]
     ipv4_routing: bool = True
 

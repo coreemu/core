@@ -2,7 +2,7 @@ import logging
 import sched
 import threading
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lxml import etree
 
@@ -40,7 +40,7 @@ class LossTable:
         self.loss_lookup: dict[int, float] = {}
         for index, value in enumerate(self.sinrs):
             self.loss_lookup[index] = self.losses[value]
-        self.mac_id: Optional[str] = None
+        self.mac_id: str | None = None
 
     def get_loss(self, sinr: float) -> float:
         index = self._get_index(sinr)
@@ -59,7 +59,7 @@ class EmaneLink:
         self.from_nem: int = from_nem
         self.to_nem: int = to_nem
         self.sinr: float = sinr
-        self.last_seen: Optional[float] = None
+        self.last_seen: float | None = None
         self.updated: bool = False
         self.touch()
 
@@ -182,10 +182,10 @@ class EmaneLinkMonitor:
         self.clients: list[EmaneClient] = []
         self.links: dict[tuple[int, int], EmaneLink] = {}
         self.complete_links: set[tuple[int, int]] = set()
-        self.loss_threshold: Optional[int] = None
-        self.link_interval: Optional[int] = None
-        self.link_timeout: Optional[int] = None
-        self.scheduler: Optional[sched.scheduler] = None
+        self.loss_threshold: int | None = None
+        self.link_interval: int | None = None
+        self.link_timeout: int | None = None
+        self.scheduler: sched.scheduler | None = None
         self.running: bool = False
 
     def start(self) -> None:

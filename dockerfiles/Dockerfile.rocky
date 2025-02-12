@@ -1,81 +1,86 @@
 # syntax=docker/dockerfile:1
-FROM rockylinux:8
-ENV LANG en_US.UTF-8
+FROM rockylinux/rockylinux:8.10 AS ospf-rpm
 WORKDIR /opt
-
-# install system dependencies
-RUN yum update -y && \
-    yum install -y \
-    xterm \
-    wget \
-    tcpdump \
-    python39 \
-    python39-tkinter \
-    iproute-tc && \
-    yum autoremove -y && \
-    yum clean all
-
-# install ospf mdr
-RUN yum update -y && \
-    yum install -y \
-    automake \
-    gcc-c++ \
-    libtool \
-    make \
-    pkg-config \
+RUN dnf update -y && \
+    dnf install -y epel-release dnf-plugins-core && \
+    dnf config-manager --set-enabled powertools && \
+    dnf update -y && \
+    dnf install -y \
+    texinfo \
+    rpm-build \
+    texlive-base \
+    texinfo-tex \
+    texi2html \
     readline-devel \
-    git && \
+    libpcap-devel \
+    ImageMagick \
+    git \
+    automake \
+    libtool \
+    pkg-config \
+    gcc-c++ \
+    libcap-devel \
+    make && \
     git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
     cd ospf-mdr && \
     ./bootstrap.sh && \
-    ./configure --disable-doc --enable-user=root --enable-group=root \
-        --with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
-        --localstatedir=/var/run/quagga && \
-    make -j$(nproc) && \
-    make install && \
+    ./configure && \
+    (make -f quagga.rpm.mk build || make -f quagga.rpm.mk build) && \
+    mv .rpmbuild/RPMS/x86_64/quagga-mr-0.99*.rpm /opt/ && \
     cd /opt && \
     rm -rf ospf-mdr && \
-    yum remove -y \
-    automake \
-    gcc-c++ \
-    libtool \
-    make \
-    pkg-config \
-    readline-devel \
-    git && \
-    yum autoremove -y --skip-broken && \
-    yum clean all
+    dnf autoremove -y && \
+    dnf clean all
 
+FROM rockylinux/rockylinux:8.10
+ENV LANG en_US.UTF-8
+WORKDIR /opt
+# install system dependencies
+RUN dnf update -y && \
+    dnf install -y \
+    xterm \
+    wget \
+    tcpdump \
+    python3.12 \
+    python3.12-tkinter \
+    iproute-tc && \
+    dnf autoremove -y && \
+    dnf clean all
+# install core
+ARG CORE_PACKAGE=core_9.2.0_x86_64.rpm
+ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
+RUN dnf update -y && \
+    wget -q ${PACKAGE_URL} && \
+    PYTHON=python3.12 dnf install -y ./${CORE_PACKAGE} && \
+    rm -f ${CORE_PACKAGE} && \
+    dnf autoremove -y && \
+    dnf clean all
+# install ospf mdr
+COPY --from=ospf-rpm /opt/quagga-mr-0.99*.rpm .
+RUN dnf update -y && \
+    dnf install -y \
+    ./quagga-mr-0.99*.rpm && \
+    dnf autoremove -y && \
+    dnf clean all
 # install emane
-ARG EMANE_VERSION=1.5.1
+ARG EMANE_VERSION=1.5.2
 ARG EMANE_RELEASE=emane-${EMANE_VERSION}-release-1
 ARG EMANE_PACKAGE=${EMANE_RELEASE}.el8.x86_64.tar.gz
-RUN yum update -y && \
+RUN dnf update -y && \
     wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE} && \
     tar xf ${EMANE_PACKAGE} && \
     cd ${EMANE_RELEASE}/rpms/el8/x86_64 && \
     rm emane-spectrum-tools-*.rpm emane-model-lte*.rpm && \
     rm *devel*.rpm && \
-    yum install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el8.noarch.rpm && \
+    dnf install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el8.noarch.rpm && \
     cd ../../../.. && \
     rm ${EMANE_PACKAGE} && \
     rm -rf ${EMANE_RELEASE} && \
-    yum autoremove -y && \
-    yum clean all
-
-# install core
-ARG CORE_PACKAGE=core_9.1.0_x86_64.rpm
-ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
-RUN yum update -y && \
-    wget -q ${PACKAGE_URL} && \
-    PYTHON=python3.9 yum install -y ./${CORE_PACKAGE} && \
-    rm -f ${CORE_PACKAGE} && \
-    yum autoremove -y && \
-    yum clean all
-
+    dnf autoremove -y && \
+    dnf clean all
 # install emane python bindings
 ARG VENV_PATH=/opt/core/venv
 COPY --from=emane-python /opt/emane-*.whl .
-RUN ${VENV_PATH}/bin/python -m pip install ./emane-*.whl
-
+RUN ${VENV_PATH}/bin/python -m pip install ./emane-*.whl setuptools
+# set default directory
 WORKDIR /root

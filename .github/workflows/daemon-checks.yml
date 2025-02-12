@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v1
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.9
+          python-version: 3.10.16
       - name: install poetry
         run: |
           python -m pip install --upgrade pip
@@ -22,7 +22,7 @@ jobs:
       - name: isort
         run: |
           cd daemon
-          poetry run isort -c -df
+          poetry run isort -c --df .
       - name: black
         run: |
           cd daemon
@@ -30,7 +30,7 @@ jobs:
       - name: flake8
         run: |
           cd daemon
-          poetry run flake8
+          poetry run flake8 .
       - name: grpc
         run: |
           cd daemon/proto

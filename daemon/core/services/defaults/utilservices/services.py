@@ -85,7 +85,7 @@ class SshService(CoreService):
     files: list[str] = ["startsshd.sh", "/etc/ssh/sshd_config"]
     executables: list[str] = ["sshd"]
     startup: list[str] = ["bash startsshd.sh"]
-    shutdown: list[str] = ["killall sshd"]
+    shutdown: list[str] = ["pkill -f sshd"]
 
     def data(self) -> dict[str, Any]:
         return dict(
@@ -103,7 +103,7 @@ class DhcpService(CoreService):
     executables: list[str] = ["dhcpd"]
     startup: list[str] = ["touch /var/lib/dhcp/dhcpd.leases", "dhcpd"]
     validate: list[str] = ["pidof dhcpd"]
-    shutdown: list[str] = ["killall dhcpd"]
+    shutdown: list[str] = ["pkill -f dhcpd"]
 
     def data(self) -> dict[str, Any]:
         subnets = []
@@ -126,7 +126,7 @@ class DhcpClientService(CoreService):
     executables: list[str] = ["dhclient"]
     startup: list[str] = ["bash startdhcpclient.sh"]
     validate: list[str] = ["pidof dhclient"]
-    shutdown: list[str] = ["killall dhclient"]
+    shutdown: list[str] = ["pkill -f dhclient"]
 
     def data(self) -> dict[str, Any]:
         ifnames = []
@@ -143,7 +143,7 @@ class FtpService(CoreService):
     executables: list[str] = ["vsftpd"]
     startup: list[str] = ["vsftpd ./vsftpd.conf"]
     validate: list[str] = ["pidof vsftpd"]
-    shutdown: list[str] = ["killall vsftpd"]
+    shutdown: list[str] = ["pkill -f vsftpd"]
 
 
 class PcapService(CoreService):

@@ -1,8 +1,6 @@
 import time
 from pathlib import Path
 from queue import Queue
-from tempfile import TemporaryFile
-from typing import Optional
 
 import grpc
 import pytest
@@ -96,9 +94,7 @@ class TestGrpc:
         service_name = DefaultRouteService.name
         file_name = DefaultRouteService.files[0]
         file_data = "hello world"
-        service_data = ServiceData(
-            templates={file_name: file_data},
-        )
+        service_data = ServiceData(templates={file_name: file_data})
         node1.service_configs[service_name] = service_data
 
         # setup session option
@@ -148,9 +144,7 @@ class TestGrpc:
         assert file_data == real_template_data
 
     @pytest.mark.parametrize("session_id", [None, 6013])
-    def test_create_session(
-        self, grpc_server: CoreGrpcServer, session_id: Optional[int]
-    ):
+    def test_create_session(self, grpc_server: CoreGrpcServer, session_id: int | None):
         # given
         client = CoreGrpcClient()
 
@@ -168,7 +162,7 @@ class TestGrpc:
 
     @pytest.mark.parametrize("session_id, expected", [(None, True), (6013, False)])
     def test_delete_session(
-        self, grpc_server: CoreGrpcServer, session_id: Optional[int], expected: bool
+        self, grpc_server: CoreGrpcServer, session_id: int | None, expected: bool
     ):
         # given
         client = CoreGrpcClient()
@@ -361,29 +355,33 @@ class TestGrpc:
         # then
         assert terminal is not None
 
-    def test_save_xml(self, grpc_server: CoreGrpcServer, tmpdir: TemporaryFile):
+    def test_save_xml(self, grpc_server: CoreGrpcServer, tmp_path: Path):
         # given
+        xml_dir = tmp_path / "xml"
+        xml_dir.mkdir()
+        xml_file = xml_dir / "text.xml"
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        tmp = tmpdir.join("text.xml")
 
         # then
         with client.context_connect():
-            client.save_xml(session.id, str(tmp))
+            client.save_xml(session.id, str(xml_file))
 
         # then
-        assert tmp.exists()
+        assert xml_file.exists()
 
-    def test_open_xml_hook(self, grpc_server: CoreGrpcServer, tmpdir: TemporaryFile):
+    def test_open_xml_hook(self, grpc_server: CoreGrpcServer, tmp_path: Path):
         # given
+        xml_dir = tmp_path / "xml"
+        xml_dir.mkdir()
+        xml_file = xml_dir / "text.xml"
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        tmp = Path(tmpdir.join("text.xml"))
-        session.save_xml(tmp)
+        session.save_xml(xml_file)
 
         # then
         with client.context_connect():
-            result, session_id = client.open_xml(tmp)
+            result, session_id = client.open_xml(xml_file)
 
         # then
         assert result is True

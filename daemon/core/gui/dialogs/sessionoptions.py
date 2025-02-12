@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class SessionOptionsDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "Session Options")
-        self.config_frame: Optional[ConfigFrame] = None
+        self.config_frame: ConfigFrame | None = None
         self.has_error: bool = False
         self.enabled: bool = not self.app.core.is_runtime()
         if not self.has_error:

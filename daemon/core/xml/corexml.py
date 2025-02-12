@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from lxml import etree
 
@@ -48,18 +48,18 @@ def write_xml_file(
         f.write(xml_data)
 
 
-def get_type(element: etree.Element, name: str, _type: Generic[T]) -> Optional[T]:
+def get_type(element: etree.Element, name: str, _type: Generic[T]) -> T | None:
     value = element.get(name)
     if value is not None:
         value = _type(value)
     return value
 
 
-def get_float(element: etree.Element, name: str) -> Optional[float]:
+def get_float(element: etree.Element, name: str) -> float | None:
     return get_type(element, name, float)
 
 
-def get_int(element: etree.Element, name: str) -> Optional[int]:
+def get_int(element: etree.Element, name: str) -> int | None:
     return get_type(element, name, int)
 
 
@@ -91,7 +91,7 @@ def create_emane_model_config(
     node_id: int,
     model: "EmaneModelType",
     config: dict[str, str],
-    iface_id: Optional[int],
+    iface_id: int | None,
 ) -> etree.Element:
     emane_element = etree.Element("emane_configuration")
     add_attribute(emane_element, "node", node_id)
@@ -446,9 +446,9 @@ class CoreXmlWriter:
     def create_link_element(
         self,
         node1: NodeBase,
-        iface1: Optional[CoreInterface],
+        iface1: CoreInterface | None,
         node2: NodeBase,
-        iface2: Optional[CoreInterface],
+        iface2: CoreInterface | None,
         options: LinkOptions,
         unidirectional: bool,
     ) -> etree.Element:
@@ -488,7 +488,7 @@ class CoreXmlWriter:
 class CoreXmlReader:
     def __init__(self, session: "Session") -> None:
         self.session: "Session" = session
-        self.scenario: Optional[etree.ElementTree] = None
+        self.scenario: etree.ElementTree | None = None
 
     def read(self, file_path: Path) -> None:
         xml_tree = etree.parse(str(file_path))
@@ -540,6 +540,7 @@ class CoreXmlReader:
             xml_config[name] = value
         logger.info("reading session options: %s", xml_config)
         self.session.options.update(xml_config)
+        self.session.parse_options()
 
     def read_session_hooks(self) -> None:
         session_hooks = self.scenario.find("session_hooks")

@@ -3,21 +3,21 @@ repos:
   hooks:
   - id: isort
     name: isort
-    stages: [commit]
+    stages: [pre-commit]
     language: system
-    entry: bash -c 'cd daemon && poetry run isort --atomic -y'
+    entry: bash -c 'cd daemon && poetry run isort --atomic .'
     types: [python]
 
   - id: black
     name: black
-    stages: [commit]
+    stages: [pre-commit]
     language: system
     entry: bash -c 'cd daemon && poetry run black .'
     types: [python]
 
   - id: flake8
     name: flake8
-    stages: [commit]
+    stages: [pre-commit]
     language: system
-    entry: bash -c 'cd daemon && poetry run flake8'
+    entry: bash -c 'cd daemon && poetry run flake8 .'
     types: [python]

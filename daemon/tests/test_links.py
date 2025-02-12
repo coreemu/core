@@ -416,3 +416,23 @@ class TestLinks:
         # when
         with pytest.raises(CoreError):
             session.delete_link(node1.id, node3.id, iface1.id, iface2.id)
+
+    def test_delete_link_ptp(self, session: Session, ip_prefixes: IpPrefixes):
+        # given
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
+        node3 = session.add_node(CoreNode)
+        n2_iface1, n3_iface1 = session.add_link(node2.id, node3.id)
+        n1_iface1, n2_iface2 = session.add_link(node1.id, node2.id)
+        assert len(session.link_manager.links()) == 2
+        assert node1.get_iface(n1_iface1.id)
+        assert node2.get_iface(n2_iface1.id)
+        assert node2.get_iface(n2_iface2.id)
+        assert node2.get_iface(n3_iface1.id)
+
+        # when
+        session.delete_link(node2.id, node3.id, n2_iface1.id, n3_iface1.id)
+
+        # then
+        assert len(session.link_manager.links()) == 1
+        assert session.get_node(node1.id, CoreNode)

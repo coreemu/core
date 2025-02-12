@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -11,8 +11,8 @@ from core.gui.widgets import ConfigFrame
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.node import CanvasNode
     from core.gui.graph.graph import CanvasGraph
+    from core.gui.graph.node import CanvasNode
 
 RANGE_COLOR: str = "#009933"
 RANGE_WIDTH: int = 3
@@ -24,8 +24,8 @@ class WlanConfigDialog(Dialog):
         self.canvas: "CanvasGraph" = app.manager.current()
         self.canvas_node: "CanvasNode" = canvas_node
         self.node: Node = canvas_node.core_node
-        self.config_frame: Optional[ConfigFrame] = None
-        self.range_entry: Optional[ttk.Entry] = None
+        self.config_frame: ConfigFrame | None = None
+        self.range_entry: ttk.Entry | None = None
         self.has_error: bool = False
         self.ranges: dict[int, int] = {}
         self.positive_int: int = self.app.master.register(self.validate_and_update)

@@ -3,7 +3,7 @@ import tkinter as tk
 from enum import Enum
 from functools import partial
 from tkinter import ttk
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable
 
 from PIL.ImageTk import PhotoImage
 
@@ -118,7 +118,7 @@ class MarkerFrame(ttk.Frame):
         self.app: "Application" = app
         self.color: str = "#000000"
         self.size: tk.DoubleVar = tk.DoubleVar()
-        self.color_frame: Optional[tk.Frame] = None
+        self.color_frame: tk.Frame | None = None
         self.draw()
 
     def draw(self) -> None:
@@ -169,27 +169,27 @@ class Toolbar(ttk.Frame):
         self.app: "Application" = app
 
         # design buttons
-        self.play_button: Optional[ttk.Button] = None
-        self.select_button: Optional[ttk.Button] = None
-        self.link_button: Optional[ttk.Button] = None
-        self.node_button: Optional[ttk.Button] = None
-        self.network_button: Optional[ttk.Button] = None
-        self.annotation_button: Optional[ttk.Button] = None
+        self.play_button: ttk.Button | None = None
+        self.select_button: ttk.Button | None = None
+        self.link_button: ttk.Button | None = None
+        self.node_button: ttk.Button | None = None
+        self.network_button: ttk.Button | None = None
+        self.annotation_button: ttk.Button | None = None
 
         # runtime buttons
-        self.runtime_select_button: Optional[ttk.Button] = None
-        self.stop_button: Optional[ttk.Button] = None
-        self.runtime_marker_button: Optional[ttk.Button] = None
-        self.run_command_button: Optional[ttk.Button] = None
+        self.runtime_select_button: ttk.Button | None = None
+        self.stop_button: ttk.Button | None = None
+        self.runtime_marker_button: ttk.Button | None = None
+        self.run_command_button: ttk.Button | None = None
 
         # frames
-        self.design_frame: Optional[ButtonBar] = None
-        self.runtime_frame: Optional[ButtonBar] = None
-        self.marker_frame: Optional[MarkerFrame] = None
-        self.picker: Optional[PickerFrame] = None
+        self.design_frame: ButtonBar | None = None
+        self.runtime_frame: ButtonBar | None = None
+        self.marker_frame: MarkerFrame | None = None
+        self.picker: PickerFrame | None = None
 
         # observers
-        self.observers_menu: Optional[ObserversMenu] = None
+        self.observers_menu: ObserversMenu | None = None
 
         # these variables help keep track of what images being drawn so that scaling
         # is possible since PhotoImage does not have resize method

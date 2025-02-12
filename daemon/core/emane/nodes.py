@@ -6,7 +6,7 @@ share the same MAC+PHY model.
 import logging
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -164,7 +164,7 @@ class EmaneNet(CoreNetworkBase):
         options = options or EmaneOptions()
         super().__init__(session, _id, name, server, options)
         self.conf: str = ""
-        self.mobility: Optional[WayPointMobility] = None
+        self.mobility: WayPointMobility | None = None
         model_class = self.session.emane.get_model(options.emane_model)
         self.wireless_model: Optional["EmaneModel"] = model_class(self.session, self.id)
         if self.session.is_running():
@@ -212,7 +212,7 @@ class EmaneNet(CoreNetworkBase):
 
     def setmodel(
         self,
-        model: Union[type["EmaneModel"], type["WayPointMobility"]],
+        model: type["EmaneModel"] | type["WayPointMobility"],
         config: dict[str, str],
     ) -> None:
         """

@@ -1,7 +1,6 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -198,7 +197,7 @@ def copy_files(current_path: Path, new_path: Path) -> None:
             shutil.copy(current_file, new_file)
 
 
-def find_terminal() -> Optional[str]:
+def find_terminal() -> str | None:
     for term in sorted(TERMINALS):
         cmd = TERMINALS[term]
         if shutil.which(term):

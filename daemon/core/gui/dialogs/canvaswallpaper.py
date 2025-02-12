@@ -4,7 +4,7 @@ set wallpaper
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui import images
 from core.gui.appconfig import BACKGROUNDS_PATH
@@ -31,7 +31,7 @@ class CanvasWallpaperDialog(Dialog):
             value=self.canvas.adjust_to_dim.get()
         )
         self.filename: tk.StringVar = tk.StringVar(value=self.canvas.wallpaper_file)
-        self.image_label: Optional[ttk.Label] = None
+        self.image_label: ttk.Label | None = None
         self.options: list[ttk.Radiobutton] = []
         self.draw()
 

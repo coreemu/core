@@ -9,10 +9,14 @@ Mobility can be provided from a NS2 file or by including mobility commands in a 
 
 Below is the list of files used for this tutorial.
 
-* movements1.txt - a NS2 mobility input file
-* scenario.xml - 3 node CORE xml scenario file  (wireless)
-* scenario.py - 3 node CORE gRPC python script (wireless)
-* printout.py - event listener
+* NS2 mobility input file
+    * /opt/core/share/tutorials/tutorial3/movements1.txt
+* 3 node CORE xml scenario file  (wireless)
+    * /opt/core/share/tutorials/tutorial3/scenario.xml
+* 3 node CORE gRPC python script (wireless)
+    * /opt/core/share/tutorials/tutorial3/scenario.py
+* event listener
+    * /opt/core/share/tutorials/tutorial3/printout.py
 
 ## Running with XML file using NS2 Movement
 
@@ -84,7 +88,7 @@ This section covers using a gRPC script to create and provide scenario movement.
    ```
 * From another terminal run the **scenario.py** script
    ```shell
-   /opt/core/venv/bin/python scenario.py
+   /opt/core/venv/bin/python /opt/core/share/tutorials/tutorial3/scenario.py
    ```
 * In another terminal run the GUI
     ```shell
@@ -146,7 +150,7 @@ API.
 * Double click on **n2** to get a terminal window
 * From the terminal window for **n2**, run the script
    ```shell
-   /opt/core/venv/bin/python move-node2.py
+   /opt/core/venv/bin/python /opt/core/share/tutorials/tutorial3/move-node2.py
    ```
 * Observe that node 2 moves and continues to move
 

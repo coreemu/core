@@ -50,7 +50,6 @@ def patcher(request):
     patch_manager = PatchManager()
     patch_manager.patch_obj(DistributedServer, "remote_cmd", return_value="1")
     if request.config.getoption("mock"):
-        patch_manager.patch("os.mkdir")
         patch_manager.patch("core.utils.cmd")
         patch_manager.patch("core.utils.which")
         patch_manager.patch("core.emulator.hooks._run_callback")

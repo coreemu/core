@@ -4,7 +4,7 @@ Service configuration dialog
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -46,26 +46,26 @@ class ServiceConfigDialog(Dialog):
         self.default_startup: list[str] = []
         self.default_validate: list[str] = []
         self.default_shutdown: list[str] = []
-        self.validation_mode: Optional[ServiceValidationMode] = None
-        self.validation_time: Optional[int] = None
+        self.validation_mode: ServiceValidationMode | None = None
+        self.validation_time: int | None = None
         self.validation_period: tk.DoubleVar = tk.DoubleVar()
         self.modes: list[str] = []
         self.mode_configs: dict[str, dict[str, str]] = {}
-        self.notebook: Optional[ttk.Notebook] = None
-        self.templates_combobox: Optional[ttk.Combobox] = None
-        self.modes_combobox: Optional[ttk.Combobox] = None
-        self.startup_commands_listbox: Optional[tk.Listbox] = None
-        self.shutdown_commands_listbox: Optional[tk.Listbox] = None
-        self.validate_commands_listbox: Optional[tk.Listbox] = None
-        self.validation_time_entry: Optional[ttk.Entry] = None
-        self.validation_mode_entry: Optional[ttk.Entry] = None
-        self.template_text: Optional[CodeText] = None
-        self.rendered_text: Optional[CodeText] = None
-        self.validation_period_entry: Optional[ttk.Entry] = None
+        self.notebook: ttk.Notebook | None = None
+        self.templates_combobox: ttk.Combobox | None = None
+        self.modes_combobox: ttk.Combobox | None = None
+        self.startup_commands_listbox: tk.Listbox | None = None
+        self.shutdown_commands_listbox: tk.Listbox | None = None
+        self.validate_commands_listbox: tk.Listbox | None = None
+        self.validation_time_entry: ttk.Entry | None = None
+        self.validation_mode_entry: ttk.Entry | None = None
+        self.template_text: CodeText | None = None
+        self.rendered_text: CodeText | None = None
+        self.validation_period_entry: ttk.Entry | None = None
         self.original_service_files: dict[str, str] = {}
         self.temp_service_files: dict[str, str] = {}
         self.modified_files: set[str] = set()
-        self.config_frame: Optional[ConfigFrame] = None
+        self.config_frame: ConfigFrame | None = None
         self.default_config: dict[str, str] = {}
         self.config: dict[str, ConfigOption] = {}
         self.has_error: bool = False

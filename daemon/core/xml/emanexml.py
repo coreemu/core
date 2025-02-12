@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lxml import etree
 
@@ -30,7 +30,7 @@ def is_external(config: dict[str, str]) -> bool:
     return config.get("external") == "1"
 
 
-def _value_to_params(value: str) -> Optional[tuple[str]]:
+def _value_to_params(value: str) -> tuple[str] | None:
     """
     Helper to convert a parameter to a parameter tuple.
 
@@ -65,10 +65,7 @@ def create_node_file(
         f'<!DOCTYPE {doc_name} SYSTEM "file:///usr/share/emane/dtd/{doc_name}.dtd">'
     )
     xml_data = etree.tostring(
-        xml_element,
-        pretty_print=True,
-        encoding="unicode",
-        doctype=doctype,
+        xml_element, pretty_print=True, encoding="unicode", doctype=doctype
     )
     if isinstance(node, CoreNode):
         file_path = Path(file_name)

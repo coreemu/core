@@ -100,7 +100,6 @@ fpm -s dir -t rpm -n core \
 	-d "tk" \
 	-d "procps-ng" \
 	-d "bash >= 3.0" \
-	-d "ebtables" \
 	-d "iproute" \
 	-d "libev" \
 	-d "net-tools" \
@@ -133,7 +132,6 @@ fpm -s dir -t deb -n core \
 	-d "procps" \
 	-d "libc6 >= 2.14" \
 	-d "bash >= 3.0" \
-	-d "ebtables" \
 	-d "iproute2" \
 	-d "libev4" \
 	-d "nftables" \

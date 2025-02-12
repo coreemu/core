@@ -11,10 +11,10 @@ class VpnClient(CoreService):
     name: str = "VPNClient"
     group: str = GROUP_NAME
     files: list[str] = ["vpnclient.sh"]
-    executables: list[str] = ["openvpn", "ip", "killall"]
+    executables: list[str] = ["openvpn", "ip"]
     startup: list[str] = ["bash vpnclient.sh"]
     validate: list[str] = ["pidof openvpn"]
-    shutdown: list[str] = ["killall openvpn"]
+    shutdown: list[str] = ["pkill -f openvpn"]
     default_configs: list[Configuration] = [
         ConfigString(
             id="keydir", label="Key Dir", default=f"{constants.CORE_CONF_DIR}/keys"
@@ -28,10 +28,10 @@ class VpnServer(CoreService):
     name: str = "VPNServer"
     group: str = GROUP_NAME
     files: list[str] = ["vpnserver.sh"]
-    executables: list[str] = ["openvpn", "ip", "killall"]
+    executables: list[str] = ["openvpn", "ip"]
     startup: list[str] = ["bash vpnserver.sh"]
     validate: list[str] = ["pidof openvpn"]
-    shutdown: list[str] = ["killall openvpn"]
+    shutdown: list[str] = ["pkill -f openvpn"]
     default_configs: list[Configuration] = [
         ConfigString(
             id="keydir", label="Key Dir", default=f"{constants.CORE_CONF_DIR}/keys"
@@ -54,10 +54,10 @@ class IPsec(CoreService):
     name: str = "IPsec"
     group: str = GROUP_NAME
     files: list[str] = ["ipsec.sh"]
-    executables: list[str] = ["racoon", "ip", "setkey", "killall"]
+    executables: list[str] = ["racoon", "ip", "setkey"]
     startup: list[str] = ["bash ipsec.sh"]
     validate: list[str] = ["pidof racoon"]
-    shutdown: list[str] = ["killall racoon"]
+    shutdown: list[str] = ["pkill -f racoon"]
 
 
 class Firewall(CoreService):

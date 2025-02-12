@@ -24,10 +24,7 @@ git clone https://github.com/coreemu/core.git
 cd core
 # first you must build EMANE python bindings
 sudo docker build -t emane-python -f dockerfiles/Dockerfile.emane-python .
-# build ospf packages
-sudo docker build -t ospf-rpm -f dockerfiles/Dockerfile.ospf-mdr-rpm .
-sudo docker build -t ospf-deb -f dockerfiles/Dockerfile.ospf-mdr-deb .
-# build desired CORE image
+# build desired CORE image, OSPF is a build stage dependency within the file
 sudo docker build -t core -f dockerfiles/<Dockerfile> .
 ```
 
@@ -38,7 +35,8 @@ are shown below in the run command.
 
 ```shell
 # start container into the background and run the core-daemon by default
-sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged --entrypoint core-daemon core
+sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    --privileged --init --entrypoint /opt/core/venv/bin/core-daemon core
 # enable xhost access to the root user, this will allow you to run the core-gui from the container
 xhost +local:root
 # launch core-gui from the running container launched previously

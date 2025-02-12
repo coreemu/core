@@ -2,7 +2,7 @@ import functools
 import logging
 import tkinter as tk
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc
 from PIL.ImageTk import PhotoImage
@@ -511,8 +511,8 @@ class ShadowNode:
         self.app: "Application" = app
         self.canvas: "CanvasGraph" = canvas
         self.node: "CanvasNode" = node
-        self.id: Optional[int] = None
-        self.text_id: Optional[int] = None
+        self.id: int | None = None
+        self.text_id: int | None = None
         self.image: PhotoImage = self.app.get_enum_icon(
             ImageEnum.SHADOW, width=images.NODE_SIZE
         )

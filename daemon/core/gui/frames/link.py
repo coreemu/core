@@ -1,5 +1,5 @@
 import tkinter as tk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.api.grpc.wrappers import Interface
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
@@ -7,12 +7,11 @@ from core.gui.utils import bandwidth_text
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.edges import CanvasEdge
+    from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
     from core.gui.graph.node import CanvasNode
-    from core.gui.graph.edges import CanvasWirelessEdge
 
 
-def get_iface(canvas_node: "CanvasNode", net_id: int) -> Optional[Interface]:
+def get_iface(canvas_node: "CanvasNode", net_id: int) -> Interface | None:
     iface = None
     for edge in canvas_node.edges:
         link = edge.link

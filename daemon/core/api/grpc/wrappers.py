@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from google.protobuf.internal.containers import MessageMap
 
@@ -615,9 +614,9 @@ class Node:
     canvas: int = None
 
     # configurations
-    emane_model_configs: dict[
-        tuple[str, Optional[int]], dict[str, ConfigOption]
-    ] = field(default_factory=dict, repr=False)
+    emane_model_configs: dict[tuple[str, int | None], dict[str, ConfigOption]] = field(
+        default_factory=dict, repr=False
+    )
     wlan_config: dict[str, ConfigOption] = field(default_factory=dict, repr=False)
     wireless_config: dict[str, ConfigOption] = field(default_factory=dict, repr=False)
     mobility_config: dict[str, ConfigOption] = field(default_factory=dict, repr=False)
@@ -854,10 +853,7 @@ class CoreConfig:
     @classmethod
     def from_proto(cls, proto: core_pb2.GetConfigResponse) -> "CoreConfig":
         services = [Service.from_proto(x) for x in proto.services]
-        return CoreConfig(
-            services=services,
-            emane_models=list(proto.emane_models),
-        )
+        return CoreConfig(services=services, emane_models=list(proto.emane_models))
 
 
 @dataclass

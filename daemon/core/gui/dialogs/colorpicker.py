@@ -3,7 +3,7 @@ custom color picker
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
@@ -48,14 +48,14 @@ class ColorPickerDialog(Dialog):
         self, master: tk.BaseWidget, app: "Application", initcolor: str = "#000000"
     ):
         super().__init__(app, "Color Picker", master=master)
-        self.red_entry: Optional[validation.RgbEntry] = None
-        self.blue_entry: Optional[validation.RgbEntry] = None
-        self.green_entry: Optional[validation.RgbEntry] = None
-        self.hex_entry: Optional[validation.HexEntry] = None
-        self.red_label: Optional[ttk.Label] = None
-        self.green_label: Optional[ttk.Label] = None
-        self.blue_label: Optional[ttk.Label] = None
-        self.display: Optional[tk.Frame] = None
+        self.red_entry: validation.RgbEntry | None = None
+        self.blue_entry: validation.RgbEntry | None = None
+        self.green_entry: validation.RgbEntry | None = None
+        self.hex_entry: validation.HexEntry | None = None
+        self.red_label: ttk.Label | None = None
+        self.green_label: ttk.Label | None = None
+        self.blue_label: ttk.Label | None = None
+        self.display: tk.Frame | None = None
         self.color: str = initcolor
         red, green, blue = get_rgb_values(initcolor)
         self.red: tk.IntVar = tk.IntVar(value=red)

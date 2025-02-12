@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
@@ -16,7 +16,7 @@ class FindDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "Find", modal=False)
         self.find_text: tk.StringVar = tk.StringVar(value="")
-        self.tree: Optional[ttk.Treeview] = None
+        self.tree: ttk.Treeview | None = None
         self.draw()
         self.protocol("WM_DELETE_WINDOW", self.close_dialog)
         self.bind("<Return>", self.find_node)

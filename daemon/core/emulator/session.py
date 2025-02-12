@@ -13,7 +13,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Optional, TypeVar, Union
+from typing import Callable, TypeVar
 
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager, EmaneState
@@ -107,10 +107,10 @@ class Session:
         if mkdir:
             self.directory.mkdir()
 
-        self.name: Optional[str] = None
-        self.file_path: Optional[Path] = None
-        self.thumbnail: Optional[Path] = None
-        self.user: Optional[str] = None
+        self.name: str | None = None
+        self.file_path: Path | None = None
+        self.thumbnail: Path | None = None
+        self.user: str | None = None
         self.event_loop: EventLoop = EventLoop()
         self.link_colors: dict[int, str] = {}
 
@@ -142,7 +142,7 @@ class Session:
         self.location: GeoLocation = GeoLocation()
         self.mobility: MobilityManager = MobilityManager(self)
         self.emane: EmaneManager = EmaneManager(self)
-        self.service_manager: Optional[ServiceManager] = None
+        self.service_manager: ServiceManager | None = None
         self.sdt: Sdt = Sdt(self)
 
     @classmethod
@@ -221,7 +221,7 @@ class Session:
         iface1_data: InterfaceData = None,
         iface2_data: InterfaceData = None,
         options: LinkOptions = None,
-    ) -> tuple[Optional[CoreInterface], Optional[CoreInterface]]:
+    ) -> tuple[CoreInterface | None, CoreInterface | None]:
         """
         Add a link between nodes.
 
@@ -284,7 +284,7 @@ class Session:
         self,
         node: NodeBase,
         iface_data: InterfaceData,
-        net: Union[WlanNode, WirelessNode],
+        net: WlanNode | WirelessNode,
     ) -> CoreInterface:
         """
         Create a wlan link.
@@ -395,7 +395,7 @@ class Session:
             iface2 = node2.delete_iface(iface2_id)
         core_link = self.link_manager.delete(node1, iface1, node2, iface2)
         if core_link.ptp:
-            self.delete_node(core_link.ptp.id)
+            self.delete_ptp(core_link.ptp.id)
         self.sdt.delete_link(node1_id, node2_id)
 
     def update_link(
@@ -528,7 +528,7 @@ class Session:
         Import a session from the EmulationScript XML format.
 
         :param file_path: xml file to load session from
-        :param start: instantiate session if true, false otherwise
+        :param start: instantiate session if true, false for a definition state
         :return: nothing
         """
         logger.info("opening xml: %s", file_path)
@@ -826,12 +826,25 @@ class Session:
             node.startup()
         return node
 
+    def delete_ptp(self, _id: int) -> None:
+        """
+        Deletes node used to link wired nodes together.
+
+        :param _id: id of ptp node to delete
+        :return: nothing
+        """
+        with self.nodes_lock:
+            try:
+                self.ptp_nodes.pop(_id)
+            except KeyError:
+                raise CoreError(f"failure deleting expected ptp node({_id})")
+
     def create_control_net(
         self,
         _id: int,
         prefix: str,
-        updown_script: Optional[str],
-        server_iface: Optional[str],
+        updown_script: str | None,
+        server_iface: str | None,
     ) -> CtrlNet:
         """
         Create a control net node, used to provide a common network between
@@ -891,13 +904,23 @@ class Session:
                 node.shutdown()
                 raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
-        logger.info(
-            "created node(%s) id(%s) name(%s) start(%s)",
-            _class.__name__,
-            node.id,
-            node.name,
-            start,
-        )
+        if isinstance(node, CoreNode):
+            logger.info(
+                "created node(%s) id(%s) name(%s) start(%s) services(%s)",
+                _class.__name__,
+                node.id,
+                node.name,
+                start,
+                ",".join(sorted(node.services)),
+            )
+        else:
+            logger.info(
+                "created node(%s) id(%s) name(%s) start(%s)",
+                _class.__name__,
+                node.id,
+                node.name,
+                start,
+            )
         if start:
             node.startup()
         return node
@@ -1057,9 +1080,7 @@ class Session:
         :return: nothing
         """
         logger.info(
-            "booting node(%s): services(%s)",
-            node.name,
-            ", ".join(node.services.keys()),
+            "booting node(%s): services(%s)", node.name, ", ".join(node.services.keys())
         )
         self.control_net_manager.setup_ifaces(node)
         with self.nodes_lock:

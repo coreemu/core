@@ -9,7 +9,7 @@ import threading
 import time
 from functools import total_ordering
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable
 
 from core import utils
 from core.config import (
@@ -40,14 +40,14 @@ LEARNING_DISABLED: int = 0
 LEARNING_ENABLED: int = 30000
 
 
-def get_mobility_node(session: "Session", node_id: int) -> Union[WlanNode, EmaneNet]:
+def get_mobility_node(session: "Session", node_id: int) -> WlanNode | EmaneNet:
     try:
         return session.get_node(node_id, WlanNode)
     except CoreError:
         return session.get_node(node_id, EmaneNet)
 
 
-def get_config_int(current: int, config: dict[str, str], name: str) -> Optional[int]:
+def get_config_int(current: int, config: dict[str, str], name: str) -> int | None:
     """
     Convenience function to get config values as int.
 
@@ -63,8 +63,8 @@ def get_config_int(current: int, config: dict[str, str], name: str) -> Optional[
 
 
 def get_config_float(
-    current: Union[int, float], config: dict[str, str], name: str
-) -> Optional[float]:
+    current: int | float, config: dict[str, str], name: str
+) -> float | None:
     """
     Convenience function to get config values as float.
 
@@ -160,10 +160,7 @@ class MobilityManager(ModelManager):
         end_time = int(model.endtime)
         data = f"start={start_time} end={end_time}"
         self.session.broadcast_event(
-            event_type,
-            node_id=model.id,
-            name=f"mobility:{model.name}",
-            data=data,
+            event_type, node_id=model.id, name=f"mobility:{model.name}", data=data
         )
 
 
@@ -250,10 +247,10 @@ class BasicRangeModel(WirelessModel):
         self.iface_to_pos: dict[CoreInterface, tuple[float, float, float]] = {}
         self.iface_lock: threading.Lock = threading.Lock()
         self.range: int = 0
-        self.bw: Optional[int] = None
-        self.delay: Optional[int] = None
-        self.loss: Optional[float] = None
-        self.jitter: Optional[int] = None
+        self.bw: int | None = None
+        self.delay: int | None = None
+        self.loss: float | None = None
+        self.jitter: int | None = None
         self.promiscuous: bool = False
 
     def setlinkparams(self) -> None:
@@ -420,10 +417,7 @@ class BasicRangeModel(WirelessModel):
             iface2=iface2.get_data(),
             network_id=self.wlan.id,
             options=LinkOptions(
-                bandwidth=self.bw,
-                delay=self.delay,
-                loss=self.loss,
-                jitter=self.jitter,
+                bandwidth=self.bw, delay=self.delay, loss=self.loss, jitter=self.jitter
             ),
             color=color,
         )
@@ -469,7 +463,7 @@ class WayPoint:
         self,
         _time: float,
         node_id: int,
-        coords: tuple[float, float, Optional[float]],
+        coords: tuple[float, float, float | None],
         speed: float,
     ) -> None:
         """
@@ -482,7 +476,7 @@ class WayPoint:
         """
         self.time: float = _time
         self.node_id: int = node_id
-        self.coords: tuple[float, float, Optional[float]] = coords
+        self.coords: tuple[float, float, float | None] = coords
         self.speed: float = speed
 
     def __eq__(self, other: "WayPoint") -> bool:
@@ -523,10 +517,10 @@ class WayPointMobility(WirelessModel):
         self.queue_copy: list[WayPoint] = []
         self.points: dict[int, WayPoint] = {}
         self.initial: dict[int, WayPoint] = {}
-        self.lasttime: Optional[float] = None
-        self.endtime: Optional[int] = None
+        self.lasttime: float | None = None
+        self.endtime: int | None = None
         self.timezero: float = 0.0
-        self.net: Union[WlanNode, EmaneNet] = get_mobility_node(self.session, self.id)
+        self.net: WlanNode | EmaneNet = get_mobility_node(self.session, self.id)
         # these are really set in child class via confmatrix
         self.loop: bool = False
         self.refresh_ms: int = 50
@@ -669,7 +663,7 @@ class WayPointMobility(WirelessModel):
         nodenum: int,
         x: float,
         y: float,
-        z: Optional[float],
+        z: float | None,
         speed: float,
     ) -> None:
         """
@@ -836,12 +830,12 @@ class Ns2ScriptedMobility(WayPointMobility):
         :param _id: object id
         """
         super().__init__(session, _id)
-        self.file: Optional[Path] = None
-        self.autostart: Optional[str] = None
+        self.file: Path | None = None
+        self.autostart: str | None = None
         self.nodemap: dict[int, int] = {}
-        self.script_start: Optional[str] = None
-        self.script_pause: Optional[str] = None
-        self.script_stop: Optional[str] = None
+        self.script_start: str | None = None
+        self.script_pause: str | None = None
+        self.script_stop: str | None = None
 
     def update_config(self, config: dict[str, str]) -> None:
         self.file = Path(config["file"])

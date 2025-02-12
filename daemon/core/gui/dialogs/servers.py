@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.appconfig import CoreServer
 from core.gui.dialogs.dialog import Dialog
@@ -20,11 +20,11 @@ class ServersDialog(Dialog):
         super().__init__(app, "CORE Servers")
         self.name: tk.StringVar = tk.StringVar(value=DEFAULT_NAME)
         self.address: tk.StringVar = tk.StringVar(value=DEFAULT_ADDRESS)
-        self.servers: Optional[tk.Listbox] = None
-        self.selected_index: Optional[int] = None
-        self.selected: Optional[str] = None
-        self.save_button: Optional[ttk.Button] = None
-        self.delete_button: Optional[ttk.Button] = None
+        self.servers: tk.Listbox | None = None
+        self.selected_index: int | None = None
+        self.selected: str | None = None
+        self.save_button: ttk.Button | None = None
+        self.delete_button: ttk.Button | None = None
         self.draw()
 
     def draw(self) -> None:

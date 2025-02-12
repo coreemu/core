@@ -6,7 +6,6 @@ for a session.
 import logging
 from collections.abc import ValuesView
 from dataclasses import dataclass
-from typing import Optional
 
 from core.emulator.data import LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags
@@ -16,14 +15,14 @@ from core.nodes.interface import CoreInterface
 from core.nodes.network import PtpNet
 
 logger = logging.getLogger(__name__)
-LinkKeyType = tuple[int, Optional[int], int, Optional[int]]
+LinkKeyType = tuple[int, int | None, int, int | None]
 
 
 def create_key(
     node1: NodeBase,
-    iface1: Optional[CoreInterface],
+    iface1: CoreInterface | None,
     node2: NodeBase,
-    iface2: Optional[CoreInterface],
+    iface2: CoreInterface | None,
 ) -> LinkKeyType:
     """
     Creates a unique key for tracking links.
@@ -49,9 +48,9 @@ class CoreLink:
     """
 
     node1: NodeBase
-    iface1: Optional[CoreInterface]
+    iface1: CoreInterface | None
     node2: NodeBase
-    iface2: Optional[CoreInterface]
+    iface2: CoreInterface | None
     ptp: PtpNet = None
     label: str = None
     color: str = None
@@ -179,9 +178,9 @@ class LinkManager:
     def delete(
         self,
         node1: NodeBase,
-        iface1: Optional[CoreInterface],
+        iface1: CoreInterface | None,
         node2: NodeBase,
-        iface2: Optional[CoreInterface],
+        iface2: CoreInterface | None,
     ) -> CoreLink:
         """
         Remove a link from being tracked.
@@ -223,10 +222,10 @@ class LinkManager:
     def get_link(
         self,
         node1: NodeBase,
-        iface1: Optional[CoreInterface],
+        iface1: CoreInterface | None,
         node2: NodeBase,
-        iface2: Optional[CoreInterface],
-    ) -> Optional[CoreLink]:
+        iface2: CoreInterface | None,
+    ) -> CoreLink | None:
         """
         Retrieve a link for provided values.
 
