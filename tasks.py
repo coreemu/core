@@ -303,7 +303,7 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         core_scripts = CORE_VENV_PATH / "bin/core-*"
         c.run(f"sudo ln -s {core_scripts} {bin_dir}")
     # install core configuration file
-    c.run(f"sudo cp -r --update=none package/etc {CORE_PATH}", hide=hide)
+    c.run(f"sudo cp -r --update package/etc {CORE_PATH}", hide=hide)
     # install examples
     c.run(f"sudo cp -r package/share {CORE_PATH}", hide=hide)
 
