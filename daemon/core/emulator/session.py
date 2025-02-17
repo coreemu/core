@@ -501,10 +501,9 @@ class Session:
             self.mobility.set_model_config(node.id, BasicRangeModel.name)
             if self.is_running():
                 self.mobility.startup([node.id])
-        # boot core nodes after runtime      
+        # boot core nodes after runtime
         if self.is_running() and isinstance(node, CoreNode):
-            with self.nodes_lock:
-                self.boot_node(node)
+            self.boot_node(node)
         self.sdt.add_node(node)
         return node
 
@@ -1093,15 +1092,14 @@ class Session:
         request flag.
 
         :return: service boot exceptions
-        """  
+        """
         funcs = []
         start = time.monotonic()
         self.control_net_manager.setup_nets()
         for node in self.nodes.values():
             if isinstance(node, CoreNode):
                 funcs.append((self.boot_node, (node,), {}))
-        with self.nodes_lock:
-            results, exceptions = utils.threadpool(funcs)
+        results, exceptions = utils.threadpool(funcs)
         total = time.monotonic() - start
         logger.debug("boot run time: %s", total)
         if not exceptions:
