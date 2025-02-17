@@ -25,6 +25,9 @@ containers, as a general rule you should select a machine having as much RAM and
 
 * Linux Kernel v3.3+
 * Python 3.10+
+  * pip
+  * venv
+  * tcl/tk support for GUI
 * iproute2 4.5+ is a requirement for bridge related commands
 * nftables compatible kernel and nft command line tool
 
