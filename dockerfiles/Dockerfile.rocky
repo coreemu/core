@@ -47,8 +47,9 @@ RUN dnf update -y && \
     dnf autoremove -y && \
     dnf clean all
 # install core
-ARG CORE_PACKAGE=core_9.2.0_x86_64.rpm
-ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
+ARG CORE_VERSION=9.2.0
+ARG CORE_PACKAGE=core_${CORE_VERSION}_x86_64.rpm
+ARG PACKAGE_URL=https://github.com/coreemu/core/releases/download/release-${CORE_VERSION}/${CORE_PACKAGE}
 RUN dnf update -y && \
     wget -q ${PACKAGE_URL} && \
     PYTHON=python3.12 dnf install -y ./${CORE_PACKAGE} && \

@@ -52,8 +52,9 @@ RUN apt-get update -y && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 # install core
-ARG CORE_PACKAGE=core_9.2.0_amd64.deb
-ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
+ARG CORE_VERSION=9.2.0
+ARG CORE_PACKAGE=core_${CORE_VERSION}_amd64.deb
+ARG PACKAGE_URL=https://github.com/coreemu/core/releases/download/release-${CORE_VERSION}/${CORE_PACKAGE}
 RUN apt-get update -y && \
     wget -q ${PACKAGE_URL} && \
     apt-get install -y --no-install-recommends ./${CORE_PACKAGE} && \
