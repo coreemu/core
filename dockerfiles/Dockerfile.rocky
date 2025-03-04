@@ -61,6 +61,7 @@ COPY --from=ospf-rpm /opt/quagga-mr-0.99*.rpm .
 RUN dnf update -y && \
     dnf install -y \
     ./quagga-mr-0.99*.rpm && \
+    rm -f ./quagga-mr-0.99*.rpm && \
     dnf autoremove -y && \
     dnf clean all
 # install emane
