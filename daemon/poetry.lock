@@ -203,7 +203,7 @@ python-versions = ">=3.8"
 
 [package.dependencies]
 grpcio = ">=1.69.0"
-protobuf = ">=5.26.1,<6.0dev"
+protobuf = ">=5.29.3,<6.0dev"
 setuptools = "*"
 
 [[package]]
