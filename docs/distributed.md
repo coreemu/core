@@ -93,7 +93,7 @@ On master server:
 sudo apt install openssh-client
 
 # generate ssh key if needed
-ssh-keygen -o -t rsa -b 4096 -f ~/.ssh/core
+ssh-keygen -o -t ed25519 -b 4096 -f ~/.ssh/core
 
 # copy public key to authorized_keys file
 ssh-copy-id -i ~/.ssh/core root@server
