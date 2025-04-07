@@ -6,6 +6,7 @@ PIPX_VERSION=1.7.1
 GRPC_VERSION=1.69.0
 INVOKE_VERSION=2.2.0
 POETRY_VERSION=1.2.1
+PROTOBUF_VERSION=5.29.3
 
 # install pre-reqs using yum/apt
 if [ -z "${NO_SYSTEM}" ]; then
@@ -15,7 +16,7 @@ if [ -z "${NO_SYSTEM}" ]; then
     sudo apt install -y ${PYTHON_DEP}-pip ${PYTHON_DEP}-venv python3-pip
     ${PYTHON} -m venv venv
     . ./venv/bin/activate
-    python -m pip install pipx==${PIPX_VERSION} grpcio==${GRPC_VERSION} grpcio-tools==${GRPC_VERSION}
+    python -m pip install pipx==${PIPX_VERSION} protobuf==${PROTOBUF_VERSION} grpcio==${GRPC_VERSION} grpcio-tools==${GRPC_VERSION}
     python -m pipx ensurepath
     python -m pipx install invoke==${INVOKE_VERSION}
     python -m pipx install poetry==${POETRY_VERSION}
@@ -25,7 +26,7 @@ if [ -z "${NO_SYSTEM}" ]; then
     sudo yum install -y ${PYTHON_DEP}-pip
     ${PYTHON} -m venv venv
     . ./venv/bin/activate
-    python -m pip install pipx==${PIPX_VERSION} grpcio==${GRPC_VERSION} grpcio-tools==${GRPC_VERSION}
+    python -m pip install pipx==${PIPX_VERSION} protobuf==${PROTOBUF_VERSION} grpcio==${GRPC_VERSION} grpcio-tools==${GRPC_VERSION}
     python -m pipx ensurepath
     python -m pipx install invoke==${INVOKE_VERSION}
     python -m pipx install poetry==${POETRY_VERSION}
