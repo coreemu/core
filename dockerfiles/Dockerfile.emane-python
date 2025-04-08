@@ -27,7 +27,7 @@ RUN wget -q https://github.com/protocolbuffers/protobuf/releases/download/v${PRO
     unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d protoc && \
     git clone https://github.com/adjacentlink/emane.git && \
     cd emane && \
-    git checkout v1.5.1 && \
+    git checkout v1.5.2 && \
     ./autogen.sh && \
     PYTHON=python3 ./configure --prefix=/usr && \
     cd src/python && \
