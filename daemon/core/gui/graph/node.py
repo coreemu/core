@@ -244,9 +244,9 @@ class CanvasNode:
                 )
             if nutils.is_container(self.core_node):
                 cmds_menu = tk.Menu(self.context)
-                for name, cmd in self.app.core.node_commands.items():
+                for name, (cmd, wait) in self.app.core.node_commands.items():
                     cmd_func = functools.partial(
-                        self.app.core.run_cmd, self.core_node.id, cmd
+                        self.app.core.run_cmd, self.core_node.id, cmd, wait
                     )
                     cmds_menu.add_command(label=name, command=cmd_func)
                 themes.style_menu(cmds_menu)

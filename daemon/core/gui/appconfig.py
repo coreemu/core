@@ -75,9 +75,19 @@ class NodeCommand(yaml.YAMLObject):
     yaml_tag: str = "!NodeCommand"
     yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
 
-    def __init__(self, name: str, cmd: str) -> None:
+    def __init__(self, name: str, cmd: str, wait: bool) -> None:
         self.name: str = name
         self.cmd: str = cmd
+        self.wait: bool = wait
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        data = loader.construct_mapping(node)
+        return cls(
+            name=data.get("name", ""),
+            cmd=data.get("cmd", ""),
+            wait=data.get("wait", True),
+        )
 
 
 class PreferencesConfig(yaml.YAMLObject):
