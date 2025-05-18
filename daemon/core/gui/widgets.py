@@ -155,14 +155,14 @@ class ConfigFrame(ttk.Notebook):
                 elif option.type in INT_TYPES:
                     value.set(option.value)
                     state = tk.NORMAL if self.enabled else tk.DISABLED
-                    entry = validation.PositiveIntEntry(
+                    entry = validation.IntEntry(
                         tab.frame, textvariable=value, state=state
                     )
                     entry.grid(row=index, column=1, sticky=tk.EW)
                 elif option.type == ConfigOptionType.FLOAT:
                     value.set(option.value)
                     state = tk.NORMAL if self.enabled else tk.DISABLED
-                    entry = validation.PositiveFloatEntry(
+                    entry = validation.FloatEntry(
                         tab.frame, textvariable=value, state=state
                     )
                     entry.grid(row=index, column=1, sticky=tk.EW)
