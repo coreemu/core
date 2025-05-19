@@ -47,7 +47,7 @@ RUN dnf update -y && \
     dnf autoremove -y && \
     dnf clean all
 # install core
-ARG CORE_VERSION=9.2.0
+ARG CORE_VERSION=9.2.1
 ARG CORE_PACKAGE=core_${CORE_VERSION}_x86_64.rpm
 ARG PACKAGE_URL=https://github.com/coreemu/core/releases/download/release-${CORE_VERSION}/${CORE_PACKAGE}
 RUN dnf update -y && \
