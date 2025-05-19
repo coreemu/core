@@ -1,0 +1,2237 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://coreemu.github.io/core/emane.html">
+      
+      
+        <link rel="prev" href="hitl.html">
+      
+      
+        <link rel="next" href="emane/antenna.html">
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Overview - CORE Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#emane-extendable-mobile-ad-hoc-network-emulator" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="CORE Documentation" class="md-header__button md-logo" aria-label="CORE Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CORE Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Overview
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to Light Mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to Light Mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to Dark Mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to Dark Mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/coreemu/core" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    coreemu/core
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="CORE Documentation" class="md-nav__button md-logo" aria-label="CORE Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CORE Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/coreemu/core" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    coreemu/core
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Overview
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="architecture.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="performance.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Performance
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Installation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install_ubuntu.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Ubuntu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install_rocky.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Rocky
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install_docker.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/setup.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial1.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 1 - Wired Network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial2.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 2 - Wireless Network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial3.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 3 - Basic Mobility
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial4.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 4 - Tests
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial5.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 5 - RJ45 Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial6.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 6 - Improve Visuals
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial7.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 7 - EMANE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Detailed Topics
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Detailed Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="gui.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GUI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Node Types
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            Node Types
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="nodetypes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="docker.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Services
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            Services
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3_2" id="__nav_5_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Provided
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            Provided
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/bird.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Bird
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/emane.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    EMANE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/frr.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FRR
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/nrl.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    NRL
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/quagga.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quagga
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/sdn.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SDN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/security.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/utility.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Utility
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/xorp.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    XORP
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    API
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="python.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Python
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="grpc.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    gRPC
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="distributed.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Distributed
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ctrlnet.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Control Network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hitl.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware In The Loop
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    EMANE
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            EMANE
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="emane.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-emane" class="md-nav__link">
+    <span class="md-ellipsis">
+      What is EMANE?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#emane-in-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      EMANE in CORE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#emane-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      EMANE Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-emane-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom EMANE Models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#single-pc-with-emane" class="md-nav__link">
+    <span class="md-ellipsis">
+      Single PC with EMANE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-emane" class="md-nav__link">
+    <span class="md-ellipsis">
+      Distributed EMANE
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8_2" id="__nav_5_8_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_8_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8_2">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/antenna.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Antenna
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/eel.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    EEL
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/files.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Files
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/gpsd.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPSD
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/precomputed.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Precomputed
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="devguide.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developers Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-emane" class="md-nav__link">
+    <span class="md-ellipsis">
+      What is EMANE?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#emane-in-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      EMANE in CORE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#emane-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      EMANE Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-emane-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom EMANE Models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#single-pc-with-emane" class="md-nav__link">
+    <span class="md-ellipsis">
+      Single PC with EMANE
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-emane" class="md-nav__link">
+    <span class="md-ellipsis">
+      Distributed EMANE
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="emane-extendable-mobile-ad-hoc-network-emulator">EMANE (Extendable Mobile Ad-hoc Network Emulator)</h1>
+<h2 id="what-is-emane">What is EMANE?</h2>
+<p>The Extendable Mobile Ad-hoc Network Emulator (EMANE) allows heterogeneous
+network emulation using a pluggable MAC and PHY layer architecture. The
+EMANE framework provides an implementation architecture for modeling
+different radio interface types in the form of <em>Network Emulation Modules</em>
+(NEMs) and incorporating these modules into a real-time emulation running
+in a distributed environment.</p>
+<p>EMANE is developed by U.S. Naval Research Labs (NRL) Code 5522 and Adjacent
+Link LLC, who maintain these websites:</p>
+<ul>
+<li><a href="https://github.com/adjacentlink/emane">https://github.com/adjacentlink/emane</a></li>
+<li><a href="http://www.adjacentlink.com/">http://www.adjacentlink.com/</a></li>
+</ul>
+<p>Instead of building Linux Ethernet bridging networks with CORE,
+higher-fidelity wireless networks can be emulated using EMANE bound to virtual
+devices. CORE emulates layers 3 and above (network, session, application) with
+its virtual network stacks and process space for protocols and applications,
+while EMANE emulates layers 1 and 2 (physical and data link) using its
+pluggable PHY and MAC models.</p>
+<p>The interface between CORE and EMANE is a TAP device. CORE builds the virtual
+node using Linux network namespaces, installs the TAP device into the namespace
+and instantiates one EMANE process in the namespace. The EMANE process binds a
+user space socket to the TAP device for sending and receiving data from CORE.</p>
+<p>An EMANE instance sends and receives OTA (Over-The-Air) traffic to and from
+other EMANE instances via a control port (e.g. <em>ctrl0</em>, <em>ctrl1</em>). It also
+sends and receives Events to and from the Event Service using the same or a
+different control port. EMANE models are configured through the GUI's
+configuration dialog. A corresponding EmaneModel Python class is sub-classed
+for each supported EMANE model, to provide configuration items and their
+mapping to XML files. This way new models can be easily supported. When
+CORE starts the emulation, it generates the appropriate XML files that
+specify the EMANE NEM configuration, and launches the EMANE daemons.</p>
+<p>Some EMANE models support location information to determine when packets
+should be dropped. EMANE has an event system where location events are
+broadcast to all NEMs. CORE can generate these location events when nodes
+are moved on the canvas. The canvas size and scale dialog has controls for
+mapping the X,Y coordinate system to a latitude, longitude geographic system
+that EMANE uses. When specified in the <em>core.conf</em> configuration file, CORE
+can also subscribe to EMANE location events and move the nodes on the canvas
+as they are moved in the EMANE emulation. This would occur when an Emulation
+Script Generator, for example, is running a mobility script.</p>
+<h2 id="emane-in-core">EMANE in CORE</h2>
+<p>This section will cover some high level topics and examples for running and
+using EMANE in CORE.</p>
+<p>You can find more detailed tutorials and examples at the
+<a href="https://github.com/adjacentlink/emane-tutorial/wiki">EMANE Tutorial</a>.</p>
+<p>Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>Demo files will be found within the <code>core-gui</code> <strong>~/.coregui/xmls</strong> directory</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>Model</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="emane/files.html">XML Files</a></td>
+<td>RF Pipe</td>
+<td>Overview of generated XML files used to drive EMANE</td>
+</tr>
+<tr>
+<td><a href="emane/gpsd.html">GPSD</a></td>
+<td>RF Pipe</td>
+<td>Overview of running and integrating gpsd with EMANE</td>
+</tr>
+<tr>
+<td><a href="emane/precomputed.html">Precomputed</a></td>
+<td>RF Pipe</td>
+<td>Overview of using the precomputed propagation model</td>
+</tr>
+<tr>
+<td><a href="emane/eel.html">EEL</a></td>
+<td>RF Pipe</td>
+<td>Overview of using the Emulation Event Log (EEL) Generator</td>
+</tr>
+<tr>
+<td><a href="emane/antenna.html">Antenna Profiles</a></td>
+<td>RF Pipe</td>
+<td>Overview of using antenna profiles in EMANE</td>
+</tr>
+</tbody>
+</table>
+<h2 id="emane-configuration">EMANE Configuration</h2>
+<p>The CORE configuration file <strong>/opt/core/etc/core.conf</strong> has options specific to
+EMANE. An example emane section from the <strong>core.conf</strong> file is shown below:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># EMANE configuration</span>
+<span class="nv">emane_platform_port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8101</span>
+<span class="nv">emane_transform_port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8201</span>
+<span class="nv">emane_event_monitor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>False
+<span class="c1">#emane_models_dir = /home/&lt;user&gt;/.coregui/custom_emane</span>
+<span class="c1"># EMANE log level range [0,4] default: 2</span>
+<span class="nv">emane_log_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span>
+<span class="nv">emane_realtime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+<span class="c1"># prefix used for emane installation</span>
+<span class="c1"># emane_prefix = /usr</span>
+</code></pre></div>
+<p>If you have an EMANE event generator (e.g. mobility or pathloss scripts) and
+want to have CORE subscribe to EMANE location events, set the following line
+in the <strong>core.conf</strong> configuration file.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Do not set this option to True if you want to manually drag nodes around
+on the canvas to update their location in EMANE.</p>
+</div>
+<div class="highlight"><pre><span></span><code><span class="nv">emane_event_monitor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+</code></pre></div>
+<p>Another common issue is if installing EMANE from source, the default configure
+prefix will place the DTD files in <strong>/usr/local/share/emane/dtd</strong> while CORE
+expects them in <strong>/usr/share/emane/dtd</strong>.</p>
+<p>Update the EMANE prefix configuration to resolve this problem.</p>
+<div class="highlight"><pre><span></span><code><span class="nv">emane_prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>/usr/local
+</code></pre></div>
+<h2 id="custom-emane-models">Custom EMANE Models</h2>
+<p>CORE supports custom developed EMANE models by way of dynamically loading user
+created python files that represent the model. Custom EMANE models should be
+placed within the path defined by <strong>emane_models_dir</strong> in the CORE
+configuration file. This path cannot end in <strong>/emane</strong>.</p>
+<p>Here is an example model with documentation describing functionality:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Example custom emane model.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Configuration</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">core.emane</span><span class="w"> </span><span class="kn">import</span> <span class="n">emanemanifest</span><span class="p">,</span> <span class="n">emanemodel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ExampleModel</span><span class="p">(</span><span class="n">emanemodel</span><span class="o">.</span><span class="n">EmaneModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Custom emane model.</span>
+
+<span class="sd">    :cvar name: defines the emane model name that will show up in the GUI</span>
+
+<span class="sd">    Mac Definition:</span>
+<span class="sd">    :cvar mac_library: defines that mac library that the model will reference</span>
+<span class="sd">    :cvar mac_xml: defines the mac manifest file that will be parsed to obtain configuration options,</span>
+<span class="sd">        that will be displayed within the GUI</span>
+<span class="sd">    :cvar mac_defaults: allows you to override options that are maintained within the manifest file above</span>
+<span class="sd">    :cvar mac_config: parses the manifest file and converts configurations into core supported formats</span>
+
+<span class="sd">    Phy Definition:</span>
+<span class="sd">    NOTE: phy configuration will default to the universal model as seen below and the below section does not</span>
+<span class="sd">    have to be included</span>
+<span class="sd">    :cvar phy_library: defines that phy library that the model will reference, used if you need to</span>
+<span class="sd">        provide a custom phy</span>
+<span class="sd">    :cvar phy_xml: defines the phy manifest file that will be parsed to obtain configuration options,</span>
+<span class="sd">        that will be displayed within the GUI</span>
+<span class="sd">    :cvar phy_defaults: allows you to override options that are maintained within the manifest file above</span>
+<span class="sd">        or for the default universal model</span>
+<span class="sd">    :cvar phy_config: parses the manifest file and converts configurations into core supported formats</span>
+
+<span class="sd">    Custom Override Options:</span>
+<span class="sd">    NOTE: these options default to what&#39;s seen below and do not have to be included</span>
+<span class="sd">    :cvar config_ignore: allows you to ignore options within phy/mac, used typically if you needed to add</span>
+<span class="sd">        a custom option for display within the gui</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;emane_example&quot;</span>
+    <span class="n">mac_library</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rfpipemaclayer&quot;</span>
+    <span class="n">mac_xml</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rfpipemaclayer.xml&quot;</span>
+    <span class="n">mac_defaults</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;pcrcurveuri&quot;</span><span class="p">:</span> <span class="s2">&quot;/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml&quot;</span>
+    <span class="p">}</span>
+    <span class="n">mac_config</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Configuration</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">phy_library</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">phy_xml</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;emanephy.xml&quot;</span>
+    <span class="n">phy_defaults</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;subid&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;propagationmodel&quot;</span><span class="p">:</span> <span class="s2">&quot;2ray&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;noisemode&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">phy_config</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Configuration</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">config_ignore</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">emane_prefix</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called after being loaded within the EmaneManager. Provides configured</span>
+<span class="sd">        emane_prefix for parsing xml files.</span>
+
+<span class="sd">        :param emane_prefix: configured emane prefix path</span>
+<span class="sd">        :return: nothing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_load_platform_config</span><span class="p">(</span><span class="n">emane_prefix</span><span class="p">)</span>
+        <span class="n">manifest_path</span> <span class="o">=</span> <span class="s2">&quot;share/emane/manifest&quot;</span>
+        <span class="c1"># load mac configuration</span>
+        <span class="n">mac_xml_path</span> <span class="o">=</span> <span class="n">emane_prefix</span> <span class="o">/</span> <span class="n">manifest_path</span> <span class="o">/</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mac_xml</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">mac_config</span> <span class="o">=</span> <span class="n">emanemanifest</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">mac_xml_path</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">mac_defaults</span><span class="p">)</span>
+        <span class="c1"># load phy configuration</span>
+        <span class="n">phy_xml_path</span> <span class="o">=</span> <span class="n">emane_prefix</span> <span class="o">/</span> <span class="n">manifest_path</span> <span class="o">/</span> <span class="bp">cls</span><span class="o">.</span><span class="n">phy_xml</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">phy_config</span> <span class="o">=</span> <span class="n">emanemanifest</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">phy_xml_path</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">phy_defaults</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="single-pc-with-emane">Single PC with EMANE</h2>
+<p>This section describes running CORE and EMANE on a single machine. This is the
+default mode of operation when building an EMANE network with CORE. The OTA
+manager and Event service interface are set to use <em>ctrl0</em> and the virtual
+nodes use the primary control channel for communicating with one another. The
+primary control channel is automatically activated when a scenario involves
+EMANE. Using the primary control channel prevents your emulation session from
+sending multicast traffic on your local network and interfering with other
+EMANE users.</p>
+<p>EMANE is configured through an EMANE node. Once a node is linked to an EMANE
+cloud, the radio interface on that node may also be configured
+separately (apart from the cloud.)</p>
+<p>Right click on an EMANE node and select EMANE Config to open the configuration dialog.
+The EMANE models should be listed here for selection. (You may need to restart the
+CORE daemon if it was running prior to installing the EMANE Python bindings.)</p>
+<p>When an EMANE model is selected, you can click on the models option button
+causing the GUI to query the CORE daemon for configuration items.
+Each model will have different parameters, refer to the
+EMANE documentation for an explanation of each item. The defaults values are
+presented in the dialog. Clicking <em>Apply</em> and <em>Apply</em> again will store the
+EMANE model selections.</p>
+<p>The RF-PIPE and IEEE 802.11abg models use a Universal PHY that supports
+geographic location information for determining pathloss between nodes. A
+default latitude and longitude location is provided by CORE and this
+location-based pathloss is enabled by default; this is the <em>pathloss mode</em>
+setting for the Universal PHY. Moving a node on the canvas while the
+emulation is running generates location events for EMANE. To view or change
+the geographic location or scale of the canvas use the <em>Canvas Size and Scale</em>
+dialog available from the <em>Canvas</em> menu.</p>
+<p>Note that conversion between geographic and Cartesian coordinate systems is
+done using UTM (Universal Transverse Mercator) projection, where different
+zones of 6 degree longitude bands are defined. The location events generated
+by CORE may become inaccurate near the zone boundaries for very large scenarios
+that span multiple UTM zones. It is recommended that EMANE location scripts be
+used to achieve geo-location accuracy in this situation.</p>
+<p>Clicking the green <em>Start</em> button launches the emulation and causes TAP devices
+to be created in the virtual nodes that are linked to the EMANE WLAN. These
+devices appear with interface names such as eth0, eth1, etc. The EMANE processes
+should now be running in each namespace.</p>
+<p>To view the configuration generated by CORE, look in the <em>/tmp/pycore.nnnnn/</em> session
+directory to find the generated EMANE xml files. One easy way to view
+this information is by double-clicking one of the virtual nodes and listing the files
+in the shell.</p>
+<p><img alt="" src="static/emane-single-pc.png" /></p>
+<h2 id="distributed-emane">Distributed EMANE</h2>
+<p>Running CORE and EMANE distributed among two or more emulation servers is
+similar to running on a single machine. There are a few key configuration
+items that need to be set in order to be successful, and those are outlined here.</p>
+<p>It is a good idea to maintain separate networks for data (OTA) and control.
+The control network may be a shared laboratory network, for example, and you do
+not want multicast traffic on the data network to interfere with other EMANE
+users. Furthermore, control traffic could interfere with the OTA latency and
+throughput and might affect emulation fidelity. The examples described here will
+use <em>eth0</em> as a control interface and <em>eth1</em> as a data interface, although
+using separate interfaces is not strictly required. Note that these interface
+names refer to interfaces present on the host machine, not virtual interfaces
+within a node.</p>
+<p><strong>IMPORTANT: If an auxiliary control network is used, an interface on the host
+has to be assigned to that network.</strong></p>
+<p>Each machine that will act as an emulation server needs to have CORE distributed
+and EMANE installed. As well as be setup to work for CORE distributed mode.</p>
+<p>The IP addresses of the available servers are configured from the CORE
+servers dialog box. The dialog shows available
+servers, some or all of which may be assigned to nodes on the canvas.</p>
+<p>Nodes need to be assigned to servers and can be done so using the node
+configuration dialog. When a node is not assigned to any emulation server,
+it will be emulated locally.</p>
+<p>Using the EMANE node configuration dialog. You can change the EMANE model
+being used, along with changing any configuration setting from their defaults.</p>
+<p><img alt="" src="static/emane-configuration.png" /></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Here is a quick checklist for distributed emulation with EMANE.</p>
+</div>
+<ol>
+<li>Follow the steps outlined for normal CORE.</li>
+<li>Assign nodes to desired servers</li>
+<li>Synchronize your machine's clocks prior to starting the emulation,
+   using <em>ntp</em> or <em>ptp</em>. Some EMANE models are sensitive to timing.</li>
+<li>Press the <em>Start</em> button to launch the distributed emulation.</li>
+</ol>
+<p>Now when the Start button is used to instantiate the emulation, the local CORE
+daemon will connect to other emulation servers that have been assigned
+to nodes. Each server will have its own session directory where the
+<em>platform.xml</em> file and other EMANE XML files are generated. The NEM IDs are
+automatically coordinated across servers so there is no overlap.</p>
+<p>An Ethernet device is used for disseminating multicast EMANE events, as
+specified in the <em>configure emane</em> dialog. EMANE's Event Service can be run
+with mobility or pathloss scripts.
+If CORE is not subscribed to location events, it will generate them as nodes
+are moved on the canvas.</p>
+<p>Double-clicking on a node during runtime will cause the GUI to attempt to SSH
+to the emulation server for that node and run an interactive shell. The public
+key SSH configuration should be tested with all emulation servers prior to
+starting the emulation.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="hitl.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Hardware In The Loop">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Hardware In The Loop
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="emane/antenna.html" class="md-footer__link md-footer__link--next" aria-label="Next: Antenna">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Antenna
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": ".", "features": ["navigation.path", "navigation.instant", "navigation.footer", "content.code.copy"], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

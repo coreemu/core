@@ -1,0 +1,44 @@
+@startuml
+skinparam {
+    RoundCorner 8
+    ComponentStyle uml2
+    ComponentBorderColor #Black
+    InterfaceBorderColor #Black
+    InterfaceBackgroundColor #Yellow
+}
+
+package User {
+    component "core-gui" as gui #DeepSkyBlue
+    component "python scripts" as scripts #DeepSkyBlue
+    component vcmd #DeepSkyBlue
+}
+package Server {
+    component "core-daemon" as daemon #DarkSeaGreen
+}
+package Python {
+    component core #LightSteelBlue
+}
+package "Linux System" {
+    component nodes #SpringGreen [
+        nodes
+        (linux namespaces)
+    ]
+    component links #SpringGreen [
+        links
+        (bridging and traffic manipulation)
+    ]
+}
+
+package API {
+    interface gRPC as grpc
+}
+
+gui <..> grpc
+scripts <..> grpc
+grpc -- daemon
+scripts -- core
+daemon - core
+core <..> nodes
+core <..> links
+vcmd <..> nodes
+@enduml

@@ -1,0 +1,3212 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://coreemu.github.io/core/gui.html">
+      
+      
+        <link rel="prev" href="tutorials/tutorial7.html">
+      
+      
+        <link rel="next" href="nodetypes.html">
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>GUI - CORE Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#core-gui" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="CORE Documentation" class="md-header__button md-logo" aria-label="CORE Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CORE Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              GUI
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to Light Mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to Light Mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Switch to Dark Mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to Dark Mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/coreemu/core" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    coreemu/core
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="CORE Documentation" class="md-nav__button md-logo" aria-label="CORE Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CORE Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/coreemu/core" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    coreemu/core
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Overview
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="architecture.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="performance.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Performance
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Installation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install_ubuntu.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Ubuntu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install_rocky.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Rocky
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install_docker.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/overview.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/setup.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial1.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 1 - Wired Network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial2.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 2 - Wireless Network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial3.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 3 - Basic Mobility
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial4.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 4 - Tests
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial5.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 5 - RJ45 Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial6.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 6 - Improve Visuals
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial7.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial 7 - EMANE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Detailed Topics
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Detailed Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    GUI
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="gui.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    GUI
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gui-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      GUI Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modes-of-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Modes of Operation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolbar" class="md-nav__link">
+    <span class="md-ellipsis">
+      Toolbar
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Toolbar">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#editing-toolbar" class="md-nav__link">
+    <span class="md-ellipsis">
+      Editing Toolbar
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#core-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      CORE Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Network Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annotation-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Annotation Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-toolbar" class="md-nav__link">
+    <span class="md-ellipsis">
+      Execution Toolbar
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Menu
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Menu">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      File Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edit-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Edit Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#canvas-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Canvas Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      View Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tools-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tools Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#widgets-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Widgets Menu
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Widgets Menu">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#periodic-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Periodic Widgets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observer-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observer Widgets
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#session-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session Menu
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Session Menu">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#session-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session States
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#help-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Help Menu
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-sample-networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building Sample Networks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building Sample Networks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wired-networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Wired Networks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireless-networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Wireless Networks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Wireless Networks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-wlan-network-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example WLAN Network Setup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-commands-within-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Commands within Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mobility-scripting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mobility Scripting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alerts
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#customizing-your-topologys-look" class="md-nav__link">
+    <span class="md-ellipsis">
+      Customizing your Topology's Look
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Node Types
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            Node Types
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="nodetypes.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="docker.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Docker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Services
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            Services
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3_2" id="__nav_5_3_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Provided
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            Provided
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/bird.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Bird
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/emane.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    EMANE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/frr.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FRR
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/nrl.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    NRL
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/quagga.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quagga
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/sdn.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SDN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/security.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/utility.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Utility
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="services/xorp.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    XORP
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    API
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="python.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Python
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="grpc.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    gRPC
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="distributed.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Distributed
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ctrlnet.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Control Network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="hitl.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Hardware In The Loop
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    EMANE
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            EMANE
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8_2" id="__nav_5_8_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_8_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8_2">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/antenna.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Antenna
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/eel.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    EEL
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/files.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Files
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/gpsd.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GPSD
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="emane/precomputed.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Precomputed
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="devguide.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developers Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gui-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      GUI Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modes-of-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Modes of Operation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#toolbar" class="md-nav__link">
+    <span class="md-ellipsis">
+      Toolbar
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Toolbar">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#editing-toolbar" class="md-nav__link">
+    <span class="md-ellipsis">
+      Editing Toolbar
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#core-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      CORE Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Network Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#annotation-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Annotation Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-toolbar" class="md-nav__link">
+    <span class="md-ellipsis">
+      Execution Toolbar
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Menu
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Menu">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      File Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edit-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Edit Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#canvas-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Canvas Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      View Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tools-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tools Menu
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#widgets-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Widgets Menu
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Widgets Menu">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#periodic-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Periodic Widgets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observer-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observer Widgets
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#session-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session Menu
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Session Menu">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#session-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session States
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#help-menu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Help Menu
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-sample-networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building Sample Networks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Building Sample Networks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wired-networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Wired Networks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireless-networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Wireless Networks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Wireless Networks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-wlan-network-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example WLAN Network Setup
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-commands-within-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Commands within Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mobility-scripting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mobility Scripting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alerts
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#customizing-your-topologys-look" class="md-nav__link">
+    <span class="md-ellipsis">
+      Customizing your Topology's Look
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="core-gui">CORE GUI</h1>
+<p><img alt="" src="static/core-gui.png" /></p>
+<h2 id="overview">Overview</h2>
+<p>The GUI is used to draw nodes and network devices on a canvas, linking them
+together to create an emulated network session.</p>
+<p>After pressing the start button, CORE will proceed through these phases,
+staying in the <strong>runtime</strong> phase. After the session is stopped, CORE will
+proceed to the <strong>data collection</strong> phase before tearing down the emulated
+state.</p>
+<p>CORE can be customized to perform any action at each state. See the
+<strong>Hooks...</strong> entry on the <a href="#session-menu">Session Menu</a> for details about
+when these session states are reached.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Beyond installing CORE, you must have the CORE daemon running. This is done
+on the command line with either systemd or sysv.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># systemd service</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>core-daemon
+
+<span class="c1"># direct invocation</span>
+sudo<span class="w"> </span>core-daemon
+</code></pre></div>
+<h2 id="gui-files">GUI Files</h2>
+<p>The GUI will create a directory in your home directory on first run called
+~/.coregui. This directory will help layout various files that the GUI may use.</p>
+<ul>
+<li>.coregui/<ul>
+<li>backgrounds/<ul>
+<li>place backgrounds used for display in the GUI</li>
+</ul>
+</li>
+<li>custom_emane/<ul>
+<li>place to keep custom emane models to use with the core-daemon</li>
+</ul>
+</li>
+<li>custom_services/<ul>
+<li>place to keep custom services to use with the core-daemon</li>
+</ul>
+</li>
+<li>icons/<ul>
+<li>icons the GUI uses along with customs icons desired</li>
+</ul>
+</li>
+<li>mobility/<ul>
+<li>place to keep custom mobility files</li>
+</ul>
+</li>
+<li>scripts/<ul>
+<li>place to keep core related scripts</li>
+</ul>
+</li>
+<li>xmls/<ul>
+<li>place to keep saved session xml files</li>
+</ul>
+</li>
+<li>gui.log<ul>
+<li>log file when running the gui, look here when issues occur for exceptions etc</li>
+</ul>
+</li>
+<li>config.yaml<ul>
+<li>configuration file used to save/load various gui related settings (custom nodes, layouts, addresses, etc)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="modes-of-operation">Modes of Operation</h2>
+<p>The CORE GUI has two primary modes of operation, <strong>Edit</strong> and <strong>Execute</strong>
+modes. Running the GUI, by typing <strong>core-gui</strong> with no options, starts in
+Edit mode. Nodes are drawn on a blank canvas using the toolbar on the left
+and configured from right-click menus or by double-clicking them. The GUI
+does not need to be run as root.</p>
+<p>Once editing is complete, pressing the green <strong>Start</strong> button instantiates
+the topology and enters Execute mode. In execute mode,
+the user can interact with the running emulated machines by double-clicking or
+right-clicking on them. The editing toolbar disappears and is replaced by an
+execute toolbar, which provides tools while running the emulation. Pressing
+the red <strong>Stop</strong> button will destroy the running emulation and return CORE
+to Edit mode.</p>
+<p>Once the emulation is running, the GUI can be closed, and a prompt will appear
+asking if the emulation should be terminated. The emulation may be left
+running and the GUI can reconnect to an existing session at a later time.</p>
+<p>The GUI can be run as a normal user on Linux.</p>
+<p>The GUI currently provides the following options on startup.</p>
+<div class="highlight"><pre><span></span><code>usage:<span class="w"> </span>core-gui<span class="w"> </span><span class="o">[</span>-h<span class="o">]</span><span class="w"> </span><span class="o">[</span>-l<span class="w"> </span><span class="o">{</span>DEBUG,INFO,WARNING,ERROR,CRITICAL<span class="o">}]</span><span class="w"> </span><span class="o">[</span>-p<span class="o">]</span>
+<span class="w">                </span><span class="o">[</span>-s<span class="w"> </span>SESSION<span class="o">]</span><span class="w"> </span><span class="o">[</span>--create-dir<span class="o">]</span>
+
+CORE<span class="w"> </span>Python<span class="w"> </span>GUI
+
+optional<span class="w"> </span>arguments:
+<span class="w">  </span>-h,<span class="w"> </span>--help<span class="w">            </span>show<span class="w"> </span>this<span class="w"> </span><span class="nb">help</span><span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span><span class="nb">exit</span>
+<span class="w">  </span>-l<span class="w"> </span><span class="o">{</span>DEBUG,INFO,WARNING,ERROR,CRITICAL<span class="o">}</span>,<span class="w"> </span>--level<span class="w"> </span><span class="o">{</span>DEBUG,INFO,WARNING,ERROR,CRITICAL<span class="o">}</span>
+<span class="w">                        </span>logging<span class="w"> </span>level
+<span class="w">  </span>-p,<span class="w"> </span>--proxy<span class="w">           </span><span class="nb">enable</span><span class="w"> </span>proxy
+<span class="w">  </span>-s<span class="w"> </span>SESSION,<span class="w"> </span>--session<span class="w"> </span>SESSION
+<span class="w">                        </span>session<span class="w"> </span>id<span class="w"> </span>to<span class="w"> </span>join
+<span class="w">  </span>--create-dir<span class="w">          </span>create<span class="w"> </span>gui<span class="w"> </span>directory<span class="w"> </span>and<span class="w"> </span><span class="nb">exit</span>
+</code></pre></div>
+<h2 id="toolbar">Toolbar</h2>
+<p>The toolbar is a row of buttons that runs vertically along the left side of the
+CORE GUI window. The toolbar changes depending on the mode of operation.</p>
+<h3 id="editing-toolbar">Editing Toolbar</h3>
+<p>When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on
+the left side of the CORE window. Below are brief descriptions for each toolbar
+item, starting from the top. Most of the tools are grouped into related
+sub-menus, which appear when you click on their group icon.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="static/gui/select.png" /></td>
+<td>Selection Tool</td>
+<td>Tool for selecting, moving, configuring nodes.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/start.png" /></td>
+<td>Start Button</td>
+<td>Starts Execute mode, instantiates the emulation.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/link.png" /></td>
+<td>Link</td>
+<td>Allows network links to be drawn between two nodes by clicking and dragging the mouse.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-nodes">CORE Nodes</h3>
+<p>These nodes will create a new node container and run associated services.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="static/gui/router.png" /></td>
+<td>Router</td>
+<td>Runs Quagga OSPFv2 and OSPFv3 routing to forward packets.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/host.png" /></td>
+<td>Host</td>
+<td>Emulated server machine having a default route, runs SSH server.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/pc.png" /></td>
+<td>PC</td>
+<td>Basic emulated machine having a default route, runs no processes by default.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/mdr.png" /></td>
+<td>MDR</td>
+<td>Runs Quagga OSPFv3 MDR routing for MANET-optimized routing.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/router.png" /></td>
+<td>PRouter</td>
+<td>Physical router represents a real testbed machine.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="network-nodes">Network Nodes</h3>
+<p>These nodes are mostly used to create a Linux bridge that serves the
+purpose described below.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="static/gui/hub.png" /></td>
+<td>Hub</td>
+<td>Ethernet hub forwards incoming packets to every connected node.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/lanswitch.png" /></td>
+<td>Switch</td>
+<td>Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/wlan.png" /></td>
+<td>Wireless LAN</td>
+<td>When routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/rj45.png" /></td>
+<td>RJ45</td>
+<td>RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/tunnel.png" /></td>
+<td>Tunnel</td>
+<td>Tool allows connecting together more than one CORE emulation using GRE tunnels.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="annotation-tools">Annotation Tools</h3>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="static/gui/marker.png" /></td>
+<td>Marker</td>
+<td>For drawing marks on the canvas.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/oval.png" /></td>
+<td>Oval</td>
+<td>For drawing circles on the canvas that appear in the background.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/rectangle.png" /></td>
+<td>Rectangle</td>
+<td>For drawing rectangles on the canvas that appear in the background.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/text.png" /></td>
+<td>Text</td>
+<td>For placing text captions on the canvas.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="execution-toolbar">Execution Toolbar</h3>
+<p>When the Start button is pressed, CORE switches to Execute mode, and the Edit
+toolbar on the left of the CORE window is replaced with the Execution toolbar
+Below are the items on this toolbar, starting from the top.</p>
+<table>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="static/gui/stop.png" /></td>
+<td>Stop Button</td>
+<td>Stops Execute mode, terminates the emulation, returns CORE to edit mode.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/select.png" /></td>
+<td>Selection Tool</td>
+<td>In Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/marker.png" /></td>
+<td>Marker</td>
+<td>For drawing freehand lines on the canvas, useful during demonstrations; markings are not saved.</td>
+</tr>
+<tr>
+<td><img alt="" src="static/gui/run.png" /></td>
+<td>Run Tool</td>
+<td>This tool allows easily running a command on all or a subset of all nodes. A list box allows selecting any of the nodes. A text entry box allows entering any command. The command should return immediately, otherwise the display will block awaiting response. The <em>ping</em> command, for example, with no parameters, is not a good idea. The result of each command is displayed in a results box. The first occurrence of the special text "NODE" will be replaced with the node name. The command will not be attempted to run on nodes that are not routers, PCs, or hosts, even if they are selected.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="menu">Menu</h2>
+<p>The menubar runs along the top of the CORE GUI window and provides access to a
+variety of features. Some of the menus are detachable, such as the <em>Widgets</em>
+menu, by clicking the dashed line at the top.</p>
+<h3 id="file-menu">File Menu</h3>
+<p>The File menu contains options for saving and opening saved sessions.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>New Session</td>
+<td>This starts a new session with an empty canvas.</td>
+</tr>
+<tr>
+<td>Save</td>
+<td>Saves the current topology. If you have not yet specified a file name, the Save As dialog box is invoked.</td>
+</tr>
+<tr>
+<td>Save As</td>
+<td>Invokes the Save As dialog box for selecting a new <strong>.xml</strong> file for saving the current configuration in the XML file.</td>
+</tr>
+<tr>
+<td>Open</td>
+<td>Invokes the File Open dialog box for selecting a new XML file to open.</td>
+</tr>
+<tr>
+<td>Recently used files</td>
+<td>Above the Quit menu command is a list of recently use files, if any have been opened. You can clear this list in the Preferences dialog box. You can specify the number of files to keep in this list from the Preferences dialog. Click on one of the file names listed to open that configuration file.</td>
+</tr>
+<tr>
+<td>Execute Python Script</td>
+<td>Invokes a File Open dialog box for selecting a Python script to run and automatically connect to. After a selection is made, a Python Script Options dialog box is invoked to allow for command-line options to be added. The Python script must create a new CORE Session and add this session to the daemon's list of sessions in order for this to work.</td>
+</tr>
+<tr>
+<td>Quit</td>
+<td>The Quit command should be used to exit the CORE GUI. CORE may prompt for termination if you are currently in Execute mode. Preferences and the recently-used files list are saved.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="edit-menu">Edit Menu</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Preferences</td>
+<td>Invokes the Preferences dialog box.</td>
+</tr>
+<tr>
+<td>Custom Nodes</td>
+<td>Custom node creation dialog box.</td>
+</tr>
+<tr>
+<td>Undo</td>
+<td>(Disabled) Attempts to undo the last edit in edit mode.</td>
+</tr>
+<tr>
+<td>Redo</td>
+<td>(Disabled) Attempts to redo an edit that has been undone.</td>
+</tr>
+<tr>
+<td>Cut, Copy, Paste, Delete</td>
+<td>Used to cut, copy, paste, and delete a selection. When nodes are pasted, their node numbers are automatically incremented, and existing links are preserved with new IP addresses assigned. Services and their customizations are copied to the new node, but care should be taken as node IP addresses have changed with possibly old addresses remaining in any custom service configurations. Annotations may also be copied and pasted.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="canvas-menu">Canvas Menu</h3>
+<p>The canvas menu provides commands related to the editing canvas.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Size/scale</td>
+<td>Invokes a Canvas Size and Scale dialog that allows configuring the canvas size, scale, and geographic reference point. The size controls allow changing the width and height of the current canvas, in pixels or meters. The scale allows specifying how many meters are equivalent to 100 pixels. The reference point controls specify the latitude, longitude, and altitude reference point used to convert between geographic and Cartesian coordinate systems. By clicking the <em>Save as default</em> option, all new canvases will be created with these properties. The default canvas size can also be changed in the Preferences dialog box.</td>
+</tr>
+<tr>
+<td>Wallpaper</td>
+<td>Used for setting the canvas background image.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="view-menu">View Menu</h3>
+<p>The View menu features items for toggling on and off their display on the canvas.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Interface Names</td>
+<td>Display interface names on links.</td>
+</tr>
+<tr>
+<td>IPv4 Addresses</td>
+<td>Display IPv4 addresses on links.</td>
+</tr>
+<tr>
+<td>IPv6 Addresses</td>
+<td>Display IPv6 addresses on links.</td>
+</tr>
+<tr>
+<td>Node Labels</td>
+<td>Display node names.</td>
+</tr>
+<tr>
+<td>Link Labels</td>
+<td>Display link labels.</td>
+</tr>
+<tr>
+<td>Annotations</td>
+<td>Display annotations.</td>
+</tr>
+<tr>
+<td>Canvas Grid</td>
+<td>Display the canvas grid.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tools-menu">Tools Menu</h3>
+<p>The tools menu lists different utility functions.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Find</td>
+<td>Display find dialog used for highlighting a node on the canvas.</td>
+</tr>
+<tr>
+<td>Auto Grid</td>
+<td>Automatically layout nodes in a grid.</td>
+</tr>
+<tr>
+<td>IP addresses</td>
+<td>Invokes the IP Addresses dialog box for configuring which IPv4/IPv6 prefixes are used when automatically addressing new interfaces.</td>
+</tr>
+<tr>
+<td>MAC addresses</td>
+<td>Invokes the MAC Addresses dialog box for configuring the starting number used as the lowest byte when generating each interface MAC address. This value should be changed when tunneling between CORE emulations to prevent MAC address conflicts.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="widgets-menu">Widgets Menu</h3>
+<p>Widgets are GUI elements that allow interaction with a running emulation.
+Widgets typically automate the running of commands on emulated nodes to report
+status information of some type and display this on screen.</p>
+<h4 id="periodic-widgets">Periodic Widgets</h4>
+<p>These Widgets are those available from the main <em>Widgets</em> menu. More than one
+of these Widgets may be run concurrently. An event loop fires once every second
+that the emulation is running. If one of these Widgets is enabled, its periodic
+routine will be invoked at this time. Each Widget may have a configuration
+dialog box which is also accessible from the <em>Widgets</em> menu.</p>
+<p>Here are some standard widgets:</p>
+<ul>
+<li><strong>Adjacency</strong> - displays router adjacency states for Quagga's OSPFv2 and OSPFv3
+  routing protocols. A line is drawn from each router halfway to the router ID
+  of an adjacent router. The color of the line is based on the OSPF adjacency
+  state such as Two-way or Full. To learn about the different colors, see the
+  <em>Configure Adjacency...</em> menu item. The <strong>vtysh</strong> command is used to
+  dump OSPF neighbor information.
+  Only half of the line is drawn because each
+  router may be in a different adjacency state with respect to the other.</li>
+<li><strong>Throughput</strong> - displays the kilobits-per-second throughput above each link,
+  using statistics gathered from each link. If the throughput exceeds a certain
+  threshold, the link will become highlighted. For wireless nodes which broadcast
+  data to all nodes in range, the throughput rate is displayed next to the node and
+  the node will become circled if the threshold is exceeded.</li>
+</ul>
+<h4 id="observer-widgets">Observer Widgets</h4>
+<p>These Widgets are available from the <strong>Observer Widgets</strong> submenu of the
+<strong>Widgets</strong> menu, and from the Widgets Tool on the toolbar. Only one Observer Widget may
+be used at a time. Mouse over a node while the session is running to pop up
+an informational display about that node.</p>
+<p>Available Observer Widgets include IPv4 and IPv6 routing tables, socket
+information, list of running processes, and OSPFv2/v3 neighbor information.</p>
+<p>Observer Widgets may be edited by the user and rearranged. Choosing
+<strong>Widgets-&gt;Observer Widgets-&gt;Edit Observers</strong> from the Observer Widget menu will
+invoke the Observer Widgets dialog. A list of Observer Widgets is displayed along
+with up and down arrows for rearranging the list. Controls are available for
+renaming each widget, for changing the command that is run during mouse over, and
+for adding and deleting items from the list. Note that specified commands should
+return immediately to avoid delays in the GUI display. Changes are saved to a
+<strong>config.yaml</strong> file in the CORE configuration directory.</p>
+<h3 id="session-menu">Session Menu</h3>
+<p>The Session Menu has entries for starting, stopping, and managing sessions,
+in addition to global options such as node types, comments, hooks, servers,
+and options.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sessions</td>
+<td>Invokes the CORE Sessions dialog box containing a list of active CORE sessions in the daemon. Basic session information such as name, node count, start time, and a thumbnail are displayed. This dialog allows connecting to different sessions, shutting them down, or starting a new session.</td>
+</tr>
+<tr>
+<td>Servers</td>
+<td>Invokes the CORE emulation servers dialog for configuring.</td>
+</tr>
+<tr>
+<td>Options</td>
+<td>Presents per-session options, such as the IPv4 prefix to be used, if any, for a control network the ability to preserve the session directory; and an on/off switch for SDT3D support.</td>
+</tr>
+<tr>
+<td>Hooks</td>
+<td>Invokes the CORE Session Hooks window where scripts may be configured for a particular session state. The session states are defined in the <a href="#session-states">table</a> below. The top of the window has a list of configured hooks, and buttons on the bottom left allow adding, editing, and removing hook scripts. The new or edit button will open a hook script editing window.  A hook script is a shell script invoked on the host (not within a virtual node).</td>
+</tr>
+</tbody>
+</table>
+<h4 id="session-states">Session States</h4>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Definition</td>
+<td>Used by the GUI to tell the backend to clear any state.</td>
+</tr>
+<tr>
+<td>Configuration</td>
+<td>When the user presses the <em>Start</em> button, node, link, and other configuration data is sent to the backend. This state is also reached when the user customizes a service.</td>
+</tr>
+<tr>
+<td>Instantiation</td>
+<td>After configuration data has been sent, just before the nodes are created.</td>
+</tr>
+<tr>
+<td>Runtime</td>
+<td>All nodes and networks have been built and are running. (This is the same state at which the previously-named <em>global experiment script</em> was run.)</td>
+</tr>
+<tr>
+<td>Datacollect</td>
+<td>The user has pressed the <em>Stop</em> button, but before services have been stopped and nodes have been shut down. This is a good time to collect log files and other data from the nodes.</td>
+</tr>
+<tr>
+<td>Shutdown</td>
+<td>All nodes and networks have been shut down and destroyed.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="help-menu">Help Menu</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CORE Github (www)</td>
+<td>Link to the CORE GitHub page.</td>
+</tr>
+<tr>
+<td>CORE Documentation (www)</td>
+<td>Lnk to the CORE Documentation page.</td>
+</tr>
+<tr>
+<td>About</td>
+<td>Invokes the About dialog box for viewing version information.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="building-sample-networks">Building Sample Networks</h2>
+<h3 id="wired-networks">Wired Networks</h3>
+<p>Wired networks are created using the <strong>Link Tool</strong> to draw a link between two
+nodes. This automatically draws a red line representing an Ethernet link and
+creates new interfaces on network-layer nodes.</p>
+<p>Double-click on the link to invoke the <strong>link configuration</strong> dialog box. Here
+you can change the Bandwidth, Delay, Loss, and Duplicate
+rate parameters for that link. You can also modify the color and width of the
+link, affecting its display.</p>
+<p>Link-layer nodes are provided for modeling wired networks. These do not create
+a separate network stack when instantiated, but are implemented using Linux bridging.
+These are the hub, switch, and wireless LAN nodes. The hub copies each packet from
+the incoming link to every connected link, while the switch behaves more like an
+Ethernet switch and keeps track of the Ethernet address of the connected peer,
+forwarding unicast traffic only to the appropriate ports.</p>
+<p>The wireless LAN (WLAN) is covered in the next section.</p>
+<h3 id="wireless-networks">Wireless Networks</h3>
+<p>Wireless networks allow moving nodes around to impact the connectivity between them. Connections between a
+pair of nodes is stronger when the nodes are closer while connection is weaker when the nodes are further away.
+CORE offers several levels of wireless emulation fidelity, depending on modeling needs and available
+hardware.</p>
+<ul>
+<li>WLAN Node<ul>
+<li>uses set bandwidth, delay, and loss</li>
+<li>links are enabled or disabled based on a set range</li>
+<li>uses the least CPU when moving, but nothing extra when not moving</li>
+</ul>
+</li>
+<li>Wireless Node<ul>
+<li>uses set bandwidth, delay, and initial loss</li>
+<li>loss dynamically changes based on distance between nodes, which can be configured with range parameters</li>
+<li>links are enabled or disabled based on a set range</li>
+<li>uses more CPU to calculate loss for every movement, but nothing extra when not moving</li>
+</ul>
+</li>
+<li>EMANE Node<ul>
+<li>uses a physical layer model to account for signal propagation, antenna profile effects and interference
+  sources in order to provide a realistic environment for wireless experimentation</li>
+<li>uses the most CPU for every packet, as complex calculations are used for fidelity</li>
+<li>See <a href="https://github.com/adjacentlink/emane/wiki">Wiki</a> for details on general EMANE usage</li>
+<li>See <a href="emane.html">CORE EMANE</a> for details on using EMANE in CORE</li>
+</ul>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Type</th>
+<th>Supported Platform(s)</th>
+<th>Fidelity</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WLAN</td>
+<td>On/Off</td>
+<td>Linux</td>
+<td>Low</td>
+<td>Ethernet bridging with nftables</td>
+</tr>
+<tr>
+<td>Wireless</td>
+<td>On/Off</td>
+<td>Linux</td>
+<td>Medium</td>
+<td>Ethernet bridging with nftables</td>
+</tr>
+<tr>
+<td>EMANE</td>
+<td>RF</td>
+<td>Linux</td>
+<td>High</td>
+<td>TAP device connected to EMANE emulator with pluggable MAC and PHY radio types</td>
+</tr>
+</tbody>
+</table>
+<h4 id="example-wlan-network-setup">Example WLAN Network Setup</h4>
+<p>To quickly build a wireless network, you can first place several router nodes
+onto the canvas. If you have the
+Quagga MDR software installed, it is
+recommended that you use the <strong>mdr</strong> node type for reduced routing overhead. Next
+choose the <strong>WLAN</strong> from the <strong>Link-layer nodes</strong> submenu. First set the
+desired WLAN parameters by double-clicking the cloud icon. Then you can link
+all selected right-clicking on the WLAN and choosing <strong>Link to Selected</strong>.</p>
+<p>Linking a router to the WLAN causes a small antenna to appear, but no red link
+line is drawn. Routers can have multiple wireless links and both wireless and
+wired links (however, you will need to manually configure route
+redistribution.) The mdr node type will generate a routing configuration that
+enables OSPFv3 with MANET extensions. This is a Boeing-developed extension to
+Quagga's OSPFv3 that reduces flooding overhead and optimizes the flooding
+procedure for mobile ad-hoc (MANET) networks.</p>
+<p>The default configuration of the WLAN is set to use the basic range model. Having this model
+selected causes <strong>core-daemon</strong> to calculate the distance between nodes based
+on screen pixels. A numeric range in screen pixels is set for the wireless
+network using the <strong>Range</strong> slider. When two wireless nodes are within range of
+each other, a green line is drawn between them and they are linked. Two
+wireless nodes that are farther than the range pixels apart are not linked.
+During Execute mode, users may move wireless nodes around by clicking and
+dragging them, and wireless links will be dynamically made or broken.</p>
+<h3 id="running-commands-within-nodes">Running Commands within Nodes</h3>
+<p>You can double click a node to bring up a terminal for running shell commands. Within
+the terminal you can run anything you like and those commands will be run in context of the node.
+For standard CORE nodes, the only thing to keep in mind is that you are using the host file
+system and anything you change or do can impact the greater system. By default, your terminal
+will open within the nodes home directory for the running session, but it is temporary and
+will be removed when the session is stopped.</p>
+<h3 id="mobility-scripting">Mobility Scripting</h3>
+<p>CORE has a few ways to script mobility.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ns-2 script</td>
+<td>The script specifies either absolute positions or waypoints with a velocity. Locations are given with Cartesian coordinates.</td>
+</tr>
+<tr>
+<td>gRPC API</td>
+<td>An external entity can move nodes by leveraging the gRPC API</td>
+</tr>
+<tr>
+<td>EMANE events</td>
+<td>See <a href="emane.html">EMANE</a> for details on using EMANE scripts to move nodes around. Location information is typically given as latitude, longitude, and altitude.</td>
+</tr>
+</tbody>
+</table>
+<p>For the first method, you can create a mobility script using a text
+editor, or using a tool such as <a href="http://net.cs.uni-bonn.de/wg/cs/applications/bonnmotion/">BonnMotion</a>, and associate
+the script with one of the wireless
+using the WLAN configuration dialog box. Click the <em>ns-2 mobility script...</em>
+button, and set the <em>mobility script file</em> field in the resulting <em>ns2script</em>
+configuration dialog.</p>
+<p>Here is an example for creating a BonnMotion script for 10 nodes:</p>
+<div class="highlight"><pre><span></span><code>bm<span class="w"> </span>-f<span class="w"> </span>sample<span class="w"> </span>RandomWaypoint<span class="w"> </span>-n<span class="w"> </span><span class="m">10</span><span class="w"> </span>-d<span class="w"> </span><span class="m">60</span><span class="w"> </span>-x<span class="w"> </span><span class="m">1000</span><span class="w"> </span>-y<span class="w"> </span><span class="m">750</span>
+bm<span class="w"> </span>NSFile<span class="w"> </span>-f<span class="w"> </span>sample
+<span class="c1"># use the resulting &#39;sample.ns_movements&#39; file in CORE</span>
+</code></pre></div>
+<p>When the Execute mode is started and one of the WLAN nodes has a mobility
+script, a mobility script window will appear. This window contains controls for
+starting, stopping, and resetting the running time for the mobility script. The
+<strong>loop</strong> checkbox causes the script to play continuously. The <strong>resolution</strong> text
+box contains the number of milliseconds between each timer event; lower values
+cause the mobility to appear smoother but consumes greater CPU time.</p>
+<p>The format of an ns-2 mobility script looks like:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># nodes: 3, max time: 35.000000, max x: 600.00, max y: 600.00</span>
+<span class="nv">$node_</span><span class="o">(</span><span class="m">2</span><span class="o">)</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>X_<span class="w"> </span><span class="m">144</span>.0
+<span class="nv">$node_</span><span class="o">(</span><span class="m">2</span><span class="o">)</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>Y_<span class="w"> </span><span class="m">240</span>.0
+<span class="nv">$node_</span><span class="o">(</span><span class="m">2</span><span class="o">)</span><span class="w"> </span><span class="nb">set</span><span class="w"> </span>Z_<span class="w"> </span><span class="m">0</span>.00
+<span class="nv">$ns_</span><span class="w"> </span>at<span class="w"> </span><span class="m">1</span>.00<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$node_</span><span class="s2">(2) setdest 130.0 280.0 15.0&quot;</span>
+</code></pre></div>
+<p>The first three lines set an initial position for node 2. The last line in the
+above example causes node 2 to move towards the destination <strong>(130, 280)</strong> at
+speed <strong>15</strong>. All units are screen coordinates, with speed in units per second.
+The total script time is learned after all nodes have reached their waypoints.
+Initially, the time slider in the mobility script dialog will not be
+accurate.</p>
+<p>Examples mobility scripts (and their associated topology files) can be found
+in the <strong>configs/</strong> directory.</p>
+<h2 id="alerts">Alerts</h2>
+<p>The alerts button is located in the bottom right-hand corner
+of the status bar in the CORE GUI. This will change colors to indicate one or
+more problems with the running emulation. Clicking on the alerts button will invoke the
+alerts dialog.</p>
+<p>The alerts dialog contains a list of alerts received from
+the CORE daemon. An alert has a time, severity level, optional node number,
+and source. When the alerts button is red, this indicates one or more fatal
+exceptions. An alert with a fatal severity level indicates that one or more
+of the basic pieces of emulation could not be created, such as failure to
+create a bridge or namespace, or the failure to launch EMANE processes for an
+EMANE-based network.</p>
+<p>Clicking on an alert displays details for that
+alert. The alert source is a text string
+to help trace where the alert occurred; "service:UserDefined" for example,
+would appear for a failed validation command with the UserDefined service.</p>
+<p>A button is available at the bottom of the dialog for clearing the alert
+list.</p>
+<h2 id="customizing-your-topologys-look">Customizing your Topology's Look</h2>
+<p>Several annotation tools are provided for changing the way your topology is
+presented. Captions may be added with the Text tool. Ovals and rectangles may
+be drawn in the background, helpful for visually grouping nodes together.</p>
+<p>During live demonstrations the marker tool may be helpful for drawing temporary
+annotations on the canvas that may be quickly erased. A size and color palette
+appears at the bottom of the toolbar when the marker tool is selected. Markings
+are only temporary and are not saved in the topology file.</p>
+<p>The basic node icons can be replaced with a custom image of your choice. Icons
+appear best when they use the GIF or PNG format with a transparent background.
+To change a node's icon, double-click the node to invoke its configuration
+dialog and click on the button to the right of the node name that shows the
+node's current icon.</p>
+<p>A background image for the canvas may be set using the <em>Wallpaper...</em> option
+from the <em>Canvas</em> menu. The image may be centered, tiled, or scaled to fit the
+canvas size. An existing terrain, map, or network diagram could be used as a
+background, for example, with CORE nodes drawn on top.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="tutorials/tutorial7.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tutorial 7 - EMANE">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Tutorial 7 - EMANE
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="nodetypes.html" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Overview
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": ".", "features": ["navigation.path", "navigation.instant", "navigation.footer", "content.code.copy"], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,40 @@
+@startuml
+skinparam {
+    RoundCorner 8
+    StateBorderColor #Black
+    StateBackgroundColor #LightSteelBlue
+}
+
+Definition: Session XML
+Definition: GUI Drawing
+Definition: Scripts
+
+Configuration: Configure Hooks
+Configuration: Configure Services
+Configuration: Configure WLAN / Mobility
+Configuration: Configure EMANE
+
+Instantiation: Create Nodes
+Instantiation: Create Interfaces
+Instantiation: Create Bridges
+Instantiation: Start Services
+
+Runtime: Interactive Shells
+Runtime: Traffic Scripts
+Runtime: Mobility
+Runtime: Widgets
+
+Datacollect: Collect Files
+Datacollect: Other Results
+
+Shutdown: Shutdown Services
+Shutdown: Destroy Brdges
+Shutdown: Destroy Interfaces
+Shutdown: Destroy Nodes
+
+Definition -> Configuration
+Configuration -> Instantiation
+Instantiation -> Runtime
+Runtime -> Datacollect
+Datacollect -> Shutdown
+@enduml
