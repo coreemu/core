@@ -1083,8 +1083,7 @@ class Session:
             "booting node(%s): services(%s)", node.name, ", ".join(node.services.keys())
         )
         self.control_net_manager.setup_ifaces(node)
-        with self.nodes_lock:
-            node.start_services()
+        node.start_services()
 
     def boot_nodes(self) -> list[Exception]:
         """

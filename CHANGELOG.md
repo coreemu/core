@@ -1,3 +1,14 @@
+## 2025-05-18 CORE 9.2.1
+
+* Installation
+    * \#914 - improvements to provided Dockerfiles
+    * \#915 - fix for package uninstall errors during post uninstall script
+* core-daemon
+    * \#895 - update to properly allow environment variables with an "=" in the value section
+    * \#909 - fix to revert loss of concurrency during service startup
+* core-gui
+    * \#916 - fix to allow negative values for emane configurations
+
 ## 2025-02-11 CORE 9.2.0
 
 * Installation

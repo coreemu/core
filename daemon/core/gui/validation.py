@@ -50,6 +50,19 @@ class PositiveIntEntry(ValidationEntry):
             return False
 
 
+class IntEntry(ValidationEntry):
+    empty: str = "0"
+
+    def is_valid(self, s: str) -> bool:
+        if not s:
+            return True
+        try:
+            int(s)
+            return True
+        except ValueError:
+            return False
+
+
 class PositiveFloatEntry(ValidationEntry):
     empty = "0.0"
 

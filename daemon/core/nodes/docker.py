@@ -268,7 +268,7 @@ class DockerNode(CoreNode):
             for line in output.split("\x00"):
                 if not line:
                     continue
-                key, value = line.split("=")
+                key, value = line.split("=", 1)
                 self.env[key] = value
             logger.debug("node(%s) pid: %s", self.name, self.pid)
             self.up = True
