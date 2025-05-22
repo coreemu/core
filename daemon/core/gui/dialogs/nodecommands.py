@@ -21,6 +21,7 @@ class NodeCommandsDialog(Dialog):
         self.selected_index: int | None = None
         self.name: tk.StringVar = tk.StringVar()
         self.cmd: tk.StringVar = tk.StringVar()
+        self.wait = tk.BooleanVar(value=True)
         self.draw()
 
     def draw(self) -> None:
@@ -57,6 +58,11 @@ class NodeCommandsDialog(Dialog):
         entry = ttk.Entry(frame, textvariable=self.cmd)
         entry.grid(row=1, column=1, sticky=tk.EW)
 
+        wait_checkbox = ttk.Checkbutton(
+            frame, text="Wait for command to complete", variable=self.wait
+        )
+        wait_checkbox.grid(row=2, column=0, sticky=tk.EW)
+
     def draw_config_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky=tk.EW, pady=PADY)
@@ -90,8 +96,8 @@ class NodeCommandsDialog(Dialog):
 
     def click_save_config(self) -> None:
         self.app.guiconfig.node_commands.clear()
-        for name, cmd in self.app.core.node_commands.items():
-            self.app.guiconfig.node_commands.append(NodeCommand(name, cmd))
+        for name, (cmd, wait) in self.app.core.node_commands.items():
+            self.app.guiconfig.node_commands.append(NodeCommand(name, cmd, wait))
         self.app.save_config()
         self.destroy()
 
@@ -99,21 +105,24 @@ class NodeCommandsDialog(Dialog):
         name = self.name.get()
         if name not in self.app.core.node_commands:
             cmd = self.cmd.get()
-            self.app.core.node_commands[name] = cmd
+            wait = self.wait.get()
+            self.app.core.node_commands[name] = (cmd, wait)
             self.commands.insert(tk.END, name)
             self.name.set("")
             self.cmd.set("")
+            self.wait.set(True)
         else:
             messagebox.showerror("Node Command Error", f"{name} already exists")
 
     def click_save(self) -> None:
         name = self.name.get()
         cmd = self.cmd.get()
+        wait = self.wait.get()
         if self.selected:
             previous_name = self.selected
             self.selected = name
             self.app.core.node_commands.pop(previous_name)
-            self.app.core.node_commands[name] = cmd
+            self.app.core.node_commands[name] = (cmd, wait)
             self.commands.delete(self.selected_index)
             self.commands.insert(self.selected_index, name)
             self.commands.selection_set(self.selected_index)
@@ -126,6 +135,7 @@ class NodeCommandsDialog(Dialog):
             self.selected_index = None
             self.name.set("")
             self.cmd.set("")
+            self.wait.set(True)
             self.commands.selection_clear(0, tk.END)
             self.save_button.config(state=tk.DISABLED)
             self.delete_button.config(state=tk.DISABLED)
@@ -135,9 +145,10 @@ class NodeCommandsDialog(Dialog):
         if selection:
             self.selected_index = selection[0]
             self.selected = self.commands.get(self.selected_index)
-            cmd = self.app.core.node_commands[self.selected]
+            cmd, wait = self.app.core.node_commands[self.selected]
             self.name.set(self.selected)
             self.cmd.set(cmd)
+            self.wait.set(wait)
             self.save_button.config(state=tk.NORMAL)
             self.delete_button.config(state=tk.NORMAL)
         else:
