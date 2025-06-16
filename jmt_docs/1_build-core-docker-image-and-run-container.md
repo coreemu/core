@@ -52,7 +52,7 @@ $ bash 2_run_containers.sh
 
 To stop the container do:
 ~~~
-$ 3_stop_containers.sh
+$ bash 3_stop_containers.sh
 ~~~
 
 ## Cleaning up a docker run session
@@ -60,8 +60,8 @@ $ 3_stop_containers.sh
 Make sure you follow usual Docker clean up etiquette (the script [3_stop_containers.sh](./3_stop_containers.sh) does this):
 
 ~~~
-$ docker stop $(docker ps -a -q)
-$ docker rm $(docker ps -a -q)
+$ docker stop core
+$ docker rm core
 $ docker system prune
 ~~~
 
