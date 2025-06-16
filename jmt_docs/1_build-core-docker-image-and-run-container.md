@@ -10,13 +10,13 @@ off Ubuntu 22.04 images:
 
 ![screenshot](images/docker_install_of_core.png)
 
-It builds a docker image tagged as 'core' and runs a container also called 'core'.
+It builds a set of 3 images with the final one tagged as 'core' and runs a container named 'core'.
 
-```
+~~~
 $ docker ps
 CONTAINER ID   IMAGE     COMMAND         CREATED         STATUS         PORTS     NAMES
 8b60c281cc06   core      "core-daemon"   3 seconds ago   Up 2 seconds             core
-```
+~~~
 
 ## Basic reiteration of the image building process
 
@@ -25,37 +25,44 @@ From the root directory of this repository, execute the following commands in th
 ~~~
 $ sudo docker build -t emane-python -f dockerfiles/Dockerfile.emane-python .
 $ sudo docker build -t ospf-deb -f dockerfiles/Dockerfile.ospf-mdr-deb .
+$ sudo docker build -t core -f dockerfiles/Dockerfile.ubuntu .
 ~~~
+
+So 3 images are built from these commands and are tagged as:
+
+1. emane-python
+2. ospf-deb
+3. core
 
 ## Easy shell scripts to run and stop containers
 
-After building the CORE 
-
-```
+After building the images above, the following script may be used for convenience.  To run a core container and get a bash shell into it:
+~~~
 $ bash 2_run_containers.sh
+~~~
+
+To stop the container do:
+~~~
 $ 3_stop_containers.sh
-```
+~~~
 
 ## Cleaning up a docker run session
 
-Make sure you follow usual Docker clean up etiquette:
+Make sure you follow usual Docker clean up etiquette (the script [3_stop_containers.sh](./3_stop_containers.sh) does this):
 
-```
+~~~
 $ docker stop $(docker ps -a -q)
 $ docker rm $(docker ps -a -q)
 $ docker system prune
-```
-
+~~~
 
 
 ## Next steps
 
-Next steps:
+Some ideas for next steps:
 
 1. Run python applications with venv in created hosts.  Say, a REST API.
-
 2. Run docker applications in created hosts.
-
 3. Run 'nrlsmf' in created hosts.
-
 4. docker-compose or similar orchestration of multiple nodes in CORE.
+
