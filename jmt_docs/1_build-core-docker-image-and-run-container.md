@@ -18,6 +18,15 @@ CONTAINER ID   IMAGE     COMMAND         CREATED         STATUS         PORTS   
 8b60c281cc06   core      "core-daemon"   3 seconds ago   Up 2 seconds             core
 ```
 
+## Basic reiteration of the image building process
+
+From the root directory of this repository, execute the following commands in the terminal:
+
+~~~
+$ sudo docker build -t emane-python -f dockerfiles/Dockerfile.emane-python .
+$ sudo docker build -t ospf-deb -f dockerfiles/Dockerfile.ospf-mdr-deb .
+~~~
+
 ## Easy shell scripts to run and stop containers
 
 After building the CORE 
