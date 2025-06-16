@@ -1,18 +1,12 @@
-# Installing and running CORE and EMANE using Docker
+# Building CORE and EMANE Docker Images and Running CORE and EMANE in Containers
 
-The documentation provides a guide on how to install CORE 
-and EMANE using the Dockerfile's in the CORE repo which builds 
+The documentation provides a guide on how to build CORE 
+and EMANE iamges using the Dockerfile's in the CORE repo. The images are based
 off Ubuntu 22.04 images:
-https://coreemu.github.io/core/install_docker.html
-https://github.com/joshuamhtsang/core/blob/master/docs/install_docker.md
 
-This is a good option to get CORE running especially if you're actually 
-running Ubuntu 24.04.
+[Instructions for building a CORE Docker image](../docs/install_docker.md)
 
-Update 09/02/2025:
-
-I followed the `docker build`, `docker run` and `docker exec` terminal
-commands and managed to get CORE running!
+*Update 09/02/2025*: I followed the `docker build`, `docker run` and `docker exec` terminal commands above and managed to get CORE running!
 
 ![screenshot](images/docker_install_of_core.png)
 
@@ -24,7 +18,16 @@ CONTAINER ID   IMAGE     COMMAND         CREATED         STATUS         PORTS   
 8b60c281cc06   core      "core-daemon"   3 seconds ago   Up 2 seconds             core
 ```
 
-# Cleaning up a docker run session
+## Easy shell scripts to run and stop containers
+
+After building the CORE 
+
+```
+$ bash 2_run_containers.sh
+$ 3_stop_containers.sh
+```
+
+## Cleaning up a docker run session
 
 Make sure you follow usual Docker clean up etiquette:
 
@@ -34,14 +37,9 @@ $ docker rm $(docker ps -a -q)
 $ docker system prune
 ```
 
-# Easy shell scripts to run and stop containers
 
-```
-$ bash 2_run_containers.sh
-$ 3_stop_containers.sh
-```
 
-# Next steps
+## Next steps
 
 Next steps:
 
