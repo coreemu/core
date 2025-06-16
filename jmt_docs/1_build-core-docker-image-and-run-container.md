@@ -34,6 +34,15 @@ So 3 images are built from these commands and are tagged as:
 2. ospf-deb
 3. core
 
+*Update 16/06/2025*: The final docker build command failed, and I suspect it is due to the following commands in the [Dockerfile](../dockerfiles/Dockerfile.ubuntu):
+
+~~~
+ARG CORE_PACKAGE=core_9.1.0_amd64.deb
+RUN apt-get install -y --no-install-recommends ./${CORE_PACKAGE}
+~~~
+
+I checked the [CORE releases page](https://github.com/coreemu/core/releases/) and the version '9.1.0' no longer exists. So I updated the `CORE_PACKAGE` argument with what is available now i.e. `core_9.2.1_amd64.deb`.  The build now succeeds.
+
 ## Easy shell scripts to run and stop containers
 
 After building the images above, the following script may be used for convenience.  To run a core container and get a bash shell into it:
