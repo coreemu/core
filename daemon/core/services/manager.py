@@ -68,7 +68,7 @@ class ServiceManager:
         # validate dependent executables are present
         for executable in service.executables:
             try:
-                utils.which(executable, required=True)
+                utils.which(executable, required=True, path=hasattr(service, "path") and service.path or None)
             except CoreError as e:
                 raise CoreError(f"service({service.name}): {e}")
 

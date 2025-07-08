@@ -146,7 +146,7 @@ def close_onexec(fd: int) -> None:
     fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
 
-def which(command: str, required: bool) -> str | None:
+def which(command: str, required: bool, path: str | None = None) -> str | None:
     """
     Find location of desired executable within current PATH.
 
@@ -155,7 +155,7 @@ def which(command: str, required: bool) -> str | None:
     :return: command location or None
     :raises ValueError: when not found and required
     """
-    found_path = shutil.which(command)
+    found_path = shutil.which(command, path=path and path.replace(" ", ":"))
     if found_path is None and required:
         raise CoreError(f"failed to find required executable({command}) in path")
     return found_path
