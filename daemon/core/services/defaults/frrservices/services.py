@@ -8,6 +8,7 @@ from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.nodes.wireless import WirelessNode
 from core.services.base import CoreService
+from core.nodes.base import CoreNode
 
 GROUP: str = "FRR"
 FRR_STATE_DIR: str = "/var/run/frr"
@@ -92,6 +93,14 @@ class FRRZebra(CoreService):
     startup: list[str] = ["bash frrboot.sh zebra"]
     validate: list[str] = ["pidof zebra"]
     shutdown: list[str] = ["pkill -f zebra"]
+    path: str = "/usr/local/sbin /usr/sbin /usr/lib/frr /usr/libexec/frr"
+
+    def __init__(self, node: CoreNode = None) -> None:
+        CoreService.__init__(self, node)
+        self.path = self.node.session.options.get(
+                "frr_sbin_search",
+                default=self.path,
+            ).strip('"')
 
     def data(self) -> dict[str, Any]:
         frr_conf = self.files[0]
@@ -100,7 +109,7 @@ class FRRZebra(CoreService):
         ).strip('"')
         frr_sbin_search = self.node.session.options.get(
             "frr_sbin_search",
-            default="/usr/local/sbin /usr/sbin /usr/lib/frr /usr/libexec/frr",
+            default=self.path,
         ).strip('"')
 
         services = []
