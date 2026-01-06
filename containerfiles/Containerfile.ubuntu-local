@@ -1,0 +1,114 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:24.04 AS ospf-deb
+WORKDIR /opt
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    git \
+    ca-certificates \
+    automake \
+    make \
+    libtool \
+    pkg-config \
+    gawk \
+    g++ \
+    dpkg-dev \
+    debhelper \
+    libreadline-dev \
+    texinfo \
+    imagemagick \
+    groff \
+    build-essential:native \
+    texlive-latex-recommended \
+    texlive-plain-generic && \
+    git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+    cd ospf-mdr && \
+    ./bootstrap.sh && \
+    ./configure && \
+    (make -f quagga.deb.mk build || make -f quagga.deb.mk build) && \
+    mv quagga-mr_0.99*.deb /opt/ && \
+    cd /opt && \
+    rm -rf ospf-mdr && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+FROM ubuntu:24.04
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/root/.local/bin:${PATH}"
+WORKDIR /opt
+
+# install python
+ARG PYTHON_VERSION=3.13
+RUN uv python install ${PYTHON_VERSION}
+
+# install system dependencies
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    xterm \
+    psmisc \
+    tk \
+    wget \
+    iproute2 \
+    iputils-ping \
+    tcpdump && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# install core
+COPY --from=core-package /opt/core/core_*.deb .
+RUN apt-get update -y && \
+    PYTHON=$(uv python find ${PYTHON_VERSION}) apt-get install -y --no-install-recommends ./core_*.deb && \
+    rm -f ${CORE_PACKAGE} && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# install ospf mdr
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    automake \
+    make \
+    gawk \
+    git \
+    g++ \
+    libreadline-dev \
+    libtool \
+    pkg-config && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+    cd ospf-mdr && \
+    ./bootstrap.sh && \
+    ./configure --disable-doc --enable-user=root --enable-group=root \
+    --with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
+    --localstatedir=/var/run/quagga && \
+    make -j$(nproc) && \
+    make install && \
+    cd .. && \
+    rm -rf ospf-mdr
+
+# install emane
+ARG EMANE_VERSION=1.5.3
+ARG EMANE_RELEASE=emane-${EMANE_VERSION}-release-1
+ARG EMANE_PACKAGE=${EMANE_RELEASE}.ubuntu-24_04.amd64.tar.gz
+RUN apt-get update -y && \
+    wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE} && \
+    tar xf ${EMANE_PACKAGE} && \
+    cd ${EMANE_RELEASE}/debs/ubuntu-24_04/amd64 && \
+    rm emane-spectrum-tools*.deb emane-model-lte*.deb && \
+    rm *dev*.deb && \
+    apt-get install -y --no-install-recommends ./emane*.deb ./python3-emane_*.deb && \
+    cd ../../../.. && \
+    rm ${EMANE_PACKAGE} && \
+    rm -rf ${EMANE_RELEASE} && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# install emane python bindings with dependencies
+ARG VENV_PATH=/opt/core/venv
+COPY --from=emane-python /opt/emane-*.whl .
+RUN uv pip install --python ${VENV_PATH} 'setuptools<81' ./emane-*.whl && \
+    rm -f ./emane-*.whl
+
+# set default directory
+WORKDIR /root

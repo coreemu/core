@@ -10,7 +10,10 @@ the latest from a given branch. The environment helps ensure we use an older
 version of glibc to avoid incompatibilities.
 
 ```shell
-<docker|podman> build -t core-build -f Containerfile.core-python .
+<docker|podman> build -t core-package -f Containerfile.core-package .
+
+# optionally change BRANCH used when building
+<docker|podman> build -t core-package --build-arg BRANCH=develop -f Containerfile.core-package .
 ```
 
 ## EMANE Python Bindings

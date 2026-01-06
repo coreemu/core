@@ -34,7 +34,8 @@ RUN dnf update -y && \
 
 FROM rockylinux/rockylinux:9
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-ENV LANG=en_US.UTF-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /opt
 
@@ -54,12 +55,9 @@ RUN dnf update -y && \
     dnf clean all
 
 # install core
-ARG CORE_VERSION=9.2.1
-ARG CORE_PACKAGE=core_${CORE_VERSION}_x86_64.rpm
-ARG PACKAGE_URL=https://github.com/coreemu/core/releases/download/release-${CORE_VERSION}/${CORE_PACKAGE}
+COPY --from=core-package /opt/core/core_*.rpm .
 RUN dnf update -y && \
-    wget -q ${PACKAGE_URL} && \
-    PYTHON=$(uv python find ${PYTHON_VERSION}) dnf install -y ./${CORE_PACKAGE} && \
+    PYTHON=$(uv python find ${PYTHON_VERSION}) dnf install -y ./core_*.rpm && \
     rm -f ${CORE_PACKAGE} && \
     dnf autoremove -y && \
     dnf clean all
