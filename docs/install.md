@@ -24,7 +24,7 @@ Any computer capable of running Linux should be able to run CORE. Since the phys
 containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
 * Linux Kernel v3.3+
-* Python 3.10+
+* Python 3.10-3.12
   * pip
   * venv
   * tcl/tk support for GUI
@@ -108,7 +108,7 @@ is ran when uninstalling and would require the same options as given, during the
 
 !!! note
 
-    PYTHON defaults to python3 for installs below, CORE requires python3.9+, pip,
+    PYTHON defaults to python3 for installs below, CORE requires Python 3.10-3.12, pip,
     tk compatibility for python gui, and venv for virtual environments
 
 Examples for install:
@@ -123,9 +123,9 @@ sudo <yum/apt> install -y ./<package>
 # disable the venv and install to python directly
 sudo NO_VENV=1 <yum/apt> install -y ./<package>
 # change python executable used to install for venv or direct installations
-sudo PYTHON=python3.9 <yum/apt> install -y ./<package>
+sudo PYTHON=python3 <yum/apt> install -y ./<package>
 # disable venv and change python executable
-sudo NO_VENV=1 PYTHON=python3.9 <yum/apt> install -y ./<package>
+sudo NO_VENV=1 PYTHON=python3 <yum/apt> install -y ./<package>
 # skip installing the python portion entirely, as you plan to carry this out yourself
 # core python wheel is located at /opt/core/core-<version>-py3-none-any.whl
 sudo NO_PYTHON=1 <yum/apt> install -y ./<package>
@@ -141,9 +141,9 @@ sudo <yum/apt> remove core
 # remove a local install
 sudo NO_VENV=1 <yum/apt> remove core
 # remove install using alternative python
-sudo PYTHON=python3.9 <yum/apt> remove core
+sudo PYTHON=python3 <yum/apt> remove core
 # remove install using alternative python and local install
-sudo NO_VENV=1 PYTHON=python3.9 <yum/apt> remove core
+sudo NO_VENV=1 PYTHON=python3 <yum/apt> remove core
 # remove install and skip python uninstall
 sudo NO_PYTHON=1 <yum/apt> remove core
 ```
@@ -248,7 +248,7 @@ When done see [Post Install](#post-install).
 For unsupported OSs you could attempt to do the following to translate
 an installation to your use case.
 
-* make sure you have python3.9+ with venv support
+* make sure you have Python 3.10-3.12 with venv support
 * make sure you have python3 invoke available to leverage `<repo>/tasks.py`
 
 ```shell

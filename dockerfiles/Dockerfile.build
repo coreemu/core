@@ -1,7 +1,11 @@
 # syntax=docker/dockerfile:1
 FROM ubuntu:20.04
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /opt
+
+# install system dependencies
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     automake \
@@ -13,7 +17,6 @@ RUN apt-get update -y && \
     tk \
     bash \
     gem \
-    curl \
     rpm \
     ruby \
     ca-certificates \
@@ -22,26 +25,25 @@ RUN apt-get update -y && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
+# install python and tools
+ARG PYTHON_VERSION=3.10
+ARG DOTENV_VERSION=2.8.1
+ARG GRPC_VERSION=1.69.0
+ARG INVOKE_VERSION=2.2.1
+ARG POETRY_VERSION=1.8.5
+RUN uv python install ${PYTHON_VERSION} && \
+    uv tool install invoke==${INVOKE_VERSION} && \
+    uv tool install poetry==${POETRY_VERSION} && \
+    gem install dotenv -v ${DOTENV_VERSION} && \
+    gem install fpm
+
 # clone and build core
 ARG BRANCH=master
-ARG PIPX_VERSION=1.7.1
-ARG GRPC_VERSION=1.69.0
-ARG INVOKE_VERSION=2.2.0
-ARG POETRY_VERSION=1.2.1
-ENV PATH="/root/.local/bin:${PATH}"
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    git clone https://github.com/coreemu/core.git && \
+RUN git clone https://github.com/coreemu/core.git && \
     cd core && \
-    uv self update && \
-    uv python install 3.10 && \
-    uv venv venv && \
-    uv pip install --python ./venv/bin/python pipx==${PIPX_VERSION} grpcio==${GRPC_VERSION} grpcio-tools==${GRPC_VERSION} && \
-    ./venv/bin/python -m pipx ensurepath && \
-    ./venv/bin/python -m pipx install invoke==${INVOKE_VERSION} && \
-    ./venv/bin/python -m pipx install poetry==${POETRY_VERSION} && \
-    gem install dotenv -v 2.8.1 && \
-    gem install fpm && \
     git checkout ${BRANCH} && \
+    uv venv --python ${PYTHON_VERSION} venv && \
+    uv pip install --python ./venv/bin/python grpcio==${GRPC_VERSION} grpcio-tools==${GRPC_VERSION} && \
     ./bootstrap.sh && \
     PYTHON=./venv/bin/python ./configure --prefix=/usr && \
     make -j$(nproc) && \

@@ -25,7 +25,7 @@ capability to respond faster. Feel free to join us at the link below.
 
 ## Quick Start
 
-Requires Python 3.9+. More detailed instructions and install options can be found
+Requires Python 3.10-3.12. More detailed instructions and install options can be found
 [here](https://coreemu.github.io/core/install.html).
 
 ### Package Install

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ubuntu:22.04 AS ospf-deb
+FROM ubuntu:24.04 AS ospf-deb
 WORKDIR /opt
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -31,36 +31,41 @@ RUN apt-get update -y && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /opt
+
+# install python
+ARG PYTHON_VERSION=3.12
+RUN uv python install ${PYTHON_VERSION}
+
 # install system dependencies
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     xterm \
     psmisc \
-    python3 \
-    python3-tk \
-    python3-venv \
-    python3-pip \
+    tk \
     wget \
     iproute2 \
     iputils-ping \
-    curl \
     tcpdump && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
+
 # install core
 ARG CORE_VERSION=9.2.1
 ARG CORE_PACKAGE=core_${CORE_VERSION}_amd64.deb
 ARG PACKAGE_URL=https://github.com/coreemu/core/releases/download/release-${CORE_VERSION}/${CORE_PACKAGE}
 RUN apt-get update -y && \
     wget -q ${PACKAGE_URL} && \
-    apt-get install -y --no-install-recommends ./${CORE_PACKAGE} && \
+    PYTHON=$(uv python find ${PYTHON_VERSION}) apt-get install -y --no-install-recommends ./${CORE_PACKAGE} && \
     rm -f ${CORE_PACKAGE} && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
+
 # install ospf mdr
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -84,13 +89,15 @@ RUN git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
     make install && \
     cd .. && \
     rm -rf ospf-mdr
+
 # install emane
-ARG EMANE_RELEASE=emane-1.5.1-release-1
-ARG EMANE_PACKAGE=${EMANE_RELEASE}.ubuntu-22_04.amd64.tar.gz
+ARG EMANE_VERSION=1.5.3
+ARG EMANE_RELEASE=emane-${EMANE_VERSION}-release-1
+ARG EMANE_PACKAGE=${EMANE_RELEASE}.ubuntu-24_04.amd64.tar.gz
 RUN apt-get update -y && \
     wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE} && \
     tar xf ${EMANE_PACKAGE} && \
-    cd ${EMANE_RELEASE}/debs/ubuntu-22_04/amd64 && \
+    cd ${EMANE_RELEASE}/debs/ubuntu-24_04/amd64 && \
     rm emane-spectrum-tools*.deb emane-model-lte*.deb && \
     rm *dev*.deb && \
     apt-get install -y --no-install-recommends ./emane*.deb ./python3-emane_*.deb && \
@@ -99,9 +106,12 @@ RUN apt-get update -y && \
     rm -rf ${EMANE_RELEASE} && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
-# install emane python bindings
+
+# install emane python bindings with dependencies
 ARG VENV_PATH=/opt/core/venv
 COPY --from=emane-python /opt/emane-*.whl .
-RUN ${VENV_PATH}/bin/python -m pip install ./emane-*.whl
+RUN uv pip install --python ${VENV_PATH} 'setuptools<81' ./emane-*.whl && \
+    rm -f ./emane-*.whl
+
 # set default directory
 WORKDIR /root
