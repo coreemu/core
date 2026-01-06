@@ -38,7 +38,7 @@ ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /opt
 
 # install python
-ARG PYTHON_VERSION=3.12
+ARG PYTHON_VERSION=3.13
 RUN uv python install ${PYTHON_VERSION}
 
 # install system dependencies

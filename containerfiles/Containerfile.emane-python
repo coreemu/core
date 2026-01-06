@@ -26,7 +26,7 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists/*
 
 # install python and setup venv
-ARG PYTHON_VERSION=3.12
+ARG PYTHON_VERSION=3.13
 RUN uv python install ${PYTHON_VERSION} && \
     uv venv --python ${PYTHON_VERSION} venv && \
     uv pip install --python ./venv/bin/python setuptools wheel

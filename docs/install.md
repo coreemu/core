@@ -24,7 +24,7 @@ Any computer capable of running Linux should be able to run CORE. Since the phys
 containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
 * Linux Kernel v3.3+
-* Python 3.10-3.12
+* Python 3.13+
   * pip
   * venv
   * tcl/tk support for GUI
@@ -108,7 +108,7 @@ is ran when uninstalling and would require the same options as given, during the
 
 !!! note
 
-    PYTHON defaults to python3 for installs below, CORE requires Python 3.10-3.12, pip,
+    PYTHON defaults to python3 for installs below, CORE requires Python 3.13+, pip,
     tk compatibility for python gui, and venv for virtual environments
 
 Examples for install:
@@ -248,7 +248,7 @@ When done see [Post Install](#post-install).
 For unsupported OSs you could attempt to do the following to translate
 an installation to your use case.
 
-* make sure you have Python 3.10-3.12 with venv support
+* make sure you have Python 3.13+ with venv support
 * make sure you have python3 invoke available to leverage `<repo>/tasks.py`
 
 ```shell
