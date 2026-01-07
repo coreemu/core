@@ -487,17 +487,20 @@ class NodeConfigDialog(Dialog):
             try:
                 ip4_subnet = IPNetwork(self.ip4_subnet.get())
                 ip6_subnet = IPNetwork(self.ip6_subnet.get())
-                if len(ip4_subnet) == 1 or len(ip6_subnet) == 1:
-                    messagebox.showerror(
-                        "IP Subnet Error",
-                        "Subnet mask must be less than ip4/32 or ip6/128"
-                        " and allow assigning the desired number of addresses needed",
-                        parent=self.top,
+                subnets = self.app.core.ifaces_manager.get_wireless_nets(self.node.id)
+                if subnets.ip4 != ip4_subnet or subnets.ip6 != ip6_subnet:
+                    if len(ip4_subnet) == 1 or len(ip6_subnet) == 1:
+                        messagebox.showerror(
+                            "IP Subnet Error",
+                            "Subnet mask must be less than ip4/32 or ip6/128"
+                            " and allow assigning the desired number of addresses "
+                            "needed",
+                            parent=self.top,
+                        )
+                        return
+                    self.app.core.ifaces_manager.set_wireless_nets(
+                        self.node.id, ip4_subnet, ip6_subnet
                     )
-                    return
-                self.app.core.ifaces_manager.set_wireless_nets(
-                    self.node.id, ip4_subnet, ip6_subnet
-                )
             except AddrFormatError as e:
                 messagebox.showerror("IP Network Error", str(e), parent=self.top)
                 return
