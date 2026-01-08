@@ -20,6 +20,7 @@ stamp-h1
 
 # python virtual environments
 venv
+.venv
 
 # generated protobuf files
 *_pb2.py
@@ -57,12 +58,25 @@ coverage.xml
 # ignore swap files
 *.swp
 
-# ignore built input files
-netns/setup.py
-daemon/setup.py
-
 # python
 __pycache__
 
 # ignore core player files
 *.core
+
+# netns specific
+netns/*.o
+netns/build
+netns/netns
+netns/vcmd
+netns/version.h
+netns/vnoded
+netns/setup.py
+
+# daemon specific
+daemon/setup.py
+daemon/core/constants.py
+daemon/doc.*.rst
+daemon/doc/_build
+daemon/doc/conf.py
+daemon/dist/*
