@@ -20,7 +20,8 @@ jobs:
           cd daemon
           cp core/constants.py.in core/constants.py
           sed -i 's/required=True/required=False/g' core/emulator/coreemu.py
-          uvx poetry install
+          uv tool install poetry
+          poetry install
       - name: isort
         run: |
           cd daemon
