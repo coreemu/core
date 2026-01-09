@@ -49,13 +49,8 @@ dev = [
 [tool.hatch.build.targets.sdist]
 exclude = ["core/constants.py.in"]
 
-[tool.hatch.build.targets.sdist.force-include]
-"core/api/grpc/*" = "core/api/grpc/*"
-"core/services/defaults/*/templates" = "core/services/defaults/*/templates"
-"core/constants.py" = "core/constants.py"
-"core/gui/data/**/*" = "core/gui/data/**/*"
-
 [tool.hatch.build.targets.wheel]
+artifacts = ["core/api/grpc/*_pb2*.py"]
 exclude = ["core/constants.py.in"]
 
 [tool.isort]

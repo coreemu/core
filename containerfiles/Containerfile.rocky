@@ -33,7 +33,7 @@ RUN dnf update -y && \
     dnf clean all
 
 FROM rockylinux/rockylinux:9
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /uvx /bin/
 ENV LANG=en_US.UTF-8
 ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /opt
