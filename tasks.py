@@ -124,12 +124,6 @@ def get_env_python_dep() -> str:
     return os.environ.get("PYTHON_DEP", "python3")
 
 
-def get_pytest(c: Context) -> str:
-    with c.cd(DAEMON_DIR):
-        venv = c.run("poetry env info -p", hide=True).stdout.strip()
-        return os.path.join(venv, "bin", "pytest")
-
-
 def get_os(install_type: Optional[str]) -> OsInfo:
     if install_type:
         name_value = OsName.UNKNOWN.value
@@ -203,20 +197,24 @@ def install_core(c: Context, hide: bool) -> None:
     c.run("sudo make install", hide=hide)
 
 
-def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
+def install_uv(c: Context, dev: bool, local: bool, hide: bool) -> None:
     python_bin = get_env_python()
     if local:
         with c.cd(DAEMON_DIR):
-            c.run("poetry build -f wheel", hide=hide)
+            c.run("uv build --wheel", hide=hide)
             c.run(f"sudo {python_bin} -m pip install dist/*")
     else:
-        args = "" if dev else "--only main"
+        args = "" if dev else "--no-dev"
         with c.cd(DAEMON_DIR):
             c.run(f"sudo mkdir -p {CORE_PATH}", hide=hide)
-            c.run(f"sudo {python_bin} -m venv {CORE_VENV_PATH}")
-            c.run(f"{ACTIVATE_VENV} && {SUDOP} poetry install {args}", hide=hide)
+            c.run(f"sudo {python_bin} -m venv {CORE_VENV_PATH}", hide=hide)
+            c.run(
+                f"{ACTIVATE_VENV} && {SUDOP} uv sync --active {args}", hide=hide
+            )
             if dev:
-                c.run(f"{ACTIVATE_VENV} && poetry run pre-commit install", hide=hide)
+                c.run(
+                    f"{ACTIVATE_VENV} && {SUDOP} pre-commit install", hide=hide
+                )
 
 
 def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
@@ -360,7 +358,7 @@ def install(
     no_python=False,
 ):
     """
-    install core, poetry, scripts, service, and ospf mdr
+    install core, scripts, service, and ospf mdr
     """
     python_bin = get_env_python()
     venv_path = None if local else CORE_VENV_PATH
@@ -381,7 +379,7 @@ def install(
     with p.start("installing vnoded/vcmd"):
         install_core(c, hide)
     with p.start(f"installing core"):
-        install_poetry(c, dev, local, hide)
+        install_uv(c, dev, local, hide)
     with p.start("installing scripts, examples, and configuration"):
         install_core_files(c, local, hide, prefix)
     with p.start("installing systemd service"):
@@ -442,7 +440,10 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
             c.run("make -j$(nproc)", hide=hide)
     with p.start("installing emane python bindings for core virtual environment"):
         with c.cd(DAEMON_DIR):
-            c.run(f"poetry run pip install {emane_python_dir.absolute()}", hide=hide)
+            c.run(
+                f"{CORE_VENV_PYTHON} -m pip install {emane_python_dir.absolute()}",
+                hide=hide,
+            )
 
 
 @task(
@@ -486,7 +487,7 @@ def uninstall(
                 if dev:
                     with c.cd(DAEMON_DIR):
                         c.run(
-                            f"{ACTIVATE_VENV} && poetry run pre-commit uninstall",
+                            f"{ACTIVATE_VENV} && {SUDOP} pre-commit uninstall",
                             hide=hide,
                         )
                 c.run(f"sudo rm -rf {CORE_VENV_PATH}", hide=hide)
@@ -550,9 +551,8 @@ def test(c):
     """
     run core tests
     """
-    pytest = get_pytest(c)
     with c.cd(DAEMON_DIR):
-        c.run(f"sudo {pytest} -v --lf -x tests", pty=True)
+        c.run(f"sudo {CORE_VENV_PYTHON} -m pytest -v --lf -x tests", pty=True)
 
 
 @task
@@ -561,7 +561,7 @@ def test_mock(c):
     run core tests using mock to avoid running as sudo
     """
     with c.cd(DAEMON_DIR):
-        c.run("poetry run pytest -v --mock --lf -x tests", pty=True)
+        c.run(f"{CORE_VENV_PYTHON} -m pytest -v --mock --lf -x tests", pty=True)
 
 
 @task
@@ -569,6 +569,5 @@ def test_emane(c):
     """
     run core emane tests
     """
-    pytest = get_pytest(c)
     with c.cd(DAEMON_DIR):
-        c.run(f"sudo {pytest} -v --lf -x tests/emane", pty=True)
+        c.run(f"sudo {CORE_VENV_PYTHON} -m pytest -v --lf -x tests/emane", pty=True)

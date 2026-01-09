@@ -178,7 +178,7 @@ Installaion will carry out the following steps:
 
 * installs system dependencies for building core
 * builds vcmd/vnoded and python grpc files
-* installs core into poetry managed virtual environment or locally, if flag is passed
+* installs core into uv managed virtual environment or locally, if flag is passed
 * installs systemd service pointing to appropriate python location based on install type
 * clone/build/install working version of [OPSF MDR](https://github.com/USNavalResearchLaboratory/ospf-mdr)
 
@@ -194,12 +194,10 @@ Installaion will carry out the following steps:
 
 The following tools will be leveraged during installation:
 
-| Tool                                        | Description                                                           |
-|---------------------------------------------|-----------------------------------------------------------------------|
-| [pip](https://pip.pypa.io/en/stable/)       | used to install pipx                                                  |
-| [pipx](https://pipxproject.github.io/pipx/) | used to install standalone python tools (invoke, poetry)              |
-| [invoke](http://www.pyinvoke.org/)          | used to run provided tasks (install, uninstall, reinstall, etc)       |
-| [poetry](https://python-poetry.org/)        | used to install python virtual environment or building a python wheel |
+| Tool                                  | Description                                                           |
+|---------------------------------------|-----------------------------------------------------------------------|
+| [invoke](http://www.pyinvoke.org/)    | used to run provided tasks (install, uninstall, reinstall, etc)       |
+| [uv](https://github.com/astral-sh/uv) | used to install python virtual environment or building a python wheel |
 
 First we will need to clone and navigate to the CORE repo.
 
@@ -229,7 +227,7 @@ inv install --no-ospf
 Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
 
 Docstring:
-  install core, poetry, scripts, service, and ospf mdr
+  install core, scripts, service, and ospf mdr
 
 Options:
   -d, --dev                          install development mode

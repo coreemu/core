@@ -1,20 +1,32 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
 name = "core"
 version = "9.2.1"
 description = "CORE Common Open Research Emulator"
-authors = ["Boeing Research and Technology"]
+authors = [{ name = "Boeing Research and Technology" }]
+requires-python = ">=3.13,<4"
 license = "BSD-2-Clause"
-repository = "https://github.com/coreemu/core"
-documentation = "https://coreemu.github.io/core/"
-include = [
-    "core/api/grpc/*",
-    "core/services/defaults/*/templates",
-    "core/constants.py",
-    "core/gui/data/**/*",
+dependencies = [
+    "fabric==3.2.2",
+    "grpcio==1.69.0",
+    "invoke==2.2.0",
+    "lxml==5.4.0",
+    "netaddr==0.10.1",
+    "protobuf==5.29.3",
+    "pyproj==3.7.2",
+    "Mako==1.2.3",
+    "PyYAML==6.0.1",
+    "pillow==11.1.0",
 ]
-exclude = ["core/constants.py.in"]
 
-[tool.poetry.scripts]
+[project.urls]
+Repository = "https://github.com/coreemu/core"
+Documentation = "https://coreemu.github.io/core/"
+
+[project.scripts]
 core-daemon = "core.scripts.daemon:main"
 core-cli = "core.scripts.cli:main"
 core-gui = "core.scripts.gui:main"
@@ -23,30 +35,31 @@ core-route-monitor = "core.scripts.routemonitor:main"
 core-service-update = "core.scripts.serviceupdate:main"
 core-cleanup = "core.scripts.cleanup:main"
 
-[tool.poetry.dependencies]
-python = "^3.13"
-fabric = "3.2.2"
-grpcio = "1.69.0"
-invoke = "2.2.0"
-lxml = "5.4.0"
-netaddr = "0.10.1"
-protobuf = "5.29.3"
-pyproj = "3.7.2"
-Mako = "1.2.3"
-PyYAML = "6.0.1"
-pillow = "11.1.0"
+[dependency-groups]
+dev = [
+    "pytest==8.3.4",
+    "grpcio-tools==1.69.0",
+    "black==22.12.0",
+    "flake8==7.1.1",
+    "isort[pyproject]==5.13.2",
+    "mock==4.0.2",
+    "pre-commit==4.1.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "8.3.4"
-grpcio-tools = "1.69.0"
-black = "22.12.0"
-flake8 = "7.1.1"
-isort = {version = "5.13.2", extras = ["pyproject"]}
-mock = "4.0.2"
-pre-commit = "4.1.0"
+[tool.hatch.build.targets.sdist]
+exclude = ["core/constants.py.in"]
+
+[tool.hatch.build.targets.sdist.force-include]
+"core/api/grpc/*" = "core/api/grpc/*"
+"core/services/defaults/*/templates" = "core/services/defaults/*/templates"
+"core/constants.py" = "core/constants.py"
+"core/gui/data/**/*" = "core/gui/data/**/*"
+
+[tool.hatch.build.targets.wheel]
+exclude = ["core/constants.py.in"]
 
 [tool.isort]
-skip_glob = "*_pb2*.py,doc,build"
+skip_glob = "*_pb2*.py,doc,build,.venv"
 multi_line_output = 3
 include_trailing_comma = "True"
 force_grid_wrap = 0
@@ -55,9 +68,13 @@ line_length = 88
 
 [tool.black]
 line_length = 88
-exclude = ".+_pb2.*.py|doc/|build/|__pycache__/"
+exclude = ".+_pb2.*.py|doc/|build/|__pycache__/|.venv"
 
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
-
+[tool.pytest.ini_options]
+pythonpath = [
+    "."
+]
+norecursedirs = [
+    "distributed",
+    "emane",
+]

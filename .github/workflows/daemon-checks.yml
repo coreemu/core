@@ -15,30 +15,29 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.9.22"
-      - name: install poetry
+      - name: install dependencies
         run: |
           cd daemon
           cp core/constants.py.in core/constants.py
           sed -i 's/required=True/required=False/g' core/emulator/coreemu.py
-          uv tool install poetry
-          poetry install
+          uv sync
       - name: isort
         run: |
           cd daemon
-          poetry run isort -c --df .
+          uv run isort -c --df .
       - name: black
         run: |
           cd daemon
-          poetry run black --check .
+          uv run black --check .
       - name: flake8
         run: |
           cd daemon
-          poetry run flake8 .
+          uv run flake8 .
       - name: grpc
         run: |
           cd daemon/proto
-          poetry run python -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/*.proto
+          uv run python -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/*.proto
       - name: test
         run: |
           cd daemon
-          poetry run pytest --mock tests
+          uv run pytest --mock tests

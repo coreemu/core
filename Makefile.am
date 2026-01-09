@@ -145,7 +145,7 @@ endef
 
 .PHONY: fpm
 fpm: clean-local-fpm
-	cd daemon && poetry build -f wheel
+	cd daemon && uv build --wheel
 	$(call fpm-deb)
 	$(call fpm-rpm)
 	$(call fpm-distributed-deb)

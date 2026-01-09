@@ -24,5 +24,5 @@ EXTRA_DIST = core \
 	     doc/conf.py.in \
 	     tests \
 	     setup.cfg \
-	     poetry.lock \
+	     uv.lock \
 	     pyproject.toml
