@@ -12,6 +12,7 @@ from typing import Optional, List
 
 from invoke import task, Context
 
+UV_PYTHON = Path.cwd() / "daemon/.venv/bin/python"
 DAEMON_DIR: str = "daemon"
 DEFAULT_PREFIX: str = "/usr/local"
 OSPFMDR_CHECKOUT: str = "63f07596268873aeff86f252cbc27901369ad50a"
@@ -116,8 +117,18 @@ class OsInfo:
         return OsInfo(os_name, os_like, version)
 
 
-def get_env_python() -> str:
-    return os.environ.get("PYTHON", "python3")
+def get_env_python(c: Context, local: bool, hide: bool) -> str:
+    if local:
+        return os.environ.get("PYTHON", "python3")
+    else:
+        r = c.run(f"{UV_PYTHON} --version", hide=hide)
+        if r.failed:
+            raise SystemError(f"cannot find uv python {UV_PYTHON}")
+        python_version = r.stdout.strip().split()[1]
+        r = c.run(f"uv python find {python_version}", hide=hide)
+        if r.failed:
+            raise SystemError(f"cannot find uv python {python_version}")
+        return r.stdout.strip()
 
 
 def get_env_python_dep() -> str:
@@ -144,10 +155,9 @@ def get_os(install_type: Optional[str]) -> OsInfo:
     return OsInfo.get(name_value, like_value.split(), version_value)
 
 
-def check_existing_core(c: Context, hide: bool) -> None:
+def check_existing_core(c: Context, hide: bool, python_bin: str) -> None:
     if c.run('python -c "import core"', warn=True, hide=hide):
         raise SystemError("existing python core installation detected, please remove")
-    python_bin = get_env_python()
     if c.run(f'{python_bin} -c "import core"', warn=True, hide=hide):
         raise SystemError(
             f"existing {python_bin} core installation detected, please remove"
@@ -156,7 +166,13 @@ def check_existing_core(c: Context, hide: bool) -> None:
         raise SystemError("core scripts found, please remove old installation")
 
 
-def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> None:
+def install_system(
+    c: Context,
+    os_info: OsInfo,
+    hide: bool,
+    no_python: bool,
+    local: bool,
+) -> None:
     python_dep = get_env_python_dep()
     if os_info.like == OsLike.DEBIAN:
         c.run(
@@ -164,7 +180,7 @@ def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> 
             f"iproute2 ethtool tk bash",
             hide=hide,
         )
-        if not no_python:
+        if not no_python and local:
             c.run(f"sudo apt install -y {python_dep}-tk", hide=hide)
     elif os_info.like == OsLike.REDHAT:
         c.run(
@@ -172,7 +188,7 @@ def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> 
             f"libev-devel nftables iproute tk ethtool make bash",
             hide=hide,
         )
-        if not no_python:
+        if not no_python and local:
             c.run(
                 f"sudo yum install -y {python_dep}-devel {python_dep}-tkinter ",
                 hide=hide,
@@ -187,9 +203,13 @@ def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> 
                 sys.exit(1)
 
 
-def build_core(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
+def build_core(
+    c: Context,
+    hide: bool,
+    prefix: str = DEFAULT_PREFIX,
+) -> None:
     c.run("./bootstrap.sh", hide=hide)
-    c.run(f"./configure --prefix={prefix}", hide=hide)
+    c.run(f"PYTHON={UV_PYTHON} ./configure --prefix={prefix}", hide=hide)
     c.run("make -j$(nproc)", hide=hide)
 
 
@@ -197,8 +217,7 @@ def install_core(c: Context, hide: bool) -> None:
     c.run("sudo make install", hide=hide)
 
 
-def install_uv(c: Context, dev: bool, local: bool, hide: bool) -> None:
-    python_bin = get_env_python()
+def install_uv(c: Context, dev: bool, local: bool, hide: bool, python_bin: str) -> None:
     if local:
         with c.cd(DAEMON_DIR):
             c.run("uv build --wheel", hide=hide)
@@ -209,7 +228,8 @@ def install_uv(c: Context, dev: bool, local: bool, hide: bool) -> None:
             c.run(f"sudo mkdir -p {CORE_PATH}", hide=hide)
             c.run(f"sudo {python_bin} -m venv {CORE_VENV_PATH}", hide=hide)
             c.run(
-                f"{ACTIVATE_VENV} && {SUDOP} uv sync --active {args}", hide=hide
+                f"{ACTIVATE_VENV} && {SUDOP} uv sync --locked --active {args}",
+                hide=hide,
             )
             if dev:
                 c.run(
@@ -299,9 +319,9 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         c.run(f"sudo chmod 755 {core_python}", hide=hide)
         os.unlink(temp.name)
         core_scripts = CORE_VENV_PATH / "bin/core-*"
-        c.run(f"sudo ln -s {core_scripts} {bin_dir}")
+        c.run(f"sudo ln -sf {core_scripts} {bin_dir}")
     # install core configuration file
-    c.run(f"sudo cp -r -n package/etc {CORE_PATH}", hide=hide)
+    c.run(f"sudo cp -r -n package/etc {CORE_PATH} &> /dev/null", hide=hide)
     # install examples
     c.run(f"sudo cp -r package/share {CORE_PATH}", hide=hide)
     # install scripts
@@ -314,6 +334,7 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
         "no-python": "avoid installing python system dependencies",
+        "local": "determines if core will install to local system, default is False",
     },
 )
 def build(
@@ -321,14 +342,15 @@ def build(
     verbose=False,
     install_type=None,
     no_python=False,
+    local=False,
 ):
+    hide = not verbose
     print("setting up to build core packages")
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
-    hide = not verbose
     os_info = get_os(install_type)
     with p.start("installing system dependencies"):
-        install_system(c, os_info, hide, no_python)
+        install_system(c, os_info, hide, no_python, local)
     with p.start("building core"):
         build_core(c, hide)
     with p.start(f"building rpm/deb packages"):
@@ -360,26 +382,26 @@ def install(
     """
     install core, scripts, service, and ospf mdr
     """
-    python_bin = get_env_python()
+    hide = not verbose
+    python_bin = get_env_python(c, local, hide)
     venv_path = None if local else CORE_VENV_PATH
     print(
         f"installing core using python({python_bin}) venv({venv_path}) prefix({prefix})"
     )
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
-    hide = not verbose
     os_info = get_os(install_type)
     if not c["run"]["dry"]:
         with p.start("checking for old installations"):
-            check_existing_core(c, hide)
+            check_existing_core(c, hide, python_bin)
     with p.start("installing system dependencies"):
-        install_system(c, os_info, hide, no_python)
+        install_system(c, os_info, hide, no_python, local)
     with p.start("building core"):
         build_core(c, hide, prefix)
     with p.start("installing vnoded/vcmd"):
         install_core(c, hide)
     with p.start(f"installing core"):
-        install_uv(c, dev, local, hide)
+        install_uv(c, dev, local, hide, python_bin)
     with p.start("installing scripts, examples, and configuration"):
         install_core_files(c, local, hide, prefix)
     with p.start("installing systemd service"):
@@ -396,9 +418,10 @@ def install(
         "verbose": "enable verbose",
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
+        "local": "determines if core will install to local system, default is False",
     },
 )
-def install_emane(c, emane_version, verbose=False, install_type=None):
+def install_emane(c, emane_version, verbose=False, install_type=None, local=False):
     """
     install emane python bindings into the core virtual environment
     """
@@ -430,7 +453,7 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
     with p.start("cloning emane"):
         c.run(f"git clone {emane_url} {emane_dir}", hide=hide)
     with p.start("setup emane"):
-        python_bin = get_env_python()
+        python_bin = get_env_python(c, local, hide)
         with c.cd(emane_dir):
             c.run(f"git checkout {emane_version}", hide=hide)
             c.run("./autogen.sh", hide=hide)
@@ -464,13 +487,13 @@ def uninstall(
     """
     uninstall core, scripts, service, virtual environment, and clean build directory
     """
-    python_bin = get_env_python()
+    hide = not verbose
+    python_bin = get_env_python(c, local, hide)
     venv_path = None if local else CORE_VENV_PATH
     print(
         f"uninstalling core using python({python_bin}) "
         f"venv({venv_path}) prefix({prefix})"
     )
-    hide = not verbose
     p = Progress(verbose)
     c.run("sudo -v", hide=True)
     with p.start("uninstalling core"):
@@ -480,7 +503,6 @@ def uninstall(
         c.run("./bootstrap.sh clean", hide=hide)
     with p.start(f"uninstalling core"):
         if local:
-            python_bin = get_env_python()
             c.run(f"sudo {python_bin} -m pip uninstall -y core", hide=hide)
         else:
             if CORE_VENV_PATH.is_dir():
@@ -517,6 +539,8 @@ def uninstall(
         "branch": "branch to install latest code from, default is current branch",
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
+        "ospf": "disable ospf installation",
+        "no-python": "avoid installing python system dependencies",
     },
 )
 def reinstall(
@@ -527,6 +551,8 @@ def reinstall(
     prefix=DEFAULT_PREFIX,
     branch=None,
     install_type=None,
+    ospf=True,
+    no_python=False,
 ):
     """
     run the uninstall task, get latest from specified branch, and run install task
@@ -543,7 +569,7 @@ def reinstall(
         c.run("git pull", hide=hide)
         if not Path("tasks.py").exists():
             raise FileNotFoundError(f"missing tasks.py on branch: {branch}")
-    install(c, dev, verbose, local, prefix, install_type)
+    install(c, dev, verbose, local, prefix, install_type, ospf, no_python)
 
 
 @task
