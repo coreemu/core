@@ -1,0 +1,66 @@
+# syntax=docker/dockerfile:1
+FROM rockylinux/rockylinux:9
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /uvx /bin/
+ENV LANG=en_US.UTF-8
+ENV PATH="/root/.local/bin:${PATH}"
+WORKDIR /opt
+
+# install python
+ARG PYTHON_VERSION=3.13
+RUN uv python install ${PYTHON_VERSION}
+
+# install system dependencies
+RUN dnf update -y && \
+    dnf install -y \
+    xterm \
+    wget \
+    tcpdump \
+    tk \
+    iproute-tc && \
+    dnf autoremove -y && \
+    dnf clean all
+
+# install frr
+ARG FRRVER="frr-stable"
+RUN curl -O https://rpm.frrouting.org/repo/$FRRVER-repo.el9.noarch.rpm && \
+    dnf update -y && \
+    dnf install -y ./$FRRVER* && \
+    dnf install -y frr frr-pythontools && \
+    rm -f $FRRVER-repo.el9.noarch.rpm && \
+    dnf autoremove -y && \
+    dnf clean all
+ENV PATH="/usr/lib/frr:$PATH"
+
+# install emane
+ARG EMANE_VERSION=1.5.3
+ARG EMANE_RELEASE=emane-${EMANE_VERSION}-release-1
+ARG EMANE_PACKAGE=${EMANE_RELEASE}.el9.x86_64.tar.gz
+RUN dnf update -y && \
+    wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE} && \
+    tar xf ${EMANE_PACKAGE} && \
+    cd ${EMANE_RELEASE}/rpms/el9/x86_64 && \
+    rm emane-spectrum-tools-*.rpm emane-model-lte*.rpm && \
+    rm *devel*.rpm && \
+    dnf install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el9.noarch.rpm && \
+    cd ../../../.. && \
+    rm ${EMANE_PACKAGE} && \
+    rm -rf ${EMANE_RELEASE} && \
+    dnf autoremove -y && \
+    dnf clean all
+
+# install core
+COPY --from=core-package /opt/core/core_*.rpm .
+RUN dnf update -y && \
+    PYTHON=$(uv python find ${PYTHON_VERSION}) dnf install -y ./core_*.rpm && \
+    rm -f ${CORE_PACKAGE} && \
+    dnf autoremove -y && \
+    dnf clean all
+
+# install emane python bindings with dependencies
+ARG VENV_PATH=/opt/core/venv
+COPY --from=emane-python /opt/emane-*.whl .
+RUN uv pip install --python ${VENV_PATH} 'setuptools<81' ./emane-*.whl && \
+    rm -f ./emane-*.whl
+
+# set default directory
+WORKDIR /root

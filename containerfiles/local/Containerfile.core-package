@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:20.04
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /uvx /bin/
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/root/.local/bin:${PATH}"
+
+# install system dependencies
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    automake \
+    pkg-config \
+    libev-dev \
+    nftables \
+    iproute2 \
+    ethtool \
+    tk \
+    bash \
+    gem \
+    rpm \
+    ruby \
+    ca-certificates \
+    build-essential \
+    git && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# install fpm dependencies
+ARG DOTENV_VERSION=2.8.1
+RUN gem install dotenv -v ${DOTENV_VERSION} && \
+    gem install fpm
+
+# copy and build core
+WORKDIR /opt/core
+COPY . .
+RUN ./setup.sh && \
+    ./bootstrap.sh && \
+    PYTHON=$PWD/daemon/.venv/bin/python ./configure --prefix=/usr && \
+    make -j$(nproc) && \
+    make fpm

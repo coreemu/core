@@ -3,36 +3,36 @@
 This provides a brief overview of using the containerfiles provided to help build CORE
 and parts related to it. You should be able to use docker/podman interchangeably.
 
-## Build CORE Packages
+## Building Local
 
-There is a Containerfile to help support building CORE packages, using
-the latest from a given branch. The environment helps ensure we use an older
-version of glibc to avoid incompatibilities.
-
-```shell
-<docker|podman> build -t core-package -f Containerfile.core-package .
-
-# optionally change BRANCH used when building
-<docker|podman> build -t core-package --build-arg BRANCH=develop -f Containerfile.core-package .
-```
-
-## EMANE Python Bindings
-
-There is a Containerfile to help build EMANE python bindings, which are needed to install
-into the CORE virtual environment to support certain EMANE interactions.
+These Containerfiles are dependent on building against a local CORE python package
+built against the currently checked out source code. You will need to build images
+in proper order to ensure expected artifacts are available.
 
 ```shell
+# build emane python package
 <docker|podman> build -t emane-python -f Containerfile.emane-python .
+
+# build core package from current source code
+<docker|podman> build -t core-package -f local/Containerfile.core-package ..
+
+# optionally you can build the core package against source, providing a branch if desired
+<docker|podman> build -t core-package --build-arg BRANCH=develop -f github/Containerfile.core-package .
+
+# build variation of a CORE image (rocky, ubuntu, or frr variations)
+<docker|podman> build -t core -f local/Containerfile.<type> .
 ```
 
-## Rocky/Ubuntu Containers
+## Building from GitHub
 
-There a Containerfile to help build and provide a full containerized environment that is inclusive
-of CORE, EMANE, and OSPF MDR for both Ubuntu and Rocky Linux.
+These Containerfiles build against packages direct from GitHub.
 
 ```shell
-<docker|podman> build -t core-rocky -f Containerfile.rocky .
-<docker|podman> build -t core-ubuntu -f Containerfile.ubuntu .
+# build emane python package
+<docker|podman> build -t emane-python -f Containerfile.emane-python .
+
+# build variation of a CORE image (rocky, ubuntu, or frr variations)
+<docker|podman> build -t core -f github/Containerfile.<type> .
 ```
 
 ## Image Tagging for GitHub

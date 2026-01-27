@@ -53,17 +53,6 @@ RUN dnf update -y && \
     dnf autoremove -y && \
     dnf clean all
 
-# install core
-ARG CORE_VERSION=9.2.1
-ARG CORE_PACKAGE=core_${CORE_VERSION}_x86_64.rpm
-ARG PACKAGE_URL=https://github.com/coreemu/core/releases/download/release-${CORE_VERSION}/${CORE_PACKAGE}
-RUN dnf update -y && \
-    wget -q ${PACKAGE_URL} && \
-    PYTHON=$(uv python find ${PYTHON_VERSION}) dnf install -y ./${CORE_PACKAGE} && \
-    rm -f ${CORE_PACKAGE} && \
-    dnf autoremove -y && \
-    dnf clean all
-
 # install ospf mdr
 COPY --from=ospf-rpm /opt/quagga-mr-0.99*.rpm .
 RUN dnf update -y && \
@@ -87,6 +76,17 @@ RUN dnf update -y && \
     cd ../../../.. && \
     rm ${EMANE_PACKAGE} && \
     rm -rf ${EMANE_RELEASE} && \
+    dnf autoremove -y && \
+    dnf clean all
+
+# install core
+ARG CORE_VERSION=9.2.1
+ARG CORE_PACKAGE=core_${CORE_VERSION}_x86_64.rpm
+ARG PACKAGE_URL=https://github.com/coreemu/core/releases/download/release-${CORE_VERSION}/${CORE_PACKAGE}
+RUN dnf update -y && \
+    wget -q ${PACKAGE_URL} && \
+    PYTHON=$(uv python find ${PYTHON_VERSION}) dnf install -y ./${CORE_PACKAGE} && \
+    rm -f ${CORE_PACKAGE} && \
     dnf autoremove -y && \
     dnf clean all
 

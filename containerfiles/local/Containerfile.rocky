@@ -1,0 +1,98 @@
+# syntax=docker/dockerfile:1
+FROM rockylinux/rockylinux:9 AS ospf-rpm
+WORKDIR /opt
+RUN dnf update -y && \
+    dnf install -y epel-release dnf-plugins-core && \
+    dnf config-manager --set-enabled crb && \
+    dnf update -y && \
+    dnf install -y \
+    texinfo \
+    rpm-build \
+    texlive-base \
+    texinfo-tex \
+    texi2html \
+    readline-devel \
+    libpcap-devel \
+    ImageMagick \
+    git \
+    automake \
+    libtool \
+    pkg-config \
+    gcc-c++ \
+    libcap-devel \
+    make && \
+    git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+    cd ospf-mdr && \
+    ./bootstrap.sh && \
+    ./configure && \
+    (make -f quagga.rpm.mk build || make -f quagga.rpm.mk build) && \
+    mv .rpmbuild/RPMS/x86_64/quagga-mr-0.99*.rpm /opt/ && \
+    cd /opt && \
+    rm -rf ospf-mdr && \
+    dnf autoremove -y && \
+    dnf clean all
+
+FROM rockylinux/rockylinux:9
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /uvx /bin/
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PATH="/root/.local/bin:${PATH}"
+WORKDIR /opt
+
+# install python
+ARG PYTHON_VERSION=3.13
+RUN uv python install ${PYTHON_VERSION}
+
+# install system dependencies
+RUN dnf update -y && \
+    dnf install -y \
+    xterm \
+    wget \
+    tcpdump \
+    tk \
+    iproute-tc && \
+    dnf autoremove -y && \
+    dnf clean all
+
+# install ospf mdr
+COPY --from=ospf-rpm /opt/quagga-mr-0.99*.rpm .
+RUN dnf update -y && \
+    dnf install -y ./quagga-mr-0.99*.rpm && \
+    rm -f ./quagga-mr-0.99*.rpm && \
+    dnf autoremove -y && \
+    dnf clean all
+ENV LD_LIBRARY_PATH=/usr/lib64/quagga
+
+# install emane
+ARG EMANE_VERSION=1.5.3
+ARG EMANE_RELEASE=emane-${EMANE_VERSION}-release-1
+ARG EMANE_PACKAGE=${EMANE_RELEASE}.el9.x86_64.tar.gz
+RUN dnf update -y && \
+    wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE} && \
+    tar xf ${EMANE_PACKAGE} && \
+    cd ${EMANE_RELEASE}/rpms/el9/x86_64 && \
+    rm emane-spectrum-tools-*.rpm emane-model-lte*.rpm && \
+    rm *devel*.rpm && \
+    dnf install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el9.noarch.rpm && \
+    cd ../../../.. && \
+    rm ${EMANE_PACKAGE} && \
+    rm -rf ${EMANE_RELEASE} && \
+    dnf autoremove -y && \
+    dnf clean all
+
+# install core
+COPY --from=core-package /opt/core/core_*.rpm .
+RUN dnf update -y && \
+    PYTHON=$(uv python find ${PYTHON_VERSION}) dnf install -y ./core_*.rpm && \
+    rm -f ${CORE_PACKAGE} && \
+    dnf autoremove -y && \
+    dnf clean all
+
+# install emane python bindings with dependencies
+ARG VENV_PATH=/opt/core/venv
+COPY --from=emane-python /opt/emane-*.whl .
+RUN uv pip install --python ${VENV_PATH} 'setuptools<81' ./emane-*.whl && \
+    rm -f ./emane-*.whl
+
+# set default directory
+WORKDIR /root

@@ -81,15 +81,15 @@ def rj45_check(iface: CoreInterface) -> bool:
 class FRRZebra(CoreService):
     name: str = "FRRzebra"
     group: str = GROUP
-    directories: list[str] = ["/usr/local/etc/frr", "/var/run/frr", "/var/log/frr"]
+    directories: list[str] = ["/etc/frr", "/var/run/frr", "/var/log/frr"]
     files: list[str] = [
-        "/usr/local/etc/frr/frr.conf",
+        "/etc/frr/frr.conf",
         "frrboot.sh",
-        "/usr/local/etc/frr/vtysh.conf",
-        "/usr/local/etc/frr/daemons",
+        "/etc/frr/vtysh.conf",
+        "/etc/frr/daemons",
     ]
     executables: list[str] = ["zebra"]
-    startup: list[str] = ["bash frrboot.sh zebra"]
+    startup: list[str] = ["bash frrboot.sh zebra >/dev/null 2>&1"]
     validate: list[str] = ["pidof zebra"]
     shutdown: list[str] = ["pkill -f zebra"]
 
@@ -122,9 +122,9 @@ class FRRZebra(CoreService):
             ip4s = []
             ip6s = []
             for ip4 in iface.ip4s:
-                ip4s.append(str(ip4.ip))
+                ip4s.append(ip4)
             for ip6 in iface.ip6s:
-                ip6s.append(str(ip6.ip))
+                ip6s.append(ip6)
             ifaces.append((iface, ip4s, ip6s, iface.control))
 
         return dict(
