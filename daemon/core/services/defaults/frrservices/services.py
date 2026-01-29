@@ -227,20 +227,19 @@ class FRROspfv3(FrrService, CoreService):
         data = dict(router_id=router_id, ifnames=ifnames)
         text = """
         router ospf6
-          router-id ${router_id}
-          % for ifname in ifnames:
-          interface ${ifname} area 0.0.0.0
-          % endfor
+          ospf6 router-id ${router_id}
+          redistribute connected
         !
         """
         return self.render_text(text, data)
 
     def frr_iface_config(self, iface: CoreInterface) -> str:
+        text = ""
         mtu = get_min_mtu(iface)
         if mtu < iface.mtu:
-            return f"ipv6 ospf6 ifmtu {mtu}"
-        else:
-            return ""
+            text = f"ipv6 ospf6 ifmtu {mtu}"
+        text += "ipv6 ospf6 area 0.0.0.0"
+        return self.clean_text(text)
 
 
 class FRRBgp(FrrService, CoreService):
@@ -345,7 +344,7 @@ class FRRBabel(FrrService, CoreService):
           % for ifname in ifnames:
           network ${ifname}
           % endfor
-          redistribute static
+          redistribute ipv4 static
           redistribute ipv4 connected
         !
         """
