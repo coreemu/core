@@ -10,4 +10,4 @@ fi
 
 sudo docker container rm -f core
 sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    --privileged --init --pids-limit=0 "${IMAGE_NAME}" bash
+    --privileged --init --pids-limit=-1 "${IMAGE_NAME}" bash
