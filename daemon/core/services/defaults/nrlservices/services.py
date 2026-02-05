@@ -34,9 +34,7 @@ class NrlNhdp(CoreService):
 
     def data(self) -> dict[str, Any]:
         has_smf = "SMF" in self.node.services
-        ifnames = []
-        for iface in self.node.get_ifaces(control=False):
-            ifnames.append(iface.name)
+        ifnames = [x.name for x in self.node.get_ifaces(control=False)]
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
@@ -52,17 +50,8 @@ class NrlSmf(CoreService):
     def data(self) -> dict[str, Any]:
         has_nhdp = "NHDP" in self.node.services
         has_olsr = "OLSR" in self.node.services
-        ifnames = []
-        ip4_prefix = None
-        for iface in self.node.get_ifaces(control=False):
-            ifnames.append(iface.name)
-            ip4 = iface.get_ip4()
-            if ip4:
-                ip4_prefix = f"{ip4.ip}/{24}"
-                break
-        return dict(
-            has_nhdp=has_nhdp, has_olsr=has_olsr, ifnames=ifnames, ip4_prefix=ip4_prefix
-        )
+        ifnames = [x.name for x in self.node.get_ifaces(control=False)]
+        return dict(has_nhdp=has_nhdp, has_olsr=has_olsr, ifnames=ifnames)
 
 
 class NrlOlsr(CoreService):
@@ -95,9 +84,7 @@ class NrlOlsrv2(CoreService):
 
     def data(self) -> dict[str, Any]:
         has_smf = "SMF" in self.node.services
-        ifnames = []
-        for iface in self.node.get_ifaces(control=False):
-            ifnames.append(iface.name)
+        ifnames = [x.name for x in self.node.get_ifaces(control=False)]
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
@@ -113,9 +100,7 @@ class OlsrOrg(CoreService):
 
     def data(self) -> dict[str, Any]:
         has_smf = "SMF" in self.node.services
-        ifnames = []
-        for iface in self.node.get_ifaces(control=False):
-            ifnames.append(iface.name)
+        ifnames = [x.name for x in self.node.get_ifaces(control=False)]
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
