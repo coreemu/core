@@ -34,7 +34,7 @@ protobuf = "5.29.3"
 pyproj = "3.6.1"
 Mako = "1.2.3"
 PyYAML = "6.0.1"
-pillow = "11.1.0"
+pillow = "12.1.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.3.4"
