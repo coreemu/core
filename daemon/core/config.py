@@ -59,18 +59,18 @@ class Configuration:
             if self.default:
                 try:
                     float(self.default)
-                except ValueError:
+                except ValueError as err:
                     raise CoreConfigError(
                         f"{self.id} is not a valid float: {self.default}"
-                    )
+                    ) from err
         elif self.type != ConfigDataTypes.STRING:
             if self.default:
                 try:
                     int(self.default)
-                except ValueError:
+                except ValueError as err:
                     raise CoreConfigError(
                         f"{self.id} is not a valid int: {self.default}"
-                    )
+                    ) from err
 
 
 @dataclass

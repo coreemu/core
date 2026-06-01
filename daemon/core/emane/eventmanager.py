@@ -118,10 +118,10 @@ class EmaneEventManager:
                     service.start()
                 self.services[device] = service
                 self.nem_service[nem_id] = service
-            except EventServiceException:
+            except EventServiceException as err:
                 raise CoreError(
                     "failed to start emane event services {name} {group}:{port}"
-                )
+                ) from err
         else:
             self.nem_service[nem_id] = service
 

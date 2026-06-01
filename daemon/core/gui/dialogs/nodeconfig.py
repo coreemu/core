@@ -10,9 +10,8 @@ from netaddr import AddrFormatError, IPNetwork
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Interface, Node
-from core.gui import images
+from core.gui import images, validation
 from core.gui import nodeutils as nutils
-from core.gui import validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.emaneconfig import EmaneModelDialog

@@ -112,7 +112,8 @@ class TunTap(CoreInterface):
 
     def waitfordevicenode(self) -> None:
         """
-        Check for presence of a node device - tap device may not appear right away waits.
+        Check for presence of a node device - tap device may not appear right
+        away waits.
 
         :return: nothing
         """

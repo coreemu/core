@@ -39,11 +39,9 @@ core-cleanup = "core.scripts.cleanup:main"
 dev = [
     "pytest==8.3.4",
     "grpcio-tools==1.69.0",
-    "black==22.12.0",
-    "flake8==7.1.1",
-    "isort[pyproject]==5.13.2",
     "mock==4.0.2",
     "pre-commit==4.1.0",
+    "ruff>=0.15.15",
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -53,17 +51,17 @@ exclude = ["core/constants.py.in"]
 artifacts = ["core/api/grpc/*_pb2*.py"]
 exclude = ["core/constants.py.in"]
 
-[tool.isort]
-skip_glob = "*_pb2*.py,doc,build,.venv"
-multi_line_output = 3
-include_trailing_comma = "True"
-force_grid_wrap = 0
-use_parentheses = "True"
-line_length = 88
-
-[tool.black]
-line_length = 88
-exclude = ".+_pb2.*.py|doc/|build/|__pycache__/|.venv"
+[tool.ruff.lint]
+#    "UP",   # pyupgrade (upgrades code to modern Python syntax)
+#    "SIM",  # flake8-simplify (suggests code simplifications)
+#    "RUF",  # Ruff-specific rules
+select = [
+    "B",    # flake8-bugbear (catches design flaws & bugs)
+    "E",    # pycodestyle errors
+    "F",    # Pyflakes (enabled by default)
+    "I",    # isort (import sorting)
+    "W",    # pycodestyle warnings
+]
 
 [tool.pytest.ini_options]
 pythonpath = [

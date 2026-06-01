@@ -79,9 +79,9 @@ class DistributedServer:
                         cmd, hide=CMD_HIDE, env=env, replace_env=replace_env
                     )
             return result.stdout.strip()
-        except UnexpectedExit as e:
-            stdout, stderr = e.streams_for_display()
-            raise CoreCommandError(e.result.exited, cmd, stdout, stderr)
+        except UnexpectedExit as err:
+            stdout, stderr = err.streams_for_display()
+            raise CoreCommandError(err.result.exited, cmd, stdout, stderr) from err
 
     def remote_put(self, src_path: Path, dst_path: Path) -> None:
         """
@@ -143,11 +143,11 @@ class DistributedController:
         for requirement in requirements:
             try:
                 server.remote_cmd(f"which {requirement}")
-            except CoreCommandError:
+            except CoreCommandError as err:
                 raise CoreError(
                     f"server({server.name}) failed validation for "
                     f"command({requirement})"
-                )
+                ) from err
         self.servers[name] = server
         cmd = f"mkdir -p {self.session.directory}"
         server.remote_cmd(cmd)

@@ -60,8 +60,8 @@ def mac_type(value: str) -> str:
     try:
         mac = EUI(value, dialect=netaddr.mac_unix_expanded)
         return str(mac)
-    except AddrFormatError:
-        raise ArgumentTypeError(f"invalid mac address: {value}")
+    except AddrFormatError as err:
+        raise ArgumentTypeError(f"invalid mac address: {value}") from err
 
 
 def ip4_type(value: str) -> IPNetwork:
@@ -70,8 +70,8 @@ def ip4_type(value: str) -> IPNetwork:
         if not netaddr.valid_ipv4(str(ip.ip)):
             raise ArgumentTypeError(f"invalid ip4 address: {value}")
         return ip
-    except AddrFormatError:
-        raise ArgumentTypeError(f"invalid ip4 address: {value}")
+    except AddrFormatError as err:
+        raise ArgumentTypeError(f"invalid ip4 address: {value}") from err
 
 
 def ip6_type(value: str) -> IPNetwork:
@@ -80,16 +80,16 @@ def ip6_type(value: str) -> IPNetwork:
         if not netaddr.valid_ipv6(str(ip.ip)):
             raise ArgumentTypeError(f"invalid ip6 address: {value}")
         return ip
-    except AddrFormatError:
-        raise ArgumentTypeError(f"invalid ip6 address: {value}")
+    except AddrFormatError as err:
+        raise ArgumentTypeError(f"invalid ip6 address: {value}") from err
 
 
 def position_type(value: str) -> tuple[float, float]:
     error = "invalid position, must be in the format: float,float"
     try:
         values = [float(x) for x in value.split(",")]
-    except ValueError:
-        raise ArgumentTypeError(error)
+    except ValueError as err:
+        raise ArgumentTypeError(error) from err
     if len(values) != 2:
         raise ArgumentTypeError(error)
     x, y = values
@@ -100,8 +100,8 @@ def geo_type(value: str) -> tuple[float, float, float]:
     error = "invalid geo, must be in the format: float,float,float"
     try:
         values = [float(x) for x in value.split(",")]
-    except ValueError:
-        raise ArgumentTypeError(error)
+    except ValueError as err:
+        raise ArgumentTypeError(error) from err
     if len(values) != 3:
         raise ArgumentTypeError(error)
     lon, lat, alt = values
@@ -217,7 +217,8 @@ def query_session(core: CoreGrpcClient, args: Namespace) -> None:
             xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
             geo_pos = f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}"
             print(
-                f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}"
+                f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | "
+                f"{xy_pos:<9} | {geo_pos}"
             )
         print("\nLinks")
         for link in session.links:
@@ -251,7 +252,8 @@ def query_node(core: CoreGrpcClient, args: Namespace) -> None:
         xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
         geo_pos = f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}"
         print(
-            f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}"
+            f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | "
+            f"{xy_pos:<9} | {geo_pos}"
         )
         if ifaces:
             print("Interfaces")

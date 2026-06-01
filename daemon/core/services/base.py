@@ -1,4 +1,3 @@
-import abc
 import enum
 import inspect
 import logging
@@ -55,7 +54,7 @@ class ShadowDir:
     has_node_paths: bool = False
 
 
-class CoreService(abc.ABC):
+class CoreService:
     """
     Base class for creating services.
     """
@@ -232,11 +231,11 @@ class CoreService(abc.ABC):
             dir_path = Path(directory)
             try:
                 self.node.create_dir(dir_path)
-            except (CoreCommandError, CoreError):
+            except (CoreCommandError, CoreError) as err:
                 raise CoreError(
                     f"node({self.node.name}) service({self.name}) "
                     f"failure to create service directory: {directory}"
-                )
+                ) from err
 
     def data(self) -> dict[str, Any]:
         """
@@ -284,11 +283,11 @@ class CoreService(abc.ABC):
             else:
                 try:
                     template = self.get_text_template(file)
-                except Exception as e:
+                except Exception as err:
                     raise ServiceTemplateError(
                         f"node({self.node.name}) service({self.name}) file({file}) "
-                        f"failure getting template: {e}"
-                    )
+                        f"failure getting template: {err}"
+                    ) from err
                 template = self.clean_text(template)
             templates[file] = template
         return templates
@@ -312,11 +311,11 @@ class CoreService(abc.ABC):
         else:
             try:
                 text = self.get_text_template(file)
-            except Exception as e:
+            except Exception as err:
                 raise ServiceTemplateError(
                     f"node({self.node.name}) service({self.name}) file({file}) "
-                    f"failure getting template: {e}"
-                )
+                    f"failure getting template: {err}"
+                ) from err
             rendered = self.render_text(text, data)
         return rendered
 
@@ -347,10 +346,10 @@ class CoreService(abc.ABC):
         for cmd in self.startup:
             try:
                 self.node.cmd(cmd, wait=wait, shell=True)
-            except CoreCommandError as e:
+            except CoreCommandError as err:
                 raise ServiceBootError(
-                    f"node({self.node.name}) service({self.name}) failed startup: {e}"
-                )
+                    f"node({self.node.name}) service({self.name}) failed startup: {err}"
+                ) from err
 
     def wait_validation(self) -> None:
         """
@@ -412,11 +411,11 @@ class CoreService(abc.ABC):
         try:
             template = Template(text)
             return self._render(template, data)
-        except Exception:
+        except Exception as err:
             raise CoreError(
                 f"node({self.node.name}) service({self.name}) "
                 f"{exceptions.text_error_template().render_unicode()}"
-            )
+            ) from err
 
     def render_template(self, template_path: str, data: dict[str, Any] = None) -> str:
         """
@@ -429,11 +428,11 @@ class CoreService(abc.ABC):
         try:
             template = self.templates.get_template(template_path)
             return self._render(template, data)
-        except Exception:
+        except Exception as err:
             raise CoreError(
                 f"node({self.node.name}) service({self.name}) file({template_path})"
                 f"{exceptions.text_error_template().render_unicode()}"
-            )
+            ) from err
 
     def _define_config(self, configs: list[Configuration]) -> None:
         """

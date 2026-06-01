@@ -288,7 +288,7 @@ class WirelessNode(CoreNetworkBase):
         self.session.broadcast_link(link_data)
 
     def position_callback(self, iface: CoreInterface) -> None:
-        for oiface, bridge_name in self.bridges.values():
+        for oiface, _bridge_name in self.bridges.values():
             if iface == oiface:
                 continue
             self.calc_link(iface, oiface)

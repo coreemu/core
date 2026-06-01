@@ -230,9 +230,9 @@ def cmd(
             return stdout
         else:
             return ""
-    except OSError as e:
-        logger.error("cmd error: %s", e.strerror)
-        raise CoreCommandError(1, input_args, "", e.strerror)
+    except OSError as err:
+        logger.error("cmd error: %s", err.strerror)
+        raise CoreCommandError(1, input_args, "", err.strerror) from err
 
 
 def run_cmds(args: list[str], wait: bool = True, shell: bool = False) -> list[str]:

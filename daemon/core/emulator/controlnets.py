@@ -225,9 +225,9 @@ class ControlNetManager:
             iface = node.create_iface(iface_data)
             control_net.attach(iface)
             iface.control = True
-        except ValueError:
+        except ValueError as err:
             raise CoreError(
                 f"error adding control net interface to node({node.id}), "
                 f"invalid control net prefix({control_net.prefix}), "
                 "a longer prefix length may be required"
-            )
+            ) from err

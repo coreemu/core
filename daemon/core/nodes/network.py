@@ -332,13 +332,13 @@ class CoreNetwork(CoreNetworkBase):
             raise ValueError(f"inconsistency for interface {iface2.name}")
         try:
             linked = self.linked[iface1][iface2]
-        except KeyError:
+        except KeyError as err:
             if self.policy == NetworkPolicy.ACCEPT:
                 linked = True
             elif self.policy == NetworkPolicy.DROP:
                 linked = False
             else:
-                raise Exception(f"unknown policy: {self.policy.value}")
+                raise ValueError(f"unknown policy: {self.policy.value}") from err
             self.linked[iface1][iface2] = linked
         return linked
 

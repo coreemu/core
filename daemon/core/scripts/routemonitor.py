@@ -109,7 +109,8 @@ class RouterMonitor:
             print(f"could not find node with source address: {self.src}")
             sys.exit(1)
         print(
-            f"monitoring src_id ({self.src_id}) src({self.src}) dst({self.dst}) pkt({self.pkt})"
+            f"monitoring src_id ({self.src_id}) src({self.src}) dst({self.dst}) "
+            f"pkt({self.pkt})"
         )
         return node_map
 
@@ -181,7 +182,10 @@ class RouterMonitor:
         self.listeners.clear()
 
     def listen(self, node_id, node) -> None:
-        cmd = f"tcpdump -lnvi any src host {self.src} and dst host {self.dst} and {self.pkt}"
+        cmd = (
+            f"tcpdump -lnvi any src host {self.src} and dst "
+            f"host {self.dst} and {self.pkt}"
+        )
         node_cmd = f"vcmd -c {node} -- {cmd}"
         p = subprocess.Popen(
             node_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
@@ -210,7 +214,10 @@ def main() -> None:
         print("core-route-monitor requires tcpdump to be installed")
         return
 
-    desc = "core route monitor leverages tcpdump to monitor traffic and find route using TTL"
+    desc = (
+        "core route monitor leverages tcpdump to monitor traffic and find "
+        "route using TTL"
+    )
     parser = argparse.ArgumentParser(
         description=desc, formatter_class=ArgumentDefaultsHelpFormatter
     )

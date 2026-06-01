@@ -1,23 +1,9 @@
 repos:
 - repo: local
   hooks:
-  - id: isort
-    name: isort
+  - id: ruff
+    name: ruff
     stages: [pre-commit]
     language: system
-    entry: bash -c 'cd daemon && uv run --python /opt/core/venv/bin/python isort --atomic .'
-    types: [python]
-
-  - id: black
-    name: black
-    stages: [pre-commit]
-    language: system
-    entry: bash -c 'cd daemon && uv run --python /opt/core/venv/bin/python black .'
-    types: [python]
-
-  - id: flake8
-    name: flake8
-    stages: [pre-commit]
-    language: system
-    entry: bash -c 'cd daemon && uv run --python /opt/core/venv/bin/python flake8 .'
+    entry: bash -c 'cd daemon && uv run ruff check .'
     types: [python]

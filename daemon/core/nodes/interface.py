@@ -198,8 +198,8 @@ class CoreInterface:
                 self.ip4s.append(ip)
             else:
                 self.ip6s.append(ip)
-        except netaddr.AddrFormatError as e:
-            raise CoreError(f"adding invalid address {ip}: {e}")
+        except netaddr.AddrFormatError as err:
+            raise CoreError(f"adding invalid address {ip}: {err}") from err
 
     def remove_ip(self, ip: str) -> None:
         """
@@ -216,8 +216,8 @@ class CoreInterface:
                 self.ip4s.remove(ip)
             else:
                 self.ip6s.remove(ip)
-        except (netaddr.AddrFormatError, ValueError) as e:
-            raise CoreError(f"deleting invalid address {ip}: {e}")
+        except (netaddr.AddrFormatError, ValueError) as err:
+            raise CoreError(f"deleting invalid address {ip}: {err}") from err
 
     def get_ip4(self) -> netaddr.IPNetwork | None:
         """
@@ -256,8 +256,8 @@ class CoreInterface:
         else:
             try:
                 self.mac = netaddr.EUI(mac, dialect=netaddr.mac_unix_expanded)
-            except netaddr.AddrFormatError as e:
-                raise CoreError(f"invalid mac address({mac}): {e}")
+            except netaddr.AddrFormatError as err:
+                raise CoreError(f"invalid mac address({mac}): {err}") from err
 
     def setposition(self) -> None:
         """

@@ -7,9 +7,8 @@ from typing import Any
 
 import grpc
 
-from core.gui import appconfig, images
+from core.gui import appconfig, images, themes
 from core.gui import nodeutils as nutils
-from core.gui import themes
 from core.gui.appconfig import GuiConfig
 from core.gui.coreclient import CoreClient
 from core.gui.dialogs.error import ErrorDialog

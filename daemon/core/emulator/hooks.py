@@ -19,11 +19,11 @@ def _run_callback(state: EventTypes, hook: Callable[[EventTypes], None]) -> None
     """
     try:
         hook(state)
-    except Exception as e:
+    except Exception as err:
         name = getattr(callable, "__name__", repr(hook))
         raise CoreError(
-            f"failure running state({state.name}) " f"hook callback({name}): {e}"
-        )
+            f"failure running state({state.name}) " f"hook callback({name}): {err}"
+        ) from err
 
 
 def _run_script(
@@ -55,10 +55,10 @@ def _run_script(
                 cwd=directory,
                 env=env,
             )
-    except (OSError, subprocess.CalledProcessError) as e:
+    except (OSError, subprocess.CalledProcessError) as err:
         raise CoreError(
-            f"failure running state({state.name}) " f"hook script({file_name}): {e}"
-        )
+            f"failure running state({state.name}) " f"hook script({file_name}): {err}"
+        ) from err
 
 
 class HookManager:

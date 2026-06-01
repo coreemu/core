@@ -58,7 +58,8 @@ class ServiceManager:
         # avoid undefined services
         if service.name is None or service.group is None:
             raise CoreError(
-                f"service name({service.name}) and group({service.group}) must be defined"
+                f"service name({service.name}) and group({service.group}) "
+                "must be defined"
             )
 
         # avoid duplicate services
@@ -69,8 +70,8 @@ class ServiceManager:
         for executable in service.executables:
             try:
                 utils.which(executable, required=True)
-            except CoreError as e:
-                raise CoreError(f"service({service.name}): {e}")
+            except CoreError as err:
+                raise CoreError(f"service({service.name}): {err}") from err
 
         # make service available
         self.services[service.name] = service

@@ -837,8 +837,8 @@ class Session:
         with self.nodes_lock:
             try:
                 self.ptp_nodes.pop(_id)
-            except KeyError:
-                raise CoreError(f"failure deleting expected ptp node({_id})")
+            except KeyError as err:
+                raise CoreError(f"failure deleting expected ptp node({_id})") from err
 
     def create_control_net(
         self,

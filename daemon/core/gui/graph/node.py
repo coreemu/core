@@ -8,9 +8,8 @@ import grpc
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Interface, Node, NodeType, ServiceAction
-from core.gui import images
+from core.gui import images, themes
 from core.gui import nodeutils as nutils
-from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog

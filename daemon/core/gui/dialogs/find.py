@@ -151,7 +151,7 @@ class FindDialog(Dialog):
             yscroll_fraction = abs(y0 - _y) / abs(y0 - y1)
             # scroll a little more to the left or a little bit up so that the node
             # doesn't always fall in the most top-left corner
-            for i in range(2):
+            for _i in range(2):
                 if xscroll_fraction > 0.05:
                     xscroll_fraction = xscroll_fraction - 0.05
                 if yscroll_fraction > 0.05:

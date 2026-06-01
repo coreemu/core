@@ -95,7 +95,7 @@ class SessionsDialog(Dialog):
 
     def draw_sessions(self) -> None:
         self.tree.delete(*self.tree.get_children())
-        for index, session in enumerate(self.get_sessions()):
+        for _index, session in enumerate(self.get_sessions()):
             state_name = SessionState(session.state).name
             self.tree.insert(
                 "",

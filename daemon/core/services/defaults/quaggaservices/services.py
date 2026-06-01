@@ -35,8 +35,8 @@ def has_mtu_mismatch(iface: CoreInterface) -> bool:
         return True
     if not iface.net:
         return False
-    for iface in iface.net.get_ifaces(control=False):
-        if iface.mtu != iface.mtu:
+    for current_iface in iface.net.get_ifaces(control=False):
+        if current_iface.mtu != iface.mtu:
             return True
     return False
 
@@ -49,9 +49,9 @@ def get_min_mtu(iface: CoreInterface):
     mtu = iface.mtu
     if not iface.net:
         return mtu
-    for iface in iface.net.get_ifaces(control=False):
-        if iface.mtu < mtu:
-            mtu = iface.mtu
+    for current_iface in iface.net.get_ifaces(control=False):
+        if current_iface.mtu < mtu:
+            mtu = current_iface.mtu
     return mtu
 
 

@@ -21,18 +21,10 @@ jobs:
           cp core/constants.py.in core/constants.py
           sed -i 's/required=True/required=False/g' core/emulator/coreemu.py
           uv sync
-      - name: isort
+      - name: ruff
         run: |
           cd daemon
-          uv run isort -c --df .
-      - name: black
-        run: |
-          cd daemon
-          uv run black --check .
-      - name: flake8
-        run: |
-          cd daemon
-          uv run flake8 .
+          uv run ruff check .
       - name: grpc
         run: |
           cd daemon/proto

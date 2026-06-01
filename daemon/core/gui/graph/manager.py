@@ -296,13 +296,13 @@ class CanvasManager:
         self.show_grid.set(gridlines)
 
         # get background configurations
-        for canvas_config in canvas_config.get("canvases", []):
-            canvas_id = canvas_config.get("id")
+        for current_canvas in canvas_config.get("canvases", []):
+            canvas_id = current_canvas.get("id")
             if canvas_id is None:
                 logger.error("canvas config id not provided")
                 continue
             canvas = self.get(canvas_id)
-            canvas.parse_metadata(canvas_config)
+            canvas.parse_metadata(current_canvas)
 
     def parse_metadata_shapes(self, metadata: dict[str, Any]) -> None:
         # load saved shapes

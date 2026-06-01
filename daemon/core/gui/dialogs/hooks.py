@@ -51,7 +51,8 @@ class HookDialog(Dialog):
             1.0,
             (
                 "#!/bin/sh\n"
-                "# session hook script; write commands here to execute on the host at the\n"
+                "# session hook script; write commands here to execute on the "
+                "host at the\n"
                 "# specified state\n"
             ),
         )

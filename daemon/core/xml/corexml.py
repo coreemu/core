@@ -176,7 +176,7 @@ class DeviceElement(NodeElement):
 
     def add_services(self) -> None:
         service_elements = etree.Element("services")
-        for name, service in self.node.services.items():
+        for name, _service in self.node.services.items():
             etree.SubElement(service_elements, "service", name=name)
         if service_elements.getchildren():
             self.element.append(service_elements)
