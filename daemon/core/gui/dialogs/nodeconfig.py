@@ -500,8 +500,8 @@ class NodeConfigDialog(Dialog):
                     self.app.core.ifaces_manager.set_wireless_nets(
                         self.node.id, ip4_subnet, ip6_subnet
                     )
-            except AddrFormatError as e:
-                messagebox.showerror("IP Network Error", str(e), parent=self.top)
+            except AddrFormatError as err:
+                messagebox.showerror("IP Network Error", str(err), parent=self.top)
                 return
 
         # redraw

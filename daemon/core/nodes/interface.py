@@ -1,7 +1,7 @@
 """
 virtual ethernet classes that implement the interfaces available under Linux.
 """
-
+import contextlib
 import logging
 import math
 from collections.abc import Callable
@@ -178,10 +178,8 @@ class CoreInterface:
         if not self.up:
             return
         if self.localname:
-            try:
+            with contextlib.suppress(CoreCommandError):
                 self.net_client.delete_device(self.localname)
-            except CoreCommandError:
-                pass
         self.up = False
 
     def add_ip(self, ip: str) -> None:
@@ -303,10 +301,7 @@ class CoreInterface:
         :param force: force link changed
         :return: nothing
         """
-        if force:
-            changed = True
-        else:
-            changed = self.options.update(options)
+        changed = True if force else self.options.update(options)
         if self.up and changed:
             self.set_config()
 

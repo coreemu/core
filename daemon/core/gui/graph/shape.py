@@ -97,10 +97,7 @@ class Shape:
             logger.exception("unknown shape: %s", shape_type)
 
     def draw(self) -> None:
-        if self.created:
-            dash = None
-        else:
-            dash = "-"
+        dash = None if self.created else "-"
         if self.shape_type == ShapeType.OVAL:
             self.id = self.canvas.create_oval(
                 self.x1,

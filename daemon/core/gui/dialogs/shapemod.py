@@ -22,10 +22,7 @@ BORDER_WIDTH: list[int] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 class ShapeDialog(Dialog):
     def __init__(self, app: "Application", shape: "Shape") -> None:
-        if is_draw_shape(shape.shape_type):
-            title = "Add Shape"
-        else:
-            title = "Add Text"
+        title = "Add Shape" if is_draw_shape(shape.shape_type) else "Add Text"
         super().__init__(app, title)
         self.canvas: "CanvasGraph" = app.manager.current()
         self.fill: ttk.Label | None = None

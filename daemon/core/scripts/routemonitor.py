@@ -205,8 +205,8 @@ class RouterMonitor:
                 else:
                     if (time.monotonic() - current) >= self.dead:
                         self.queue.put((RouteEnum.DEL, node_id, None))
-        except Exception as e:
-            print(f"listener error: {e}")
+        except Exception as err:
+            print(f"listener error: {err}")
 
 
 def main() -> None:

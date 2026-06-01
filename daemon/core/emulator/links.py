@@ -84,10 +84,7 @@ class CoreLink:
         if self.is_unidirectional():
             options = self.iface1.options
         else:
-            if self.iface1:
-                options = self.iface1.options
-            else:
-                options = self.iface2.options
+            options = self.iface1.options if self.iface1 else self.iface2.options
         return options
 
     def get_data(self, message_type: MessageFlags, source: str = None) -> LinkData:

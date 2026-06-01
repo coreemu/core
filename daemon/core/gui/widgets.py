@@ -182,12 +182,11 @@ class ConfigFrame(ttk.Notebook):
                 else:
                     option.value = "0"
             else:
-                if option.regex:
-                    if not re.match(option.regex, config_value):
-                        raise ValueError(
-                            f"{option.label} value '{config_value}' "
-                            f"does not match regex '{option.regex}'"
-                        )
+                if option.regex and not re.match(option.regex, config_value):
+                    raise ValueError(
+                        f"{option.label} value '{config_value}' "
+                        f"does not match regex '{option.regex}'"
+                    )
                 option.value = config_value
         return {x: self.config[x].value for x in self.config}
 
@@ -196,10 +195,7 @@ class ConfigFrame(ttk.Notebook):
             option = self.config[name]
             value = self.values[name]
             if option.type == ConfigOptionType.BOOL:
-                if data == "1":
-                    data = "On"
-                else:
-                    data = "Off"
+                data = "On" if data == "1" else "Off"
             value.set(data)
 
 

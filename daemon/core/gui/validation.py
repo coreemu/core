@@ -120,10 +120,7 @@ class NodeNameEntry(ValidationEntry):
             return False
         if len(s) == 0:
             return True
-        for x in s:
-            if not x.isalnum() and x != "-":
-                return False
-        return True
+        return all(not (not x.isalnum() and x != "-") for x in s)
 
 
 class AppScaleEntry(ValidationEntry):

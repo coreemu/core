@@ -51,13 +51,13 @@ artifacts = ["core/api/grpc/*_pb2*.py"]
 exclude = ["core/constants.py.in"]
 
 [tool.ruff.lint]
-# "SIM",  # flake8-simplify (suggests code simplifications)
 # "RUF",  # Ruff-specific rules
 select = [
     "B", # flake8-bugbear (catches design flaws & bugs)
     "E", # pycodestyle errors
     "F", # Pyflakes (enabled by default)
     "I", # isort (import sorting)
+    "SIM",  # flake8-simplify (suggests code simplifications)
     "UP", # pyupgrade (upgrades code to modern Python syntax)
     "W", # pycodestyle warnings
 ]

@@ -105,8 +105,8 @@ class ServiceConfigDialog(Dialog):
                 for file, data in service_config.templates.items():
                     self.modified_files.add(file)
                     self.temp_service_files[file] = data
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Get Service Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Get Service Error", err)
             self.has_error = True
 
     def draw(self) -> None:

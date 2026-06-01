@@ -235,16 +235,17 @@ class EventLoop:
                 evtime += time.monotonic()
             event = Event(eventnum, evtime, func, *args, **kwds)
 
-            if self.queue:
-                prevhead = self.queue[0]
-            else:
-                prevhead = None
+            prevhead = self.queue[0] if self.queue else None
 
             heapq.heappush(self.queue, event)
             head = self.queue[0]
-            if prevhead is not None and prevhead != head:
-                if self.timer is not None and self.timer.cancel():
-                    self.timer = None
+            if (
+                prevhead is not None and
+                prevhead != head and
+                self.timer is not None and
+                self.timer.cancel()
+            ):
+                self.timer = None
             if self.running and self.timer is None:
                 self._schedule_event()
         return event

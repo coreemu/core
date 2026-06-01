@@ -321,8 +321,8 @@ class CoreClient:
             if self.is_runtime():
                 self.show_mobility_players()
             self.app.after(0, self.app.joined_session_update)
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Join Session Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Join Session Error", err)
 
     def is_runtime(self) -> bool:
         return self.session and self.session.state == SessionState.RUNTIME
@@ -345,8 +345,8 @@ class CoreClient:
                 alt=location_config.alt,
                 scale=location_config.scale,
             )
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("New Session Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("New Session Error", err)
 
     def delete_session(self, session_id: int = None) -> None:
         if session_id is None and not self.session:
@@ -356,8 +356,8 @@ class CoreClient:
         try:
             response = self.client.delete_session(session_id)
             logger.info("deleted session(%s), Result: %s", session_id, response)
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Delete Session Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Delete Session Error", err)
 
     def setup(self, session_id: int = None) -> None:
         """
@@ -392,9 +392,9 @@ class CoreClient:
                 else:
                     dialog = SessionsDialog(self.app, True)
                     dialog.show()
-        except grpc.RpcError as e:
+        except grpc.RpcError as err:
             logger.exception("core setup error")
-            self.app.show_grpc_exception("Setup Error", e, blocking=True)
+            self.app.show_grpc_exception("Setup Error", err, blocking=True)
             self.app.close()
 
     def edit_node(self, core_node: Node) -> None:
@@ -402,8 +402,8 @@ class CoreClient:
             self.client.move_node(
                 self.session.id, core_node.id, core_node.position, source=GUI_SOURCE
             )
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Edit Node Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Edit Node Error", err)
 
     def get_links(self, definition: bool = False) -> list[Link]:
         if not definition:
@@ -441,8 +441,8 @@ class CoreClient:
             )
             if self.show_throughputs.get():
                 self.enable_throughputs()
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Start Session Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Start Session Error", err)
         return result, exceptions
 
     def stop_session(self, session_id: int = None) -> bool:
@@ -452,8 +452,8 @@ class CoreClient:
         try:
             result = self.client.stop_session(session_id)
             logger.info("stopped session(%s), result: %s", session_id, result)
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Stop Session Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Stop Session Error", err)
         return result
 
     def show_mobility_players(self) -> None:
@@ -509,8 +509,8 @@ class CoreClient:
             cmd = f"{terminal} {node_term} &"
             logger.info("launching terminal %s", cmd)
             os.system(cmd)
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Node Terminal Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Node Terminal Error", err)
 
     def get_xml_dir(self) -> str:
         return str(self.session.file.parent) if self.session.file else str(XMLS_PATH)
@@ -542,8 +542,8 @@ class CoreClient:
                 self.update_session_title()
             logger.info("saved xml file %s", file_path)
             result = True
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Save XML Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Save XML Error", err)
         return result
 
     def open_xml(self, file_path: Path) -> None:
@@ -559,8 +559,8 @@ class CoreClient:
                 session_id,
             )
             self.join_session(session_id)
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Open XML Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Open XML Error", err)
 
     def close(self) -> None:
         """

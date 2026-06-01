@@ -43,10 +43,7 @@ def _get_default(config_type_name: str, config_value: list[str]) -> str:
     config_default = ""
 
     if config_type_name == "bool":
-        if config_value and config_value[0] == "true":
-            config_default = "1"
-        else:
-            config_default = "0"
+        config_default = "1" if config_value and config_value[0] == "true" else "0"
     elif config_value:
         config_default = config_value[0]
 

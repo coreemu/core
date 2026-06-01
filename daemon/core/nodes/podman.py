@@ -279,28 +279,27 @@ class PodmanNode(CoreNode):
         :return: nothing
         """
         logger.debug("node(%s) create file(%s) mode(%o)", self.name, file_path, mode)
-        temp = NamedTemporaryFile(delete=False)
-        temp.write(contents.encode())
-        temp.close()
-        temp_path = Path(temp.name)
-        directory = file_path.parent
-        if str(directory) != ".":
-            self.cmd(f"mkdir -m {0o755:o} -p {directory}")
-        if self.server is not None:
-            self.server.remote_put(temp_path, temp_path)
-        self.host_cmd(f"{PODMAN} cp {temp_path} {self.name}:{file_path}")
-        self.cmd(f"chmod {mode:o} {file_path}")
-        if self.server is not None:
-            self.host_cmd(f"rm -f {temp_path}")
-        temp_path.unlink()
+        with NamedTemporaryFile(delete_on_close=False) as temp:
+            temp.write(contents.encode())
+            temp.close()
+            temp_path = Path(temp.name)
+            directory = file_path.parent
+            if str(directory) != ".":
+                self.cmd(f"mkdir -m {0o755:o} -p {directory}")
+            if self.server is not None:
+                self.server.remote_put(temp_path, temp_path)
+            self.host_cmd(f"{PODMAN} cp {temp_path} {self.name}:{file_path}")
+            self.cmd(f"chmod {mode:o} {file_path}")
+            if self.server is not None:
+                self.host_cmd(f"rm -f {temp_path}")
 
     def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
         """
         Copy a file to a node, following symlinks and preserving metadata.
         Change file mode if specified.
 
-        :param dst_path: file name to copy file to
         :param src_path: file to copy
+        :param dst_path: file name to copy file to
         :param mode: mode to copy to
         :return: nothing
         """
@@ -309,10 +308,8 @@ class PodmanNode(CoreNode):
         )
         self.cmd(f"mkdir -p {dst_path.parent}")
         if self.server:
-            temp = NamedTemporaryFile(delete=False)
-            temp_path = Path(temp.name)
-            src_path = temp_path
-            self.server.remote_put(src_path, temp_path)
+            # copy local src file to src location on remote
+            self.server.remote_put(src_path, src_path)
         self.host_cmd(f"{PODMAN} cp {src_path} {self.name}:{dst_path}")
         if mode is not None:
             self.cmd(f"chmod {mode:o} {dst_path}")

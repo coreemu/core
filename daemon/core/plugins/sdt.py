@@ -147,8 +147,7 @@ class Sdt:
 
         self.connected = True
         # refresh all objects in SDT3D when connecting after session start
-        if not self.sendobjs():
-            return False
+        self.sendobjs()
         return True
 
     def initialize(self) -> bool:
@@ -382,10 +381,7 @@ class Sdt:
             color = self.session.get_link_color(network_id)
         line = f"{color},2"
         link_id = get_link_id(node1_id, node2_id, network_id)
-        if network_id:
-            layer = self.get_network_layer(network_id)
-        else:
-            layer = WIRED_LINK_LAYER
+        layer = self.get_network_layer(network_id) if network_id else WIRED_LINK_LAYER
         link_label = ""
         if label:
             link_label = f'linklabel on,"{label}"'

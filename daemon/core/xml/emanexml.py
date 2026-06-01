@@ -73,13 +73,12 @@ def create_node_file(
     else:
         file_name = node.session.directory / file_name
         if node.server:
-            temp = NamedTemporaryFile(delete=False)
-            temp_path = Path(temp.name)
-            with temp_path.open("w") as f:
-                f.write(xml_data)
-            temp.close()
-            node.server.remote_put(temp_path, file_name)
-            temp_path.unlink()
+            with NamedTemporaryFile(delete_on_close=False) as temp:
+                temp_path = Path(temp.name)
+                with temp_path.open("w") as f:
+                    f.write(xml_data)
+                temp.close()
+                node.server.remote_put(temp_path, file_name)
         else:
             with file_name.open("w") as f:
                 f.write(xml_data)

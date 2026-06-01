@@ -50,8 +50,8 @@ def coreclient(func):
         try:
             with core.context_connect():
                 return func(core, *args, **kwargs)
-        except grpc.RpcError as e:
-            print(f"grpc error: {e.details()}")
+        except grpc.RpcError as err:
+            print(f"grpc error: {err.details()}")
 
     return wrapper
 

@@ -35,8 +35,8 @@ class SessionsDialog(Dialog):
             sessions = self.app.core.client.get_sessions()
             logger.info("sessions: %s", sessions)
             return sorted(sessions, key=lambda x: x.id)
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Get Sessions Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Get Sessions Error", err)
             self.destroy()
 
     def draw(self) -> None:

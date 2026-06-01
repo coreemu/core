@@ -69,10 +69,7 @@ def arc_edges(edges) -> None:
     if not edges:
         return
     mid_index = len(edges) // 2
-    if mid_index == 0:
-        arc_step = ARC_DISTANCE
-    else:
-        arc_step = ARC_DISTANCE / mid_index
+    arc_step = ARC_DISTANCE if mid_index == 0 else ARC_DISTANCE / mid_index
     # below edges
     arc = 0
     for edge in edges[:mid_index]:

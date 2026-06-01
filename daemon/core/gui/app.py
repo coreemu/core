@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import math
 import tkinter as tk
@@ -91,10 +92,8 @@ class Application(ttk.Frame):
 
         :return: nothing
         """
-        try:
+        with contextlib.suppress(tk.TclError):
             self.master.tk.call("tk_getOpenFile", "-foobar")
-        except tk.TclError:
-            pass
         self.master.tk.call("set", "::tk::dialog::file::showHiddenBtn", "1")
         self.master.tk.call("set", "::tk::dialog::file::showHiddenVar", "0")
 

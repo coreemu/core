@@ -172,10 +172,7 @@ class CoreService:
         for shadow_dir in self.shadow_directories:
             # setup shadow and src paths, using node unique paths when configured
             shadow_path = Path(shadow_dir.path)
-            if shadow_dir.src is None:
-                src_path = shadow_path
-            else:
-                src_path = Path(shadow_dir.src)
+            src_path = Path(shadow_dir.src) if shadow_dir.src else shadow_path
             if shadow_dir.has_node_paths:
                 src_path = src_path / self.node.name
             # validate shadow and src paths

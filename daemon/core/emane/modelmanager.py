@@ -31,9 +31,9 @@ class EmaneModelManager:
                 try:
                     model.load(emane_prefix)
                     cls.models[model.name] = model
-                except CoreError as e:
+                except CoreError as err:
                     errors.append(model.name)
-                    logger.debug("not loading emane model(%s): %s", model.name, e)
+                    logger.debug("not loading emane model(%s): %s", model.name, err)
         return errors
 
     @classmethod
@@ -56,9 +56,9 @@ class EmaneModelManager:
                 try:
                     model.load(emane_prefix)
                     cls.models[model.name] = model
-                except CoreError as e:
+                except CoreError as err:
                     errors.append(model.name)
-                    logger.debug("not loading emane model(%s): %s", model.name, e)
+                    logger.debug("not loading emane model(%s): %s", model.name, err)
         return errors
 
     @classmethod

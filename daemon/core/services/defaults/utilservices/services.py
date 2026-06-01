@@ -54,10 +54,7 @@ class StaticRouteService(CoreService):
         for iface in self.node.get_ifaces(control=False):
             for ip in iface.ips():
                 address = str(ip.ip)
-                if netaddr.valid_ipv6(address):
-                    dst = "3ffe:4::/64"
-                else:
-                    dst = "10.9.8.0/24"
+                dst = "3ffe:4::/64" if netaddr.valid_ipv6(address) else "10.9.8.0/24"
                 if ip[-2] != ip[1]:
                     routes.append((dst, ip[1]))
         return dict(routes=routes)

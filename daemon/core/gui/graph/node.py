@@ -200,8 +200,8 @@ class CanvasNode:
                     self.core_node.id, self.app.core.observer
                 )
                 self.tooltip.text.set(output)
-            except grpc.RpcError as e:
-                self.app.show_grpc_exception("Observer Error", e)
+            except grpc.RpcError as err:
+                self.app.show_grpc_exception("Observer Error", err)
 
     def on_leave(self, event: tk.Event) -> None:
         self.tooltip.on_leave(event)
@@ -439,10 +439,7 @@ class CanvasNode:
         is_src_bridge = nutils.is_bridge(self.core_node)
         is_dst_bridge = nutils.is_bridge(node.core_node)
         common_links = self.edges & node.edges
-        if all([is_src_bridge, is_dst_bridge, common_links]):
-            return False
-        # valid link
-        return True
+        return not all([is_src_bridge, is_dst_bridge, common_links])
 
     def hide(self) -> None:
         self.hidden = True
@@ -484,8 +481,8 @@ class CanvasNode:
             )
             if not result:
                 self.app.show_error("Service Action Error", "Action Failed!")
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Service Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Service Error", err)
 
     def start_service(self, service: str) -> None:
         self._service_action(service, ServiceAction.START)

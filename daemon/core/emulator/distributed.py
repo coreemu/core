@@ -3,7 +3,6 @@ Defines distributed server functionality.
 """
 
 import logging
-import os
 import threading
 from collections import OrderedDict
 from collections.abc import Callable
@@ -104,12 +103,10 @@ class DistributedServer:
         :param data: data to store in remote file
         :return: nothing
         """
-        with self.lock:
-            temp = NamedTemporaryFile(delete=False)
+        with self.lock, NamedTemporaryFile(delete_on_close=False) as temp:
             temp.write(data.encode())
             temp.close()
             self.conn.put(temp.name, str(dst_path))
-            os.unlink(temp.name)
 
 
 class DistributedController:

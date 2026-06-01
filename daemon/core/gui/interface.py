@@ -157,10 +157,7 @@ class InterfaceManager:
                 self.used_subnets[subnets.key()] = subnets
 
     def next_index(self, node: Node, subnets: Subnets) -> int:
-        if nutils.is_router(node):
-            index = 1
-        else:
-            index = 20
+        index = 1 if nutils.is_router(node) else 20
         while True:
             if index not in subnets.used_indexes:
                 subnets.used_indexes.add(index)

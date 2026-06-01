@@ -45,8 +45,8 @@ class EmaneModelDialog(Dialog):
                 )
             self.config: dict[str, ConfigOption] = config
             self.draw()
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Get EMANE Config Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Get EMANE Config Error", err)
             self.has_error: bool = True
             self.destroy()
 
@@ -75,8 +75,8 @@ class EmaneModelDialog(Dialog):
             key = (self.model, self.iface_id)
             self.node.emane_model_configs[key] = self.config
             self.destroy()
-        except ValueError as e:
-            messagebox.showerror("EMANE Config Error", str(e))
+        except ValueError as err:
+            messagebox.showerror("EMANE Config Error", str(err))
 
 
 class EmaneConfigDialog(Dialog):

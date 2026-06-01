@@ -26,8 +26,8 @@ class WirelessConfigDialog(Dialog):
                 config = self.app.core.get_wireless_config(self.node.id)
             self.config: dict[str, ConfigOption] = config
             self.draw()
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Wireless Config Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Wireless Config Error", err)
             self.has_error: bool = True
             self.destroy()
 

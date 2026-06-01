@@ -90,9 +90,9 @@ class ServiceManager:
             for service in services:
                 try:
                     self.add(service)
-                except CoreError as e:
+                except CoreError as err:
                     errors.append(service.name)
-                    logger.debug("not loading service(%s): %s", service.name, e)
+                    logger.debug("not loading service(%s): %s", service.name, err)
         return errors
 
     def load(self, path: Path) -> list[str]:
@@ -112,7 +112,7 @@ class ServiceManager:
             for service in services:
                 try:
                     self.add(service)
-                except CoreError as e:
+                except CoreError as err:
                     service_errors.append(service.name)
-                    logger.debug("not loading service(%s): %s", service.name, e)
+                    logger.debug("not loading service(%s): %s", service.name, err)
         return service_errors

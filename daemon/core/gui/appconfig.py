@@ -220,10 +220,7 @@ def check_directory() -> None:
     copy_files(LOCAL_MOBILITY_PATH, MOBILITY_PATH)
     if not CONFIG_PATH.exists():
         terminal = find_terminal()
-        if "EDITOR" in os.environ:
-            editor = EDITORS[0]
-        else:
-            editor = EDITORS[1]
+        editor = EDITORS[0] if "EDITOR" in os.environ else EDITORS[1]
         preferences = PreferencesConfig(editor, terminal)
         config = GuiConfig(preferences=preferences)
         save(config)

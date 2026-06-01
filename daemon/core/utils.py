@@ -18,7 +18,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from queue import Queue
-from subprocess import PIPE, STDOUT, Popen
+from subprocess import DEVNULL, PIPE, STDOUT, Popen
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import netaddr
@@ -33,7 +33,6 @@ if TYPE_CHECKING:
     from core.nodes.base import CoreNode
 T = TypeVar("T")
 
-DEVNULL = open(os.devnull, "wb")
 IFACE_CONFIG_FACTOR: int = 1000
 
 
@@ -112,9 +111,7 @@ def _valid_module(path: Path) -> bool:
         return False
     if path.name.startswith("_"):
         return False
-    if not path.suffix == ".py":
-        return False
-    return True
+    return path.suffix == ".py"
 
 
 def _is_class(module: Any, member: type, clazz: type) -> bool:
@@ -130,9 +127,7 @@ def _is_class(module: Any, member: type, clazz: type) -> bool:
         return False
     if not issubclass(member, clazz):
         return False
-    if member.__module__ != module.__name__:
-        return False
-    return True
+    return member.__module__ == module.__name__
 
 
 def close_onexec(fd: int) -> None:
@@ -440,9 +435,9 @@ def run_cmds_threaded(
                 result = future.result()
                 node = node_mappings[future]
                 outputs[node.id] = result
-            except Exception as e:
+            except Exception as err:
                 logger.exception("thread pool exception")
-                exceptions.append(e)
+                exceptions.append(err)
     return outputs, exceptions
 
 
@@ -484,9 +479,9 @@ def run_cmds_mp(
                 result = future.result()
                 node = node_mapping[future]
                 outputs[node.id] = result
-            except Exception as e:
+            except Exception as err:
                 logger.exception("thread pool exception")
-                exceptions.append(e)
+                exceptions.append(err)
     return outputs, exceptions
 
 
@@ -512,9 +507,9 @@ def threadpool(
             try:
                 result = future.result()
                 results.append(result)
-            except Exception as e:
+            except Exception as err:
                 logger.exception("thread pool exception")
-                exceptions.append(e)
+                exceptions.append(err)
     return results, exceptions
 
 

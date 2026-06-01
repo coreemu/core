@@ -1,7 +1,7 @@
 """
 PhysicalNode class for including real systems in the emulated network.
 """
-
+import contextlib
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -78,10 +78,8 @@ class Rj45Node(CoreNodeBase):
         localname = self.iface.localname
         self.net_client.device_down(localname)
         self.net_client.device_flush(localname)
-        try:
+        with contextlib.suppress(CoreCommandError):
             self.net_client.delete_tc(localname)
-        except CoreCommandError:
-            pass
         self.up = False
         self.restore_state()
 

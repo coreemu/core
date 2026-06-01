@@ -103,16 +103,12 @@ class TestGrpc:
         session.set_options({option_key: option_value})
 
         # when
-        with patch.object(CoreXmlWriter, "write"):
-            with client.context_connect():
-                client.start_session(session, definition=definition)
+        with patch.object(CoreXmlWriter, "write"), client.context_connect():
+            client.start_session(session, definition=definition)
 
         # then
         real_session = grpc_server.coreemu.sessions[session.id]
-        if definition:
-            state = EventTypes.DEFINITION_STATE
-        else:
-            state = EventTypes.RUNTIME_STATE
+        state = EventTypes.DEFINITION_STATE if definition else EventTypes.RUNTIME_STATE
         assert real_session.state == state
         assert node1.id in real_session.nodes
         assert node2.id in real_session.nodes
@@ -415,9 +411,8 @@ class TestGrpc:
 
         # then
         link = Link(node.id, 3)
-        with pytest.raises(grpc.RpcError):
-            with client.context_connect():
-                client.add_link(session.id, link)
+        with pytest.raises(grpc.RpcError), client.context_connect():
+            client.add_link(session.id, link)
 
     def test_edit_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given
@@ -808,9 +803,8 @@ class TestGrpc:
         streamer.stop()
 
         # then
-        with pytest.raises(grpc.RpcError):
-            with client.context_connect():
-                client.move_nodes(streamer)
+        with pytest.raises(grpc.RpcError), client.context_connect():
+            client.move_nodes(streamer)
 
     def test_wlan_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given

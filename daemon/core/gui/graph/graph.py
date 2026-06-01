@@ -180,11 +180,7 @@ class CanvasGraph(tk.Canvas):
         for _id in overlapping:
             if self.drawing_edge and self.drawing_edge.id == _id:
                 continue
-            elif _id in self.nodes:
-                selected = _id
-            elif _id in self.shapes:
-                selected = _id
-            elif _id in self.shadow_nodes:
+            elif _id in self.nodes or _id in self.shapes or _id in self.shadow_nodes:
                 selected = _id
         return selected
 
@@ -677,7 +673,7 @@ class CanvasGraph(tk.Canvas):
         if self.selection:
             logger.debug("to copy nodes: %s", self.selection)
             self.to_copy.clear()
-            for node_id in self.selection.keys():
+            for node_id in self.selection:
                 canvas_node = self.nodes[node_id]
                 self.to_copy.append(canvas_node)
 
@@ -816,7 +812,7 @@ class CanvasGraph(tk.Canvas):
         wallpaper_path = None
         if self.wallpaper_file:
             wallpaper = Path(self.wallpaper_file)
-            if appconfig.BACKGROUNDS_PATH == wallpaper.parent:
+            if wallpaper.parent == appconfig.BACKGROUNDS_PATH:
                 wallpaper_path = wallpaper.name
             else:
                 wallpaper_path = str(wallpaper)

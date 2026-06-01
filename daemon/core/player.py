@@ -1,4 +1,5 @@
 import ast
+import contextlib
 import csv
 import enum
 import logging
@@ -38,16 +39,14 @@ class PlayerEvents(enum.Enum):
         :return: valid event type, None otherwise
         """
         event = None
-        try:
+        with contextlib.suppress(KeyError):
             event = cls[value]
-        except KeyError:
-            pass
         return event
 
 
 class CorePlayerWriter:
     """
-    Provides conveniences for programatically creating a core file for playback.
+    Provides conveniences for programmatically creating a core file for playback.
     """
 
     def __init__(self, file_path: str):
@@ -68,7 +67,7 @@ class CorePlayerWriter:
         :return: nothing
         """
         logger.info("core player write file(%s)", self._file_path)
-        self._file = open(self._file_path, "w", newline="")
+        self._file = open(self._file_path, "w", newline="")  # noqa: SIM115
         self._csv_file = csv.writer(self._file, quoting=csv.QUOTE_MINIMAL)
 
     def close(self) -> None:
@@ -264,8 +263,8 @@ class CorePlayer:
                 target=self.core.move_nodes, args=(self.node_streamer,), daemon=True
             )
             self.node_streamer_thread.start()
-        except grpc.RpcError as e:
-            logger.error("core is not running: %s", e.details())
+        except grpc.RpcError as err:
+            logger.error("core is not running: %s", err.details())
             return False
         return True
 

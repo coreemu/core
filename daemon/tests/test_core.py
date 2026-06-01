@@ -24,8 +24,8 @@ def ping(from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes):
     try:
         from_node.cmd(f"ping -c 1 {address}")
         status = 0
-    except CoreCommandError as e:
-        status = e.returncode
+    except CoreCommandError as err:
+        status = err.returncode
     return status
 
 

@@ -169,8 +169,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         try:
             return session.get_node(node_id, _class)
-        except CoreError as e:
-            context.abort(grpc.StatusCode.NOT_FOUND, str(e))
+        except CoreError as err:
+            context.abort(grpc.StatusCode.NOT_FOUND, str(err))
 
     def move_node(
         self,
@@ -674,9 +674,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         try:
             output = node.cmd(request.command, request.wait, request.shell)
             return_code = 0
-        except CoreCommandError as e:
-            output = e.stderr
-            return_code = e.returncode
+        except CoreCommandError as err:
+            output = err.stderr
+            return_code = err.returncode
         return core_pb2.NodeCommandResponse(output=output, return_code=return_code)
 
     def GetNodeTerminal(
@@ -1041,22 +1041,21 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logger.debug("open xml: %s", request)
         session = self.coreemu.create_session()
-        temp = tempfile.NamedTemporaryFile(delete=False)
-        temp.write(request.data.encode())
-        temp.close()
-        temp_path = Path(temp.name)
-        file_path = Path(request.file)
-        try:
-            session.open_xml(temp_path, request.start)
-            session.name = file_path.name
-            session.file_path = file_path
-            return core_pb2.OpenXmlResponse(session_id=session.id, result=True)
-        except OSError:
-            logger.exception("error opening session file")
-            self.coreemu.delete_session(session.id)
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")
-        finally:
-            os.unlink(temp.name)
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as temp:
+            temp.write(request.data.encode())
+            temp.close()
+
+            temp_path = Path(temp.name)
+            file_path = Path(request.file)
+            try:
+                session.open_xml(temp_path, request.start)
+                session.name = file_path.name
+                session.file_path = file_path
+                return core_pb2.OpenXmlResponse(session_id=session.id, result=True)
+            except OSError:
+                logger.exception("error opening session file")
+                self.coreemu.delete_session(session.id)
+                context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")
 
     def GetInterfaces(
         self, request: core_pb2.GetInterfacesRequest, context: ServicerContext
@@ -1434,6 +1433,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if issubclass(custom_class, CustomCoreService):
                 self.coreemu.service_manager.add(custom_class)
                 result = True
-        except CoreError as e:
-            logger.error("error creating custom service: %s", e)
+        except CoreError as err:
+            logger.error("error creating custom service: %s", err)
         return CreateServiceResponse(result=result)

@@ -38,8 +38,8 @@ def ping(
     try:
         from_node.cmd(f"ping -c {count} {address}")
         status = 0
-    except CoreCommandError as e:
-        status = e.returncode
+    except CoreCommandError as err:
+        status = err.returncode
     return status
 
 

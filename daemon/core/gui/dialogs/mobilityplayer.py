@@ -136,8 +136,8 @@ class MobilityPlayerDialog(Dialog):
             self.app.core.client.mobility_action(
                 session_id, self.node.id, MobilityAction.START
             )
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Mobility Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Mobility Error", err)
 
     def click_pause(self) -> None:
         self.set_pause()
@@ -146,8 +146,8 @@ class MobilityPlayerDialog(Dialog):
             self.app.core.client.mobility_action(
                 session_id, self.node.id, MobilityAction.PAUSE
             )
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Mobility Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Mobility Error", err)
 
     def click_stop(self) -> None:
         self.set_stop()
@@ -156,5 +156,5 @@ class MobilityPlayerDialog(Dialog):
             self.app.core.client.mobility_action(
                 session_id, self.node.id, MobilityAction.STOP
             )
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Mobility Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Mobility Error", err)

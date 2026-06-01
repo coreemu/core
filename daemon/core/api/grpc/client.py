@@ -187,8 +187,8 @@ def throughput_listener(
         for event_proto in stream:
             event = wrappers.ThroughputsEvent.from_proto(event_proto)
             handler(event)
-    except grpc.RpcError as e:
-        if e.code() == grpc.StatusCode.CANCELLED:
+    except grpc.RpcError as err:
+        if err.code() == grpc.StatusCode.CANCELLED:
             logger.debug("throughput stream closed")
         else:
             logger.exception("throughput stream error")
@@ -208,8 +208,8 @@ def cpu_listener(
         for event_proto in stream:
             event = wrappers.CpuUsageEvent.from_proto(event_proto)
             handler(event)
-    except grpc.RpcError as e:
-        if e.code() == grpc.StatusCode.CANCELLED:
+    except grpc.RpcError as err:
+        if err.code() == grpc.StatusCode.CANCELLED:
             logger.debug("cpu stream closed")
         else:
             logger.exception("cpu stream error")
@@ -227,8 +227,8 @@ def event_listener(stream: Any, handler: Callable[[wrappers.Event], None]) -> No
         for event_proto in stream:
             event = wrappers.Event.from_proto(event_proto)
             handler(event)
-    except grpc.RpcError as e:
-        if e.code() == grpc.StatusCode.CANCELLED:
+    except grpc.RpcError as err:
+        if err.code() == grpc.StatusCode.CANCELLED:
             logger.debug("session stream closed")
         else:
             logger.exception("session stream error")

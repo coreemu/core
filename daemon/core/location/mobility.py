@@ -75,13 +75,7 @@ def get_config_float(
     :return: current config value when not provided, new value otherwise
     """
     value = config.get(name)
-    if value is not None:
-        if value == "":
-            value = None
-        else:
-            value = float(value)
-    else:
-        value = current
+    value = (None if value == "" else float(value)) if value is not None else current
     return value
 
 

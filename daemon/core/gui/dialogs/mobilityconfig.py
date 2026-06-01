@@ -28,8 +28,8 @@ class MobilityConfigDialog(Dialog):
                 config = self.app.core.get_mobility_config(self.node.id)
             self.config: dict[str, ConfigOption] = config
             self.draw()
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Get Mobility Config Error", e)
+        except grpc.RpcError as err:
+            self.app.show_grpc_exception("Get Mobility Config Error", err)
             self.has_error: bool = True
             self.destroy()
 

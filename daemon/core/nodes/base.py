@@ -2,6 +2,7 @@
 Defines the base logic for nodes used within core.
 """
 import abc
+import contextlib
 import logging
 import shlex
 import shutil
@@ -686,10 +687,8 @@ class CoreNode(CoreNodeBase):
                 self._mounts = []
                 # shutdown all interfaces
                 for iface in self.get_ifaces():
-                    try:
+                    with contextlib.suppress(CoreCommandError):
                         self.node_net_client.device_flush(iface.name)
-                    except CoreCommandError:
-                        pass
                     iface.shutdown()
                 # kill node process if present
                 try:

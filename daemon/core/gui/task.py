@@ -45,9 +45,9 @@ class ProgressTask:
                 values = (values,)
             if self.callback:
                 self.app.after(0, self.callback, *values)
-        except Exception as e:
+        except Exception as err:
             logger.exception("progress task exception")
-            self.app.show_exception("Task Error", e)
+            self.app.show_exception("Task Error", err)
         finally:
             self.app.after(0, self.complete)
 
