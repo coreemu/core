@@ -12,8 +12,9 @@ import sys
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager, EmaneState

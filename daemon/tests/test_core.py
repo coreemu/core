@@ -4,7 +4,6 @@ Unit tests for testing basic CORE networks.
 
 import threading
 from pathlib import Path
-from typing import List, Type
 
 import pytest
 
@@ -17,7 +16,7 @@ from core.nodes.network import HubNode, SwitchNode, WlanNode
 
 _PATH: Path = Path(__file__).resolve().parent
 _MOBILITY_FILE: Path = _PATH / "mobility.scen"
-_WIRED: List = [HubNode, SwitchNode]
+_WIRED: list = [HubNode, SwitchNode]
 
 
 def ping(from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes):
@@ -33,7 +32,7 @@ def ping(from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes):
 class TestCore:
     @pytest.mark.parametrize("net_type", _WIRED)
     def test_wired_ping(
-        self, session: Session, net_type: Type[NodeBase], ip_prefixes: IpPrefixes
+        self, session: Session, net_type: type[NodeBase], ip_prefixes: IpPrefixes
     ):
         """
         Test ptp node network.

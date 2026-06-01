@@ -589,7 +589,7 @@ def get_net_stats() -> dict[str, dict[str, float]]:
 
     :return: send and receive status of the interfaces in the system
     """
-    with open("/proc/net/dev", "r") as f:
+    with open("/proc/net/dev") as f:
         lines = f.readlines()[2:]
     return parse_proc_net_dev(lines)
 

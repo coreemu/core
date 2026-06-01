@@ -3,7 +3,6 @@ Unit tests for testing CORE EMANE networks.
 """
 from pathlib import Path
 from tempfile import TemporaryFile
-from typing import Type
 from xml.etree import ElementTree
 
 import pytest
@@ -91,7 +90,7 @@ class TestEmane:
 
     @pytest.mark.parametrize("model", _EMANE_MODELS)
     def test_models(
-        self, session: Session, model: Type[EmaneModel], ip_prefixes: IpPrefixes
+        self, session: Session, model: type[EmaneModel], ip_prefixes: IpPrefixes
     ):
         """
         Test emane models within a basic network.

@@ -1051,7 +1051,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             session.name = file_path.name
             session.file_path = file_path
             return core_pb2.OpenXmlResponse(session_id=session.id, result=True)
-        except IOError:
+        except OSError:
             logger.exception("error opening session file")
             self.coreemu.delete_session(session.id)
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")

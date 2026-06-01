@@ -1,10 +1,11 @@
 import logging
 import re
 import tkinter as tk
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 from tkinter import filedialog, font, ttk
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from core.api.grpc.wrappers import ConfigOption, ConfigOptionType
 from core.gui import appconfig, themes, validation

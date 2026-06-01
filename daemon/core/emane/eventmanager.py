@@ -1,11 +1,12 @@
 import logging
 import threading
-from typing import Callable, Union
+from collections.abc import Callable
 
 from core.errors import CoreError
 
 logger = logging.getLogger(__name__)
 
+EventType = None
 try:
     from emane.events import (
         AntennaProfileEvent,
@@ -16,6 +17,14 @@ try:
         PathlossEvent,
     )
     from emane.events.eventserviceexception import EventServiceException
+
+    EventType = (
+        AntennaProfileEvent |
+        CommEffectEvent |
+        FadingSelectionEvent |
+        LocationEvent |
+        PathlossEvent
+    )
 except ImportError:
     try:
         from emanesh.events import (
@@ -27,6 +36,14 @@ except ImportError:
             PathlossEvent,
         )
         from emanesh.events.eventserviceexception import EventServiceException
+
+        EventType = (
+            AntennaProfileEvent |
+            CommEffectEvent |
+            FadingSelectionEvent |
+            LocationEvent |
+            PathlossEvent
+        )
     except ImportError:
         EventService = None
         AntennaProfileEvent = None
@@ -229,13 +246,7 @@ class EmaneEventManager:
     def _publish_event(
         self,
         nem_id: int,
-        event: Union[
-            AntennaProfileEvent,
-            CommEffectEvent,
-            FadingSelectionEvent,
-            LocationEvent,
-            PathlossEvent,
-        ],
+        event: EventType,
         publish_id: int = None,
     ) -> None:
         service = self.get_service(nem_id)

@@ -4,8 +4,9 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import math
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING
 
 import netaddr
 
@@ -106,7 +107,7 @@ class CoreInterface:
                 f"interface local name ({localname}) too long, max {IFACE_NAME_LENGTH}"
             )
         self.id: int = _id
-        self.node: Optional["NodeBase"] = node
+        self.node: "NodeBase" | None = node
         # id of interface for network, used by wlan/emane
         self.net_id: int | None = None
         self.name: str = name
@@ -123,7 +124,7 @@ class CoreInterface:
         self.transport_type: TransportType = TransportType.VIRTUAL
         # id used to find flow data
         self.flow_id: int | None = None
-        self.server: Optional["DistributedServer"] = server
+        self.server: "DistributedServer" | None = server
         self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
         self.control: bool = False
         # configuration data

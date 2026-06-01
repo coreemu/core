@@ -1,10 +1,10 @@
 import time
 from pathlib import Path
 from queue import Queue
+from unittest.mock import patch
 
 import grpc
 import pytest
-from mock import patch
 
 from core.api.grpc import wrappers
 from core.api.grpc.client import CoreGrpcClient, InterfaceHelper, MoveNodesStreamer

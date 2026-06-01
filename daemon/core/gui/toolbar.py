@@ -1,9 +1,10 @@
 import logging
 import tkinter as tk
+from collections.abc import Callable
 from enum import Enum
 from functools import partial
 from tkinter import ttk
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from PIL.ImageTk import PhotoImage
 

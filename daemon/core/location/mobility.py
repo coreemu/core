@@ -7,9 +7,10 @@ import logging
 import math
 import threading
 import time
+from collections.abc import Callable
 from functools import total_ordering
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from core import utils
 from core.config import (
@@ -888,7 +889,7 @@ class Ns2ScriptedMobility(WayPointMobility):
                     #    $ns_ at 1.00 "$node_(6) setdest 500.0 178.0 25.0"
                     parts = line.split()
                     line_time = float(parts[2])
-                    nodenum = parts[3][1 + parts[3].index("(") : parts[3].index(")")]
+                    nodenum = parts[3][1 + parts[3].index("("): parts[3].index(")")]
                     x = float(parts[5])
                     y = float(parts[6])
                     z = None
@@ -898,7 +899,7 @@ class Ns2ScriptedMobility(WayPointMobility):
                     # initial position (time=0, speed=0):
                     #    $node_(6) set X_ 780.0
                     parts = line.split()
-                    nodenum = parts[0][1 + parts[0].index("(") : parts[0].index(")")]
+                    nodenum = parts[0][1 + parts[0].index("("): parts[0].index(")")]
                     if parts[2] == "X_":
                         if ix is not None and iy is not None:
                             self.addinitial(self.map(inodenum), ix, iy, iz)

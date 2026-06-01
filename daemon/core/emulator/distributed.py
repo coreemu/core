@@ -6,9 +6,10 @@ import logging
 import os
 import threading
 from collections import OrderedDict
+from collections.abc import Callable
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import netaddr
 from fabric import Connection

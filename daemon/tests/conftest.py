@@ -4,8 +4,8 @@ Unit test fixture module.
 
 import threading
 import time
+from unittest import mock
 
-import mock
 import pytest
 
 from core.api.grpc.client import InterfaceHelper

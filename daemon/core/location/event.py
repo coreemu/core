@@ -5,8 +5,9 @@ event.py: event loop implementation using a heap queue and threads.
 import heapq
 import threading
 import time
+from collections.abc import Callable
 from functools import total_ordering
-from typing import Any, Callable
+from typing import Any
 
 
 class Timer(threading.Thread):

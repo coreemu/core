@@ -3,9 +3,10 @@ import csv
 import enum
 import logging
 import sched
+from collections.abc import Callable
 from pathlib import Path
 from threading import Thread
-from typing import IO, Callable, Optional
+from typing import IO
 
 import grpc
 
@@ -29,7 +30,7 @@ class PlayerEvents(enum.Enum):
     WICONFIG = enum.auto()
 
     @classmethod
-    def get(cls, value: str) -> Optional["PlayerEvents"]:
+    def get(cls, value: str) -> "PlayerEvents" | None:
         """
         Retrieves a valid event type from read input.
 
@@ -58,7 +59,7 @@ class CorePlayerWriter:
         self._time: float = 0.0
         self._file_path: str = file_path
         self._file: IO | None = None
-        self._csv_file: Optional[csv.writer, None] = None
+        self._csv_file: csv.writer | None = None
 
     def open(self) -> None:
         """

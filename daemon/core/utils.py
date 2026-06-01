@@ -15,11 +15,11 @@ import shutil
 import sys
 import threading
 from collections import OrderedDict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from queue import Queue
 from subprocess import PIPE, STDOUT, Popen
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import netaddr
 
@@ -161,7 +161,7 @@ def which(command: str, required: bool) -> str | None:
     return found_path
 
 
-def make_tuple_fromstr(s: str, value_type: Callable[[str], T]) -> tuple[T, ...]:
+def make_tuple_fromstr[T](s: str, value_type: Callable[[str], T]) -> tuple[T, ...]:
     """
     Create a tuple from a string.
 
@@ -355,7 +355,7 @@ def load_config(file_path: Path, d: dict[str, str]) -> None:
             logger.exception("error reading file to dict: %s", file_path)
 
 
-def load_module(import_statement: str, clazz: Generic[T]) -> list[T]:
+def load_module[T](import_statement: str, clazz: T) -> list[T]:
     classes = []
     try:
         module = importlib.import_module(import_statement)
@@ -370,7 +370,7 @@ def load_module(import_statement: str, clazz: Generic[T]) -> list[T]:
     return classes
 
 
-def load_classes(path: Path, clazz: Generic[T]) -> list[T]:
+def load_classes[T](path: Path, clazz: T) -> list[T]:
     """
     Dynamically load classes for use within CORE.
 

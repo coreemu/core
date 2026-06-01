@@ -39,7 +39,6 @@ core-cleanup = "core.scripts.cleanup:main"
 dev = [
     "pytest==8.3.4",
     "grpcio-tools==1.69.0",
-    "mock==4.0.2",
     "pre-commit==4.1.0",
     "ruff>=0.15.15",
 ]
@@ -52,15 +51,19 @@ artifacts = ["core/api/grpc/*_pb2*.py"]
 exclude = ["core/constants.py.in"]
 
 [tool.ruff.lint]
-#    "UP",   # pyupgrade (upgrades code to modern Python syntax)
-#    "SIM",  # flake8-simplify (suggests code simplifications)
-#    "RUF",  # Ruff-specific rules
+# "SIM",  # flake8-simplify (suggests code simplifications)
+# "RUF",  # Ruff-specific rules
 select = [
-    "B",    # flake8-bugbear (catches design flaws & bugs)
-    "E",    # pycodestyle errors
-    "F",    # Pyflakes (enabled by default)
-    "I",    # isort (import sorting)
-    "W",    # pycodestyle warnings
+    "B", # flake8-bugbear (catches design flaws & bugs)
+    "E", # pycodestyle errors
+    "F", # Pyflakes (enabled by default)
+    "I", # isort (import sorting)
+    "UP", # pyupgrade (upgrades code to modern Python syntax)
+    "W", # pycodestyle warnings
+]
+ignore = [
+    "UP037", # Removes unnecessary quotes in type annotations
+    "TC008", # Removes unnecessary quotes in type aliases
 ]
 
 [tool.pytest.ini_options]

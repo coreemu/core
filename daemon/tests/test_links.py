@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import pytest
 
 from core.emulator.data import IpPrefixes, LinkOptions
@@ -16,7 +14,7 @@ LINK_OPTIONS: LinkOptions = LinkOptions(
 
 def create_ptp_network(
     session: Session, ip_prefixes: IpPrefixes
-) -> Tuple[CoreNode, CoreNode]:
+) -> tuple[CoreNode, CoreNode]:
     # create nodes
     node1 = session.add_node(CoreNode)
     node2 = session.add_node(CoreNode)

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from lxml import etree
 
@@ -48,7 +48,7 @@ def write_xml_file(
         f.write(xml_data)
 
 
-def get_type(element: etree.Element, name: str, _type: Generic[T]) -> T | None:
+def get_type[T](element: etree.Element, name: str, _type: T) -> T | None:
     value = element.get(name)
     if value is not None:
         value = _type(value)

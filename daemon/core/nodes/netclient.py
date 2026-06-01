@@ -1,7 +1,7 @@
 """
 Clients for dealing with bridge/interface commands.
 """
-from typing import Callable
+from collections.abc import Callable
 
 import netaddr
 

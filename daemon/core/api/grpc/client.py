@@ -1104,7 +1104,7 @@ class CoreGrpcClient:
             self.channel = None
 
     @contextmanager
-    def context_connect(self) -> Generator[None, None, None]:
+    def context_connect(self) -> Generator:
         """
         Makes a context manager based connection to the server, will close after
         context ends.
