@@ -273,14 +273,14 @@ class Menubar(tk.Menu):
                 label=i, command=partial(self.open_recent_files, Path(i))
             )
 
-    def click_save(self, _event: tk.Event = None) -> None:
+    def click_save(self, _event: tk.Event | None = None) -> None:
         if self.core.session.file:
             if self.core.save_xml():
                 self.add_recent_file_to_gui_config(self.core.session.file)
         else:
             self.click_save_as()
 
-    def click_save_as(self, _event: tk.Event = None) -> None:
+    def click_save_as(self, _event: tk.Event | None = None) -> None:
         init_dir = self.core.get_xml_dir()
         file_path = filedialog.asksaveasfilename(
             initialdir=init_dir,
@@ -293,7 +293,7 @@ class Menubar(tk.Menu):
             if self.core.save_xml(file_path):
                 self.add_recent_file_to_gui_config(file_path)
 
-    def click_open_xml(self, _event: tk.Event = None) -> None:
+    def click_open_xml(self, _event: tk.Event | None = None) -> None:
         init_dir = self.core.get_xml_dir()
         file_path = filedialog.askopenfilename(
             initialdir=init_dir,
@@ -355,7 +355,7 @@ class Menubar(tk.Menu):
         self.prompt_save_running_session()
         self.core.create_new_session()
 
-    def click_find(self, _event: tk.Event = None) -> None:
+    def click_find(self, _event: tk.Event | None = None) -> None:
         dialog = FindDialog(self.app)
         dialog.show()
 
@@ -397,28 +397,28 @@ class Menubar(tk.Menu):
         dialog = ThroughputDialog(self.app)
         dialog.show()
 
-    def click_copy(self, _event: tk.Event = None) -> None:
+    def click_copy(self, _event: tk.Event | None = None) -> None:
         canvas = self.manager.current()
         canvas.copy_selected()
 
-    def click_paste(self, event: tk.Event = None) -> None:
+    def click_paste(self, event: tk.Event | None = None) -> None:
         canvas = self.manager.current()
         canvas.paste_selected(event)
 
-    def click_delete(self, event: tk.Event = None) -> None:
+    def click_delete(self, event: tk.Event | None = None) -> None:
         canvas = self.manager.current()
         canvas.delete_selected(event)
 
-    def click_hide(self, event: tk.Event = None) -> None:
+    def click_hide(self, event: tk.Event | None = None) -> None:
         canvas = self.manager.current()
         canvas.hide_selected(event)
 
-    def click_cut(self, event: tk.Event = None) -> None:
+    def click_cut(self, event: tk.Event | None = None) -> None:
         canvas = self.manager.current()
         canvas.copy_selected(event)
         canvas.delete_selected(event)
 
-    def click_show_hidden(self, _event: tk.Event = None) -> None:
+    def click_show_hidden(self, _event: tk.Event | None = None) -> None:
         for canvas in self.manager.all():
             canvas.show_hidden()
 

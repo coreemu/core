@@ -55,7 +55,9 @@ def execute_script(coreemu: "CoreEmu", file_path: Path, args: str) -> None:
 
 
 def execute_file(
-    path: Path, exec_globals: dict[str, str] = None, exec_locals: dict[str, str] = None
+    path: Path,
+    exec_globals: dict[str, str] | None = None,
+    exec_locals: dict[str, str] | None = None,
 ) -> None:
     """
     Provides a way to execute a file.
@@ -191,8 +193,8 @@ def mute_detach(args: str, **kwargs: dict[str, Any]) -> int:
 
 def cmd(
     args: str,
-    env: dict[str, str] = None,
-    cwd: Path = None,
+    env: dict[str, str] | None = None,
+    cwd: Path | None = None,
     wait: bool = True,
     shell: bool = False,
 ) -> str:
@@ -398,7 +400,7 @@ def run_cmds_threaded(
     node_cmds: list[tuple["CoreNode", list[str]]],
     wait: bool = True,
     shell: bool = False,
-    workers: int = None,
+    workers: int | None = None,
 ) -> tuple[dict[int, list[str]], list[Exception]]:
     """
     Run the set of commands for the node provided. Each node will
@@ -445,7 +447,7 @@ def run_cmds_mp(
     node_cmds: list[tuple["CoreNode", list[str]]],
     wait: bool = True,
     shell: bool = False,
-    workers: int = None,
+    workers: int | None = None,
 ) -> tuple[dict[int, list[str]], list[Exception]]:
     """
     Run the set of commands for the node provided. Each node will
@@ -525,7 +527,7 @@ def random_mac() -> str:
     return str(mac)
 
 
-def iface_config_id(node_id: int, iface_id: int = None) -> int:
+def iface_config_id(node_id: int, iface_id: int | None = None) -> int:
     """
     Common utility to generate a configuration id, in case an interface is being
     targeted.

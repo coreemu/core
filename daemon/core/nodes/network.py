@@ -197,10 +197,10 @@ class CoreNetwork(CoreNetworkBase):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
+        _id: int | None = None,
+        name: str | None = None,
         server: "DistributedServer" = None,
-        options: NetworkOptions = None,
+        options: NetworkOptions | None = None,
     ) -> None:
         """
         Creates a CoreNetwork instance.
@@ -226,8 +226,8 @@ class CoreNetwork(CoreNetworkBase):
     def host_cmd(
         self,
         args: str,
-        env: dict[str, str] = None,
-        cwd: Path = None,
+        env: dict[str, str] | None = None,
+        cwd: Path | None = None,
         wait: bool = True,
         shell: bool = False,
     ) -> str:
@@ -381,13 +381,13 @@ class GreTapBridge(CoreNetwork):
     def __init__(
         self,
         session: "Session",
-        remoteip: str = None,
-        _id: int = None,
-        name: str = None,
+        remoteip: str | None = None,
+        _id: int | None = None,
+        name: str | None = None,
         policy: NetworkPolicy = NetworkPolicy.ACCEPT,
-        localip: str = None,
+        localip: str | None = None,
         ttl: int = 255,
-        key: int = None,
+        key: int | None = None,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -515,10 +515,10 @@ class CtrlNet(CoreNetwork):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
+        _id: int | None = None,
+        name: str | None = None,
         server: "DistributedServer" = None,
-        options: CtrlNetOptions = None,
+        options: CtrlNetOptions | None = None,
     ) -> None:
         """
         Creates a CtrlNet instance.
@@ -692,10 +692,10 @@ class WlanNode(CoreNetwork):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
+        _id: int | None = None,
+        name: str | None = None,
         server: "DistributedServer" = None,
-        options: NetworkOptions = None,
+        options: NetworkOptions | None = None,
     ) -> None:
         """
         Create a WlanNode instance.

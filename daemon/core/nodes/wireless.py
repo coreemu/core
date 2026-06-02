@@ -264,7 +264,7 @@ class WirelessNode(CoreNetworkBase):
         node1_id: int,
         node2_id: int,
         message_type: MessageFlags,
-        label: str = None,
+        label: str | None = None,
     ) -> None:
         """
         Broadcasts out a wireless link/unlink message.

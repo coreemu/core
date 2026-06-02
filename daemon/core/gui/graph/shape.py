@@ -46,9 +46,9 @@ class Shape:
         shape_type: ShapeType,
         x1: float,
         y1: float,
-        x2: float = None,
-        y2: float = None,
-        data: AnnotationData = None,
+        x2: float | None = None,
+        y2: float | None = None,
+        data: AnnotationData | None = None,
     ) -> None:
         self.app: "Application" = app
         self.canvas: "CanvasGraph" = canvas

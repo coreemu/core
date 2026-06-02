@@ -348,7 +348,7 @@ class CoreClient:
         except grpc.RpcError as err:
             self.app.show_grpc_exception("New Session Error", err)
 
-    def delete_session(self, session_id: int = None) -> None:
+    def delete_session(self, session_id: int | None = None) -> None:
         if session_id is None and not self.session:
             return
         if session_id is None:
@@ -359,7 +359,7 @@ class CoreClient:
         except grpc.RpcError as err:
             self.app.show_grpc_exception("Delete Session Error", err)
 
-    def setup(self, session_id: int = None) -> None:
+    def setup(self, session_id: int | None = None) -> None:
         """
         Query sessions, if there exist any, prompt whether to join one
         """
@@ -445,7 +445,7 @@ class CoreClient:
             self.app.show_grpc_exception("Start Session Error", err)
         return result, exceptions
 
-    def stop_session(self, session_id: int = None) -> bool:
+    def stop_session(self, session_id: int | None = None) -> bool:
         session_id = session_id or self.session.id
         self.cancel_throughputs()
         result = False
@@ -515,7 +515,7 @@ class CoreClient:
     def get_xml_dir(self) -> str:
         return str(self.session.file.parent) if self.session.file else str(XMLS_PATH)
 
-    def save_xml(self, file_path: Path = None) -> bool:
+    def save_xml(self, file_path: Path | None = None) -> bool:
         """
         Save core session as to an xml file
         """
@@ -726,7 +726,7 @@ class CoreClient:
         return config
 
     def get_emane_model_config(
-        self, node_id: int, model: str, iface_id: int = None
+        self, node_id: int, model: str, iface_id: int | None = None
     ) -> dict[str, ConfigOption]:
         if iface_id is None:
             iface_id = -1

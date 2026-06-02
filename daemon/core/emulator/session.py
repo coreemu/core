@@ -92,7 +92,7 @@ class Session:
     """
 
     def __init__(
-        self, _id: int, config: dict[str, str] = None, mkdir: bool = True
+        self, _id: int, config: dict[str, str] | None = None, mkdir: bool = True
     ) -> None:
         """
         Create a Session instance.
@@ -248,12 +248,17 @@ class Session:
         node2 = self.get_node(node2_id, NodeBase)
         # check for invalid linking
         if (
-            isinstance(node1, WIRELESS_TYPE)
-            and isinstance(node2, WIRELESS_TYPE)
-            or isinstance(node1, WIRELESS_TYPE)
-            and not isinstance(node2, CoreNodeBase)
-            or not isinstance(node1, CoreNodeBase)
-            and isinstance(node2, WIRELESS_TYPE)
+            (
+                isinstance(node1, WIRELESS_TYPE) and
+                isinstance(node2, WIRELESS_TYPE)
+            )
+            or (
+                isinstance(node1, WIRELESS_TYPE) and
+                not isinstance(node2, CoreNodeBase)
+            ) or (
+                not isinstance(node1, CoreNodeBase) and
+                isinstance(node2, WIRELESS_TYPE)
+            )
         ):
             raise CoreError(f"cannot link node({type(node1)}) node({type(node2)})")
         # custom links
@@ -357,7 +362,11 @@ class Session:
         return iface1, iface2
 
     def delete_link(
-        self, node1_id: int, node2_id: int, iface1_id: int = None, iface2_id: int = None
+        self,
+        node1_id: int,
+        node2_id: int,
+        iface1_id: int | None = None,
+        iface2_id: int | None = None,
     ) -> None:
         """
         Delete a link between nodes.
@@ -404,9 +413,9 @@ class Session:
         self,
         node1_id: int,
         node2_id: int,
-        iface1_id: int = None,
-        iface2_id: int = None,
-        options: LinkOptions = None,
+        iface1_id: int | None = None,
+        iface2_id: int | None = None,
+        options: LinkOptions | None = None,
     ) -> None:
         """
         Update link information between nodes.
@@ -459,11 +468,11 @@ class Session:
     def add_node(
         self,
         _class: type[NT],
-        _id: int = None,
-        name: str = None,
-        server: str = None,
-        position: Position = None,
-        options: NodeOptions = None,
+        _id: int | None = None,
+        name: str | None = None,
+        server: str | None = None,
+        position: Position | None = None,
+        options: NodeOptions | None = None,
     ) -> NT:
         """
         Add a node to the session, based on the provided node data.
@@ -623,9 +632,9 @@ class Session:
         self,
         event_type: EventTypes,
         *,
-        node_id: int = None,
-        name: str = None,
-        data: str = None,
+        node_id: int | None = None,
+        name: str | None = None,
+        data: str | None = None,
     ) -> None:
         """
         Handle event data that should be provided to event handler.
@@ -647,7 +656,7 @@ class Session:
         self.broadcast_manager.send(event_data)
 
     def broadcast_alert(
-        self, level: AlertLevels, source: str, text: str, node_id: int = None
+        self, level: AlertLevels, source: str, text: str, node_id: int | None = None
     ) -> None:
         """
         Generate and broadcast an alert event.
@@ -672,7 +681,7 @@ class Session:
         self,
         node: NodeBase,
         message_type: MessageFlags = MessageFlags.NONE,
-        source: str = None,
+        source: str | None = None,
     ) -> None:
         """
         Handle node data that should be provided to node handlers.
@@ -882,9 +891,9 @@ class Session:
         self,
         _class: type[NT],
         start: bool,
-        _id: int = None,
-        name: str = None,
-        server: str = None,
+        _id: int | None = None,
+        name: str | None = None,
+        server: str | None = None,
         options: NodeOptions = None,
     ) -> NT:
         """
@@ -1101,7 +1110,7 @@ class Session:
         for node in self.nodes.values():
             if isinstance(node, CoreNode):
                 funcs.append((self.boot_node, (node,), {}))
-        results, exceptions = utils.threadpool(funcs)
+        _results, exceptions = utils.threadpool(funcs)
         total = time.monotonic() - start
         logger.debug("boot run time: %s", total)
         if not exceptions:
@@ -1119,7 +1128,11 @@ class Session:
             return 0.0
 
     def add_event(
-        self, event_time: float, node_id: int = None, name: str = None, data: str = None
+        self,
+        event_time: float,
+        node_id: int | None = None,
+        name: str | None = None,
+        data: str | None = None,
     ) -> None:
         """
         Add an event to the event queue, with a start time relative to the
@@ -1154,7 +1167,10 @@ class Session:
         )
 
     def run_event(
-        self, node_id: int = None, name: str = None, data: str = None
+        self,
+        node_id: int | None = None,
+        name: str | None = None,
+        data: str | None = None,
     ) -> None:
         """
         Run a scheduled event, executing commands in the data string.

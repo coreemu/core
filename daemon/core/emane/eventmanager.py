@@ -154,12 +154,12 @@ class EmaneEventManager:
         lon: float,
         lat: float,
         alt: float,
-        azimuth: float = None,
-        elevation: float = None,
-        magnitude: float = None,
-        roll: float = None,
-        pitch: float = None,
-        yaw: float = None,
+        azimuth: float | None = None,
+        elevation: float | None = None,
+        magnitude: float | None = None,
+        roll: float | None = None,
+        pitch: float | None = None,
+        yaw: float | None = None,
     ) -> None:
         args = dict(
             azimuth=azimuth,
@@ -216,10 +216,10 @@ class EmaneEventManager:
         self,
         nem1_id: int,
         nem2_id: int,
-        forward1: float = None,
-        reverse1: float = None,
-        forward2: float = None,
-        reverse2: float = None,
+        forward1: float | None = None,
+        reverse1: float | None = None,
+        forward2: float | None = None,
+        reverse2: float | None = None,
     ) -> None:
         args1 = dict(forward=forward1, reverse=reverse1)
         args1 = {k: v for k, v in args1.items() if v is not None}
@@ -247,7 +247,7 @@ class EmaneEventManager:
         self,
         nem_id: int,
         event: EventType,
-        publish_id: int = None,
+        publish_id: int | None = None,
     ) -> None:
         service = self.get_service(nem_id)
         if not service:

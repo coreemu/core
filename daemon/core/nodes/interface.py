@@ -134,8 +134,8 @@ class CoreInterface:
     def host_cmd(
         self,
         args: str,
-        env: dict[str, str] = None,
-        cwd: Path = None,
+        env: dict[str, str] | None = None,
+        cwd: Path | None = None,
         wait: bool = True,
         shell: bool = False,
     ) -> str:
@@ -365,11 +365,11 @@ class GreTap(CoreInterface):
         self,
         session: "Session",
         remoteip: str,
-        key: int = None,
+        key: int | None = None,
         node: "CoreNode" = None,
         mtu: int = DEFAULT_MTU,
-        _id: int = None,
-        localip: str = None,
+        _id: int | None = None,
+        localip: str | None = None,
         ttl: int = 255,
         server: "DistributedServer" = None,
     ) -> None:

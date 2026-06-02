@@ -20,8 +20,8 @@ class Timer(threading.Thread):
         self,
         interval: float,
         func: Callable[..., None],
-        args: tuple[Any] = None,
-        kwargs: dict[Any, Any] = None,
+        args: tuple[Any] | None = None,
+        kwargs: dict[Any, Any] | None = None,
     ) -> None:
         """
         Create a Timer instance.

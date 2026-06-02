@@ -382,7 +382,7 @@ class CoreService:
                     f"node({self.node.name}) service({self.name}) failed to validate"
                 )
 
-    def _render(self, template: Template, data: dict[str, Any] = None) -> str:
+    def _render(self, template: Template, data: dict[str, Any] | None = None) -> str:
         """
         Renders template providing all associated data to template.
 
@@ -396,7 +396,7 @@ class CoreService:
             node=self.node, config=self.render_config(), **data
         )
 
-    def render_text(self, text: str, data: dict[str, Any] = None) -> str:
+    def render_text(self, text: str, data: dict[str, Any] | None = None) -> str:
         """
         Renders text based template providing all associated data to template.
 
@@ -414,7 +414,11 @@ class CoreService:
                 f"{exceptions.text_error_template().render_unicode()}"
             ) from err
 
-    def render_template(self, template_path: str, data: dict[str, Any] = None) -> str:
+    def render_template(
+        self,
+        template_path: str,
+        data: dict[str, Any] | None = None,
+    ) -> str:
         """
         Renders file based template providing all associated data to template.
 

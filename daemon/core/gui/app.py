@@ -28,7 +28,7 @@ HEIGHT: int = 800
 
 
 class Application(ttk.Frame):
-    def __init__(self, proxy: bool, session_id: int = None) -> None:
+    def __init__(self, proxy: bool, session_id: int | None = None) -> None:
         super().__init__()
         # load node icons
         nutils.setup()

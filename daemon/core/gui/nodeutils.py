@@ -163,8 +163,8 @@ class NodeDraw:
         image_enum: ImageEnum,
         node_type: NodeType,
         label: str,
-        model: str = None,
-        tooltip: str = None,
+        model: str | None = None,
+        tooltip: str | None = None,
     ) -> "NodeDraw":
         node_draw = NodeDraw()
         node_draw.image_enum = image_enum

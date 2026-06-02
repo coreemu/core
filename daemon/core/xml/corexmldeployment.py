@@ -23,7 +23,7 @@ def add_address(
     parent_element: etree.Element,
     address_type: str,
     address: str,
-    iface_name: str = None,
+    iface_name: str | None = None,
 ) -> None:
     address_element = etree.SubElement(parent_element, "address", type=address_type)
     address_element.text = address

@@ -17,8 +17,8 @@ class ProgressTask:
         app: "Application",
         title: str,
         task: Callable,
-        callback: Callable = None,
-        args: tuple[Any] = None,
+        callback: Callable | None = None,
+        args: tuple[Any] | None = None,
     ):
         self.app: "Application" = app
         self.title: str = title

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class NodeServiceDialog(Dialog):
     def __init__(
-        self, app: "Application", node: Node, services: set[str] = None
+        self, app: "Application", node: Node, services: set[str] | None = None
     ) -> None:
         title = f"{node.name} Services"
         super().__init__(app, title)
@@ -88,7 +88,7 @@ class NodeServiceDialog(Dialog):
         # trigger group change
         self.handle_group_change()
 
-    def handle_group_change(self, event: tk.Event = None) -> None:
+    def handle_group_change(self, _event: tk.Event | None = None) -> None:
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]

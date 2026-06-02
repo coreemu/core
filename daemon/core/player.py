@@ -180,8 +180,8 @@ class CorePlayerWriter:
         node2_id: int,
         loss1: float,
         delay1: int,
-        loss2: float = None,
-        delay2: float = None,
+        loss2: float | None = None,
+        delay2: float | None = None,
     ) -> None:
         """
         Write a wireless link config event.

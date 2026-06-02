@@ -18,10 +18,10 @@ class Tooltip:
         self.id: str | None = None
         self.tw: tk.Toplevel | None = None
 
-    def on_enter(self, event: tk.Event = None) -> None:
+    def on_enter(self, _event: tk.Event | None = None) -> None:
         self.schedule()
 
-    def on_leave(self, event: tk.Event = None) -> None:
+    def on_leave(self, event: tk.Event | None = None) -> None:
         self.unschedule()
         self.close(event)
 
@@ -35,8 +35,8 @@ class Tooltip:
         if id_:
             self.widget.after_cancel(id_)
 
-    def enter(self, event: tk.Event = None):
-        x, y, cx, cy = self.widget.bbox("insert")
+    def enter(self, _event: tk.Event | None = None):
+        x, y, _cx, _cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx()
         y += self.widget.winfo_rooty() + 32
         self.tw = tk.Toplevel(self.widget)
@@ -49,6 +49,6 @@ class Tooltip:
         label = ttk.Label(frame, text=self.text, style=Styles.tooltip)
         label.grid()
 
-    def close(self, event: tk.Event = None):
+    def close(self, _event: tk.Event | None = None):
         if self.tw:
             self.tw.destroy()

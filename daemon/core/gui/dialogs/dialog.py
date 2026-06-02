@@ -16,7 +16,7 @@ class Dialog(tk.Toplevel):
         app: "Application",
         title: str,
         modal: bool = True,
-        master: tk.BaseWidget = None,
+        master: tk.BaseWidget | None = None,
     ) -> None:
         if master is None:
             master = app
@@ -43,7 +43,7 @@ class Dialog(tk.Toplevel):
             self.grab_set()
             self.wait_window()
 
-    def draw_spacer(self, row: int = None) -> None:
+    def draw_spacer(self, row: int | None = None) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(row=row, sticky=tk.NSEW)
         frame.rowconfigure(0, weight=1)

@@ -80,7 +80,7 @@ class ServicesSelectDialog(Dialog):
         # trigger group change
         self.handle_group_change()
 
-    def handle_group_change(self, event: tk.Event = None) -> None:
+    def handle_group_change(self, _event: tk.Event | None = None) -> None:
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]

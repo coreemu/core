@@ -18,7 +18,7 @@ class CoreEmu:
     Provides logic for creating and configuring CORE sessions and the nodes within them.
     """
 
-    def __init__(self, config: dict[str, str] = None) -> None:
+    def __init__(self, config: dict[str, str] | None = None) -> None:
         """
         Create a CoreEmu object.
 
@@ -110,7 +110,11 @@ class CoreEmu:
             _, session = self.sessions.popitem()
             session.shutdown()
 
-    def create_session(self, _id: int = None, _cls: type[Session] = Session) -> Session:
+    def create_session(
+        self,
+        _id: int | None = None,
+        _cls: type[Session] = Session,
+    ) -> Session:
         """
         Create a new CORE session.
 

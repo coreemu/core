@@ -87,7 +87,7 @@ class PreferencesConfig(yaml.YAMLObject):
     def __init__(
         self,
         editor: str = EDITORS[1],
-        terminal: str = None,
+        terminal: str | None = None,
         theme: str = themes.THEME_DARK,
         gui3d: str = "/usr/local/bin/std3d.sh",
         width: int = 1000,
@@ -148,16 +148,16 @@ class GuiConfig(yaml.YAMLObject):
 
     def __init__(
         self,
-        preferences: PreferencesConfig = None,
-        location: LocationConfig = None,
-        servers: list[CoreServer] = None,
-        nodes: list[CustomNode] = None,
-        recentfiles: list[str] = None,
-        observers: list[Observer] = None,
+        preferences: PreferencesConfig | None = None,
+        location: LocationConfig | None = None,
+        servers: list[CoreServer] | None = None,
+        nodes: list[CustomNode] | None = None,
+        recentfiles: list[str] | None = None,
+        observers: list[Observer] | None = None,
         scale: float = 1.0,
-        ips: IpConfigs = None,
+        ips: IpConfigs | None = None,
         mac: str = "00:00:00:aa:00:00",
-        node_commands: list[NodeCommand] = None,
+        node_commands: list[NodeCommand] | None = None,
     ) -> None:
         if preferences is None:
             preferences = PreferencesConfig()

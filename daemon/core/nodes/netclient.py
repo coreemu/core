@@ -144,7 +144,12 @@ class LinuxNetClient:
         """
         self.run(f"{ETHTOOL} -K {iface_name} rx off tx off")
 
-    def create_address(self, device: str, address: str, broadcast: str = None) -> None:
+    def create_address(
+        self,
+        device: str,
+        address: str,
+        broadcast: str | None = None,
+    ) -> None:
         """
         Create address for a device.
 

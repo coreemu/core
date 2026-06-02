@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 
 class MoveNodesStreamer:
-    def __init__(self, session_id: int, source: str = None) -> None:
+    def __init__(self, session_id: int, source: str | None = None) -> None:
         self.session_id: int = session_id
         self.source: str | None = source
         self.queue: SetQueue = SetQueue()
@@ -139,7 +139,11 @@ class InterfaceHelper:
     of a pool of addresses and the node ID is too high, there will be a failure.
     """
 
-    def __init__(self, ip4_prefix: str = None, ip6_prefix: str = None) -> None:
+    def __init__(
+        self,
+        ip4_prefix: str | None = None,
+        ip6_prefix: str | None = None,
+    ) -> None:
         """
         Creates an InterfaceHelper object.
 
@@ -150,7 +154,11 @@ class InterfaceHelper:
         self.prefixes: IpPrefixes = IpPrefixes(ip4_prefix, ip6_prefix)
 
     def create_iface(
-        self, node_id: int, iface_id: int, name: str = None, mac: str = None
+        self,
+        node_id: int,
+        iface_id: int,
+        name: str | None = None,
+        mac: str | None = None,
     ) -> wrappers.Interface:
         """
         Create an interface protobuf object.
@@ -278,7 +286,7 @@ class CoreGrpcClient:
         response = self.stub.StopSession(request)
         return response.result
 
-    def create_session(self, session_id: int = None) -> wrappers.Session:
+    def create_session(self, session_id: int | None = None) -> wrappers.Session:
         """
         Create a session.
 
@@ -345,7 +353,7 @@ class CoreGrpcClient:
         level: wrappers.AlertLevel,
         source: str,
         text: str,
-        node_id: int = None,
+        node_id: int | None = None,
     ) -> bool:
         """
         Initiate an alert to be broadcast out to all listeners.
@@ -371,7 +379,7 @@ class CoreGrpcClient:
         self,
         session_id: int,
         handler: Callable[[wrappers.Event], None],
-        events: list[wrappers.EventType] = None,
+        events: list[wrappers.EventType] | None = None,
     ) -> grpc.Future:
         """
         Listen for session events.
@@ -427,7 +435,12 @@ class CoreGrpcClient:
         thread.start()
         return stream
 
-    def add_node(self, session_id: int, node: wrappers.Node, source: str = None) -> int:
+    def add_node(
+        self,
+        session_id: int,
+        node: wrappers.Node,
+        source: str | None = None,
+    ) -> int:
         """
         Add node to session.
 
@@ -468,7 +481,11 @@ class CoreGrpcClient:
         return node, ifaces, links
 
     def edit_node(
-        self, session_id: int, node_id: int, icon: str = None, source: str = None
+        self,
+        session_id: int,
+        node_id: int,
+        icon: str | None = None,
+        source: str | None = None,
     ) -> bool:
         """
         Edit a node's icon and/or location, can only use position(x,y) or
@@ -491,9 +508,9 @@ class CoreGrpcClient:
         self,
         session_id: int,
         node_id: int,
-        position: wrappers.Position = None,
-        geo: wrappers.Geo = None,
-        source: str = None,
+        position: wrappers.Position | None = None,
+        geo: wrappers.Geo | None = None,
+        source: str | None = None,
     ) -> bool:
         """
         Move node using provided position or geo location.
@@ -530,7 +547,12 @@ class CoreGrpcClient:
         """
         self.stub.MoveNodes(streamer.iter())
 
-    def delete_node(self, session_id: int, node_id: int, source: str = None) -> bool:
+    def delete_node(
+        self,
+        session_id: int,
+        node_id: int,
+        source: str | None = None,
+    ) -> bool:
         """
         Delete node from session.
 
@@ -591,7 +613,7 @@ class CoreGrpcClient:
         return response.terminal
 
     def add_link(
-        self, session_id: int, link: wrappers.Link, source: str = None
+        self, session_id: int, link: wrappers.Link, source: str | None = None
     ) -> tuple[bool, wrappers.Interface, wrappers.Interface]:
         """
         Add a link between nodes.
@@ -611,7 +633,7 @@ class CoreGrpcClient:
         return response.result, iface1, iface2
 
     def edit_link(
-        self, session_id: int, link: wrappers.Link, source: str = None
+        self, session_id: int, link: wrappers.Link, source: str | None = None
     ) -> bool:
         """
         Edit a link between nodes.
@@ -637,7 +659,7 @@ class CoreGrpcClient:
         return response.result
 
     def delete_link(
-        self, session_id: int, link: wrappers.Link, source: str = None
+        self, session_id: int, link: wrappers.Link, source: str | None = None
     ) -> bool:
         """
         Delete a link between nodes.

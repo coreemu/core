@@ -360,7 +360,11 @@ class Sdt:
         return result
 
     def add_link(
-        self, node1_id: int, node2_id: int, network_id: int = None, label: str = None
+        self,
+        node1_id: int,
+        node2_id: int,
+        network_id: int | None = None,
+        label: str | None = None,
     ) -> None:
         """
         Handle adding a link in SDT.
@@ -399,7 +403,12 @@ class Sdt:
             layer = WIRED_LINK_LAYER
         return layer
 
-    def delete_link(self, node1_id: int, node2_id: int, network_id: int = None) -> None:
+    def delete_link(
+        self,
+        node1_id: int,
+        node2_id: int,
+        network_id: int | None = None,
+    ) -> None:
         """
         Handle deleting a link in SDT.
 

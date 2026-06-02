@@ -48,7 +48,11 @@ class DistributedServer:
         self.lock: threading.Lock = threading.Lock()
 
     def remote_cmd(
-        self, cmd: str, env: dict[str, str] = None, cwd: str = None, wait: bool = True
+        self,
+        cmd: str,
+        env: dict[str, str] | None = None,
+        cwd: str | None = None,
+        wait: bool = True,
     ) -> str:
         """
         Run command remotely using server connection.

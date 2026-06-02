@@ -200,7 +200,7 @@ class ConfigFrame(ttk.Notebook):
 
 
 class ListboxScroll(ttk.Frame):
-    def __init__(self, master: tk.BaseWidget = None, **kw: Any) -> None:
+    def __init__(self, master: tk.BaseWidget | None = None, **kw: Any) -> None:
         super().__init__(master, **kw)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -222,7 +222,7 @@ class CheckboxList(FrameScroll):
         self,
         master: ttk.Widget,
         app: "Application",
-        clicked: Callable = None,
+        clicked: Callable | None = None,
         **kw: Any,
     ) -> None:
         super().__init__(master, app, **kw)
@@ -273,7 +273,7 @@ class CodeText(ttk.Frame):
 
 
 class Spinbox(ttk.Entry):
-    def __init__(self, master: tk.BaseWidget = None, **kwargs: Any) -> None:
+    def __init__(self, master: tk.BaseWidget | None = None, **kwargs: Any) -> None:
         super().__init__(master, "ttk::spinbox", **kwargs)
 
     def set(self, value: str) -> None:

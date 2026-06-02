@@ -241,7 +241,11 @@ class IpPrefixes:
     Convenience class to help generate IP4 and IP6 addresses for nodes within CORE.
     """
 
-    def __init__(self, ip4_prefix: str = None, ip6_prefix: str = None) -> None:
+    def __init__(
+        self,
+        ip4_prefix: str | None = None,
+        ip6_prefix: str | None = None,
+    ) -> None:
         """
         Creates an IpPrefixes object.
 
@@ -281,7 +285,12 @@ class IpPrefixes:
             raise ValueError("ip6 prefixes have not been set")
         return str(self.ip6[node_id])
 
-    def gen_iface(self, node_id: int, name: str = None, mac: str = None):
+    def gen_iface(
+        self,
+        node_id: int,
+        name: str | None = None,
+        mac: str | None = None,
+    ) -> InterfaceData:
         """
         Creates interface data for linking nodes, using the nodes unique id for
         generation, along with a random mac address, unless provided.
@@ -315,7 +324,7 @@ class IpPrefixes:
         )
 
     def create_iface(
-        self, node: "CoreNode", name: str = None, mac: str = None
+        self, node: "CoreNode", name: str | None = None, mac: str | None = None
     ) -> InterfaceData:
         """
         Creates interface data for linking nodes, using the nodes unique id for

@@ -222,14 +222,14 @@ class ShapeDialog(Dialog):
         )
         shape_text = self.shape_text.get()
         size = int(self.font_size.get())
-        x0, y0, x1, y1 = self.canvas.bbox(self.shape.id)
-        _y = y0 + 1.5 * size
-        _x = (x0 + x1) / 2
+        x0, y0, x1, _y1 = self.canvas.bbox(self.shape.id)
+        y = y0 + 1.5 * size
+        x = (x0 + x1) / 2
         text_font = self.make_font()
         if self.shape.text_id is None:
             self.shape.text_id = self.canvas.create_text(
-                _x,
-                _y,
+                x,
+                y,
                 text=shape_text,
                 fill=self.text_color,
                 font=text_font,

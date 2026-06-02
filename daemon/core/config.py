@@ -174,7 +174,7 @@ class ConfigurableManager:
         """
         return [x for x in self.node_configurations if x != self._default_node]
 
-    def config_reset(self, node_id: int = None) -> None:
+    def config_reset(self, node_id: int | None = None) -> None:
         """
         Clears all configurations or configuration for a specific node.
 
@@ -232,7 +232,7 @@ class ConfigurableManager:
         _id: str,
         node_id: int = _default_node,
         config_type: str = _default_type,
-        default: str = None,
+        default: str | None = None,
     ) -> str:
         """
         Retrieves a specific configuration for a node and configuration type.
@@ -289,7 +289,7 @@ class ModelManager(ConfigurableManager):
         self.node_models: dict[int, str] = {}
 
     def set_model_config(
-        self, node_id: int, model_name: str, config: dict[str, str] = None
+        self, node_id: int, model_name: str, config: dict[str, str] | None = None
     ) -> None:
         """
         Set configuration data for a model.
@@ -343,7 +343,7 @@ class ModelManager(ConfigurableManager):
         self,
         node: WlanNode | EmaneNet,
         model_class: "WirelessModelType",
-        config: dict[str, str] = None,
+        config: dict[str, str] | None = None,
     ) -> None:
         """
         Set model and model configuration for node.

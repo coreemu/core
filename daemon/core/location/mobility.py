@@ -106,7 +106,7 @@ class MobilityManager(ModelManager):
         """
         self.config_reset()
 
-    def startup(self, node_ids: list[int] = None) -> None:
+    def startup(self, node_ids: list[int] | None = None) -> None:
         """
         Session is transitioning from instantiation to runtime state.
         Instantiate any mobility models that have been configured for a WLAN.

@@ -25,7 +25,7 @@ def load_all() -> None:
 
 
 def from_file(
-    file_path: str, *, width: int, height: int = None, scale: float = 1.0
+    file_path: str, *, width: int, height: int | None = None, scale: float = 1.0
 ) -> PhotoImage:
     if height is None:
         height = width
@@ -37,7 +37,11 @@ def from_file(
 
 
 def from_enum(
-    image_enum: "ImageEnum", *, width: int, height: int = None, scale: float = 1.0
+    image_enum: "ImageEnum",
+    *,
+    width: int,
+    height: int | None = None,
+    scale: float = 1.0,
 ) -> PhotoImage:
     file_path = IMAGES[image_enum.value]
     return from_file(file_path, width=width, height=height, scale=scale)

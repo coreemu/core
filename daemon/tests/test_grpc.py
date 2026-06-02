@@ -656,7 +656,7 @@ class TestGrpc:
         node = session.add_node(CoreNode)
         iface_data = ip_prefixes.create_iface(node)
         session.add_link(node.id, wlan.id, iface_data)
-        core_link = list(session.link_manager.links())[0]
+        core_link = next(iter(session.link_manager.links()))
         link_data = core_link.get_data(MessageFlags.ADD)
 
         queue = Queue()

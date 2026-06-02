@@ -177,9 +177,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         context: ServicerContext,
         session_id: int,
         node_id: int,
-        geo: core_pb2.Geo = None,
-        position: core_pb2.Position = None,
-        source: str = None,
+        geo: core_pb2.Geo | None = None,
+        position: core_pb2.Position | None = None,
+        source: str | None = None,
     ):
         if not geo and not position:
             raise CoreError("move node must provide a geo or position to move")

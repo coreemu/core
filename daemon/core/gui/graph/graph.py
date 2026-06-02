@@ -83,7 +83,7 @@ class CanvasGraph(tk.Canvas):
         self.draw_canvas()
         self.draw_grid()
 
-    def draw_canvas(self, dimensions: tuple[int, int] = None) -> None:
+    def draw_canvas(self, dimensions: tuple[int, int] | None = None) -> None:
         if self.rect is not None:
             self.delete(self.rect)
         if not dimensions:
@@ -279,7 +279,7 @@ class CanvasGraph(tk.Canvas):
         if select_id is not None:
             self.move(select_id, x_offset, y_offset)
 
-    def delete_selected_objects(self, _event: tk.Event = None) -> None:
+    def delete_selected_objects(self, _event: tk.Event | None = None) -> None:
         edges = set()
         nodes = []
         for object_id in self.selection:
@@ -309,7 +309,7 @@ class CanvasGraph(tk.Canvas):
         self.selection.clear()
         self.core.deleted_canvas_nodes(nodes)
 
-    def hide_selected(self, _event: tk.Event = None) -> None:
+    def hide_selected(self, _event: tk.Event | None = None) -> None:
         for object_id in self.selection:
             #  delete selection box
             selection_id = self.selection[object_id]
@@ -324,7 +324,7 @@ class CanvasGraph(tk.Canvas):
             if node.hidden:
                 node.show()
 
-    def zoom(self, event: tk.Event, factor: float = None) -> None:
+    def zoom(self, event: tk.Event, factor: float | None = None) -> None:
         if not factor:
             factor = ZOOM_IN if event.delta > 0 else ZOOM_OUT
         event.x, event.y = self.canvasx(event.x), self.canvasy(event.y)
@@ -425,8 +425,10 @@ class CanvasGraph(tk.Canvas):
         logger.debug("control left click: %s", event)
         selected = self.get_selected(event)
         if (
-            selected not in self.selection
-            and selected in self.shapes
+            (
+                selected not in self.selection and
+                selected in self.shapes
+            )
             or selected in self.nodes
         ):
             self.select_object(selected, choose_multiple=True)
@@ -529,7 +531,7 @@ class CanvasGraph(tk.Canvas):
         return image
 
     def draw_wallpaper(
-        self, image: PhotoImage, x: float = None, y: float = None
+        self, image: PhotoImage, x: float | None = None, y: float | None = None
     ) -> None:
         if x is None and y is None:
             x1, y1, x2, y2 = self.bbox(self.rect)
@@ -600,7 +602,7 @@ class CanvasGraph(tk.Canvas):
         self.redraw_canvas((image.width(), image.height()))
         self.draw_wallpaper(image)
 
-    def redraw_canvas(self, dimensions: tuple[int, int] = None) -> None:
+    def redraw_canvas(self, dimensions: tuple[int, int] | None = None) -> None:
         logger.debug("redrawing canvas to dimensions: %s", dimensions)
 
         # reset scale and move back to original position
@@ -666,7 +668,7 @@ class CanvasGraph(tk.Canvas):
         edge.complete(dst)
         return edge
 
-    def copy_selected(self, _event: tk.Event = None) -> None:
+    def copy_selected(self, _event: tk.Event | None = None) -> None:
         if self.core.is_runtime():
             logger.debug("copy is disabled during runtime state")
             return
@@ -677,14 +679,14 @@ class CanvasGraph(tk.Canvas):
                 canvas_node = self.nodes[node_id]
                 self.to_copy.append(canvas_node)
 
-    def cut_selected(self, _event: tk.Event = None) -> None:
+    def cut_selected(self, _event: tk.Event | None = None) -> None:
         if self.core.is_runtime():
             logger.debug("cut is disabled during runtime state")
             return
         self.copy_selected()
         self.delete_selected()
 
-    def delete_selected(self, _event: tk.Event = None) -> None:
+    def delete_selected(self, _event: tk.Event | None = None) -> None:
         """
         delete selected nodes and any data that relates to it
         """
@@ -695,7 +697,7 @@ class CanvasGraph(tk.Canvas):
         self.delete_selected_objects()
         self.app.default_info()
 
-    def paste_selected(self, _event: tk.Event = None) -> None:
+    def paste_selected(self, _event: tk.Event | None = None) -> None:
         if self.core.is_runtime():
             logger.debug("paste is disabled during runtime state")
             return

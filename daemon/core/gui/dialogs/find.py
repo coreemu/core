@@ -82,7 +82,7 @@ class FindDialog(Dialog):
         for i in list(self.tree.get_children("")):
             self.tree.delete(i)
 
-    def find_node(self, _event: tk.Event = None) -> None:
+    def find_node(self, _event: tk.Event | None = None) -> None:
         """
         Query nodes that have the same node name as our search key,
         display results to tree view
@@ -114,7 +114,7 @@ class FindDialog(Dialog):
         for canvas in self.app.manager.all():
             canvas.delete("find")
 
-    def click_select(self, _event: tk.Event = None) -> None:
+    def click_select(self, _event: tk.Event | None = None) -> None:
         """
         find the node that matches search criteria, circle around that node
         and scroll the x and y scrollbar to be able to see the node if

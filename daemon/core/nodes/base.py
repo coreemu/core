@@ -47,7 +47,12 @@ class Position:
     lat: float = None
     alt: float = None
 
-    def set(self, x: float = None, y: float = None, z: float = None) -> bool:
+    def set(
+        self,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
+    ) -> bool:
         """
         Returns True if the position has actually changed.
 
@@ -127,9 +132,9 @@ class NodeBase(abc.ABC):
         self,
         session: "Session",
         _id: int,
-        name: str = None,
+        name: str | None = None,
         server: "DistributedServer" = None,
-        options: NodeOptions = None,
+        options: NodeOptions | None = None,
     ) -> None:
         """
         Creates a NodeBase instance.
@@ -204,8 +209,8 @@ class NodeBase(abc.ABC):
     def host_cmd(
         self,
         args: str,
-        env: dict[str, str] = None,
-        cwd: Path = None,
+        env: dict[str, str] | None = None,
+        cwd: Path | None = None,
         wait: bool = True,
         shell: bool = False,
     ) -> str:
@@ -238,7 +243,12 @@ class NodeBase(abc.ABC):
         """
         return self.host_cmd(args, wait=wait, shell=shell)
 
-    def setposition(self, x: float = None, y: float = None, z: float = None) -> bool:
+    def setposition(
+        self,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
+    ) -> bool:
         """
         Set the (x,y,z) position of the object.
 
@@ -383,13 +393,13 @@ class CoreNodeBase(NodeBase):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
+        _id: int | None = None,
+        name: str | None = None,
         server: "DistributedServer" = None,
-        options: NodeOptions = None,
+        options: NodeOptions | None = None,
     ) -> None:
         """
-        Create a CoreNodeBase instance.
+        Create a CoreNodeBase instance.5
 
         :param session: session owning this node
         :param _id: id of this node
@@ -425,7 +435,12 @@ class CoreNodeBase(NodeBase):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
+    def copy_file(
+        self,
+        src_path: Path,
+        dst_path: Path,
+        mode: int | None = None,
+    ) -> None:
         """
         Copy source file to node host destination, updating the file mode when
         provided.
@@ -543,7 +558,12 @@ class CoreNodeBase(NodeBase):
         if self.tmpnodedir:
             self.host_cmd(f"rm -rf {self.directory}")
 
-    def setposition(self, x: float = None, y: float = None, z: float = None) -> None:
+    def setposition(
+        self,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
+    ) -> None:
         """
         Set position.
 
@@ -566,10 +586,10 @@ class CoreNode(CoreNodeBase):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
+        _id: int | None = None,
+        name: str | None = None,
         server: "DistributedServer" = None,
-        options: CoreNodeOptions = None,
+        options: CoreNodeOptions | None = None,
     ) -> None:
         """
         Create a CoreNode instance.
@@ -875,7 +895,12 @@ class CoreNode(CoreNodeBase):
             self.server.remote_put_temp(host_path, contents)
             self.host_cmd(f"chmod {mode:o} {host_path}")
 
-    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
+    def copy_file(
+        self,
+        src_path: Path,
+        dst_path: Path,
+        mode: int | None = None,
+    ) -> None:
         """
         Copy source file to node host destination, updating the file mode when
         provided.

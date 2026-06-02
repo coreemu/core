@@ -165,7 +165,7 @@ class SessionsDialog(Dialog):
         self.app.core.create_new_session()
         self.destroy()
 
-    def click_select(self, _event: tk.Event = None) -> None:
+    def click_select(self, _event: tk.Event | None = None) -> None:
         item = self.tree.selection()
         if item:
             self.selected_session = int(self.tree.item(item, "text"))

@@ -57,8 +57,8 @@ class PickerFrame(ttk.Frame):
         self,
         label: str,
         func: Callable,
-        image_enum: ImageEnum = None,
-        image_file: str = None,
+        image_enum: ImageEnum | None = None,
+        image_file: str | None = None,
     ) -> None:
         if image_enum:
             bar_image = self.app.get_enum_icon(image_enum, width=TOOLBAR_SIZE)
@@ -443,7 +443,10 @@ class Toolbar(ttk.Frame):
         self.show_marker()
 
     def scale_button(
-        self, button: ttk.Button, image_enum: ImageEnum = None, image_file: str = None
+        self,
+        button: ttk.Button,
+        image_enum: ImageEnum | None = None,
+        image_file: str | None = None,
     ) -> None:
         image = None
         if image_enum:

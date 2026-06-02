@@ -710,7 +710,7 @@ class Node:
             self.mobility_config[key] = option
 
     def set_emane_model(
-        self, model: str, config: dict[str, str], iface_id: int = None
+        self, model: str, config: dict[str, str], iface_id: int | None = None
     ) -> None:
         key = (model, iface_id)
         config_options = self.emane_model_configs.setdefault(key, {})
@@ -797,14 +797,14 @@ class Session:
         self,
         _id: int,
         *,
-        name: str = None,
+        name: str | None = None,
         _type: NodeType = NodeType.DEFAULT,
         model: str = "PC",
-        position: Position = None,
-        geo: Geo = None,
-        emane: str = None,
-        image: str = None,
-        server: str = None,
+        position: Position | None = None,
+        geo: Geo | None = None,
+        emane: str | None = None,
+        image: str | None = None,
+        server: str | None = None,
     ) -> Node:
         node = Node(
             id=_id,

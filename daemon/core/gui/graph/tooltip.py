@@ -41,10 +41,10 @@ class CanvasTooltip:
         self.id: str | None = None
         self.tw: tk.Toplevel | None = None
 
-    def on_enter(self, event: tk.Event = None) -> None:
+    def on_enter(self, _event: tk.Event | None = None) -> None:
         self.schedule()
 
-    def on_leave(self, event: tk.Event = None) -> None:
+    def on_leave(self, _event: tk.Event | None = None) -> None:
         self.unschedule()
         self.hide()
 
@@ -58,7 +58,7 @@ class CanvasTooltip:
         if id_:
             self.canvas.after_cancel(id_)
 
-    def show(self, event: tk.Event = None) -> None:
+    def show(self, _event: tk.Event | None = None) -> None:
         def tip_pos_calculator(
             canvas: "CanvasGraph",
             label: ttk.Label,

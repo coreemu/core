@@ -31,10 +31,10 @@ class Rj45Node(CoreNodeBase):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
-        server: DistributedServer = None,
-        options: NodeOptions = None,
+        _id: int | None = None,
+        name: str | None = None,
+        server: DistributedServer | None = None,
+        options: NodeOptions | None = None,
     ) -> None:
         """
         Create an RJ45Node instance.
@@ -193,7 +193,12 @@ class Rj45Node(CoreNodeBase):
         if self.old_up:
             self.net_client.device_up(localname)
 
-    def setposition(self, x: float = None, y: float = None, z: float = None) -> None:
+    def setposition(
+        self,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
+    ) -> None:
         """
         Uses setposition from both parent classes.
 
@@ -217,7 +222,12 @@ class Rj45Node(CoreNodeBase):
     def create_file(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
         raise CoreError("rj45 does not support creating files")
 
-    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
+    def copy_file(
+        self,
+        src_path: Path,
+        dst_path: Path,
+        mode: int | None = None,
+    ) -> None:
         raise CoreError("rj45 does not support copying files")
 
 
@@ -225,10 +235,10 @@ class PhysicalNode(CoreNode):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
-        server: DistributedServer = None,
-        options: CoreNodeOptions = None,
+        _id: int | None = None,
+        name: str | None = None,
+        server: DistributedServer | None = None,
+        options: CoreNodeOptions | None = None,
     ) -> None:
         if not self.server:
             raise CoreError("physical nodes must be assigned to a remote server")

@@ -26,7 +26,7 @@ class EmaneModelDialog(Dialog):
         app: "Application",
         node: Node,
         model: str,
-        iface_id: int = None,
+        iface_id: int | None = None,
     ) -> None:
         super().__init__(app, f"{node.name} {model} Configuration", master=master)
         self.node: Node = node

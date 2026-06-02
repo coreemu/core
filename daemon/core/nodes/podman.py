@@ -68,10 +68,10 @@ class PodmanNode(CoreNode):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
-        server: DistributedServer = None,
-        options: PodmanOptions = None,
+        _id: int | None = None,
+        name: str | None = None,
+        server: DistributedServer | None = None,
+        options: PodmanOptions | None = None,
     ) -> None:
         """
         Create a PodmanNode instance.
@@ -293,7 +293,12 @@ class PodmanNode(CoreNode):
             if self.server is not None:
                 self.host_cmd(f"rm -f {temp_path}")
 
-    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
+    def copy_file(
+        self,
+        src_path: Path,
+        dst_path: Path,
+        mode: int | None = None,
+    ) -> None:
         """
         Copy a file to a node, following symlinks and preserving metadata.
         Change file mode if specified.

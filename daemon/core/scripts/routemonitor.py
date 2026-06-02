@@ -169,7 +169,7 @@ class RouterMonitor:
             if next_index == len(values):
                 break
             next_node_id = values[next_index][0]
-            node_id, ttl = node_data
+            node_id, _ttl = node_data
             print(f"{node_id} -> {next_node_id}")
             self.sdt.add_link(node_id, next_node_id)
 

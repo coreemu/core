@@ -34,7 +34,7 @@ class SessionConfig:
         ConfigBool(id="checksums", default="0", label="Enable Eth Checksums?"),
     ]
 
-    def __init__(self, config: dict[str, str] = None) -> None:
+    def __init__(self, config: dict[str, str] | None = None) -> None:
         """
         Create a SessionConfig instance.
 
@@ -62,7 +62,7 @@ class SessionConfig:
         """
         self._config[name] = value
 
-    def get(self, name: str, default: str = None) -> str | None:
+    def get(self, name: str, default: str | None = None) -> str | None:
         """
         Retrieve configuration value.
 
@@ -80,7 +80,7 @@ class SessionConfig:
         """
         return self._config
 
-    def get_bool(self, name: str, default: bool = None) -> bool:
+    def get_bool(self, name: str, default: bool | None = None) -> bool:
         """
         Get configuration value as a boolean.
 
@@ -96,7 +96,7 @@ class SessionConfig:
         else:
             return value.lower() == "true"
 
-    def get_int(self, name: str, default: int = None) -> int:
+    def get_int(self, name: str, default: int | None = None) -> int:
         """
         Get configuration value as int.
 

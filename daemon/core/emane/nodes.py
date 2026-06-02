@@ -158,10 +158,10 @@ class EmaneNet(CoreNetworkBase):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
-        name: str = None,
-        server: DistributedServer = None,
-        options: EmaneOptions = None,
+        _id: int | None = None,
+        name: str | None = None,
+        server: DistributedServer | None = None,
+        options: EmaneOptions | None = None,
     ) -> None:
         options = options or EmaneOptions()
         super().__init__(session, _id, name, server, options)

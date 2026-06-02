@@ -35,7 +35,7 @@ T = TypeVar("T")
 
 
 def write_xml_file(
-    xml_element: etree.Element, file_path: Path, doctype: str = None
+    xml_element: etree.Element, file_path: Path, doctype: str | None = None
 ) -> None:
     xml_data = etree.tostring(
         xml_element,

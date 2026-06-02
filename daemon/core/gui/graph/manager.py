@@ -160,7 +160,7 @@ class CanvasManager:
             canvas = self.add_canvas(canvas_id)
         return canvas
 
-    def add_canvas(self, canvas_id: int = None) -> CanvasGraph:
+    def add_canvas(self, canvas_id: int | None = None) -> CanvasGraph:
         # create tab frame
         tab = ttk.Frame(self.notebook, padding=0)
         tab.grid(sticky=tk.NSEW)

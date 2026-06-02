@@ -36,7 +36,7 @@ class BroadcastManager:
         handlers = self.handlers.setdefault(data_type, set())
         if handler in handlers:
             raise CoreError(
-                f"cannot add data({data_type}) handler({repr(handler)}), "
+                f"cannot add data({data_type}) handler({handler!r}), "
                 f"already exists"
             )
         handlers.add(handler)
@@ -52,7 +52,7 @@ class BroadcastManager:
         handlers = self.handlers.get(data_type, set())
         if handler not in handlers:
             raise CoreError(
-                f"cannot remove data({data_type}) handler({repr(handler)}), "
+                f"cannot remove data({data_type}) handler({handler!r}), "
                 f"does not exist"
             )
         handlers.remove(handler)

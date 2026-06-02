@@ -316,7 +316,7 @@ class TestXml:
         assert session.get_node(node1.id, CoreNode)
         assert session.get_node(switch.id, SwitchNode)
         assert len(session.link_manager.links()) == 1
-        link = list(session.link_manager.links())[0]
+        link = next(iter(session.link_manager.links()))
         link_options = link.options()
         assert options.loss == link_options.loss
         assert options.bandwidth == link_options.bandwidth
@@ -379,7 +379,7 @@ class TestXml:
         assert session.get_node(node1.id, CoreNode)
         assert session.get_node(node2.id, CoreNode)
         assert len(session.link_manager.links()) == 1
-        link = list(session.link_manager.links())[0]
+        link = next(iter(session.link_manager.links()))
         link_options = link.options()
         assert options.loss == link_options.loss
         assert options.bandwidth == link_options.bandwidth

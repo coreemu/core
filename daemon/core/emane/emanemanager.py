@@ -116,7 +116,12 @@ class EmaneManager:
             config = model_class.default_values()
         return config
 
-    def set_config(self, key: int, model: str, config: dict[str, str] = None) -> None:
+    def set_config(
+        self,
+        key: int,
+        model: str,
+        config: dict[str, str] | None = None,
+    ) -> None:
         """
         Sets and update the provided configuration against the default model
         or currently set emane model configuration.
@@ -173,7 +178,7 @@ class EmaneManager:
             config = emane_net.wireless_model.default_values()
         return config
 
-    def config_reset(self, node_id: int = None) -> None:
+    def config_reset(self, node_id: int | None = None) -> None:
         if node_id is None:
             self.node_configs.clear()
             self.node_models.clear()
@@ -356,7 +361,7 @@ class EmaneManager:
             alt = node.position.alt
         node.position.set_geo(lon, lat, alt)
         # altitude must be an integer or warning is printed
-        alt = int(round(alt))
+        alt = round(alt)
         return nem_id, lon, lat, alt
 
     def set_nem_position(self, iface: CoreInterface) -> None:

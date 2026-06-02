@@ -17,8 +17,8 @@ class ValidationEntry(ttk.Entry):
 
     def __init__(
         self,
-        master: tk.BaseWidget = None,
-        widget: tk.BaseWidget = None,
+        master: tk.BaseWidget | None = None,
+        widget: tk.BaseWidget | None = None,
         empty_enabled: bool = True,
         **kwargs: Any
     ) -> None:

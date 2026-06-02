@@ -235,7 +235,7 @@ class InterfaceManager:
         return found_subnets
 
     def find_subnets(
-        self, canvas_node: CanvasNode, visited: set[int] = None
+        self, canvas_node: CanvasNode, visited: set[int] | None = None
     ) -> IPNetwork | None:
         logger.info("finding subnet for node: %s", canvas_node.core_node.name)
         subnets = None
