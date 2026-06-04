@@ -152,7 +152,7 @@ if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; 
   AC_FUNC_FORK
   AC_FUNC_MALLOC
   AC_FUNC_REALLOC
-  AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
+  AC_CHECK_FUNCS([atexit close_range closefrom dup2 gettimeofday memset socket strerror uname])
 
   PKG_CHECK_MODULES(libev, libev,
     AC_MSG_RESULT([found libev using pkgconfig OK])

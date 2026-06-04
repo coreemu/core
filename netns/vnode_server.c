@@ -20,6 +20,7 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 
+#include "config.h"
 #include "netns.h"
 #include "myerr.h"
 #include "vnode_msg.h"
@@ -264,13 +265,59 @@ void vnode_delserver(vnode_server_t *server)
   return;
 }
 
+/* Close all fds except the controlfd */
+static void close_fds(int ctrlfd)
+{
+  unsigned int start = 3;
+
+  /* Try to close any open files. Use fast syscalls for closing fds if
+   * available - otherwise, on some systems we might be spending a
+   * very long time closing billions of files individually. */
+
+
+#ifdef HAVE_CLOSE_RANGE /* Newer versions of Linux */
+  if (ctrlfd < start)
+    (void)close_range(start, UINT_MAX, 0);
+  else if (ctrlfd == start || ctrlfd == start + 1)
+    (void)close_range(ctrlfd + 1, UINT_MAX, 0);
+  else
+  {
+    (void)close_range(start, ctrlfd - 1, 0);
+    (void)close_range(ctrlfd + 1, UINT_MAX, 0);
+  }
+
+#elif defined (HAVE_CLOSEFROM) /* FreeBSD, etc. */
+  if (ctrlfd < start)
+    closefrom(start);
+  else if (ctrlfd == start || ctrlfd == start + 1)
+    closefrom(ctrlfd + 1);
+  else
+  {
+    unsigned int i;
+    for (i = start; i < ctrlfd; i++)
+      close(i);
+    closefrom(ctrlfd + 1);
+  }
+
+#else /* Close fds one at a time */
+  long openmax;
+  unsigned int i;
+  if ((openmax = sysconf(_SC_OPEN_MAX)) < 0)
+    openmax = 1024;
+  assert(openmax >= _POSIX_OPEN_MAX);
+  for (i = start; i < openmax; i++)
+    if (i != ctrlfd)
+      close(i);
+
+#endif
+
+}
+
 vnode_server_t *vnoded(int newnetns, const char *ctrlchnlname,
 		       const char *logfilename, const char *pidfilename,
 		       const char *chdirname)
 {
   int ctrlfd;
-  unsigned int i;
-  long openmax;
   vnode_server_t *server;
   pid_t pid;
 
@@ -324,13 +371,7 @@ vnode_server_t *vnoded(int newnetns, const char *ctrlchnlname,
       _exit(0);		       /* nothing else for the parent to do */
   }
 
-  /* try to close any open files */
-  if ((openmax = sysconf(_SC_OPEN_MAX)) < 0)
-    openmax = 1024;
-  assert(openmax >= _POSIX_OPEN_MAX);
-  for (i = 3; i < openmax; i++)
-    if (i != ctrlfd)
-      close(i);
+  close_fds(ctrlfd);
 
   if (!logfilename)
     logfilename = "/dev/null";
