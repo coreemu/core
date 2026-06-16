@@ -1,6 +1,7 @@
 """
 Incorporate grpc into python tkinter GUI
 """
+
 import getpass
 import json
 import logging
@@ -82,7 +83,7 @@ class CoreClient:
         self.servers: dict[str, CoreServer] = {}
         self.custom_nodes: dict[str, NodeDraw] = {}
         self.custom_observers: dict[str, Observer] = {}
-        self.node_commands: dict[str, str] = {}
+        self.node_commands: dict[str, tuple[str, bool]] = {}
         self.read_config()
 
         # helpers
@@ -153,7 +154,7 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
         # read node commands
         for node_cmd in self.app.guiconfig.node_commands:
-            self.node_commands[node_cmd.name] = node_cmd.cmd
+            self.node_commands[node_cmd.name] = (node_cmd.cmd, node_cmd.wait)
 
     def handle_events(self, event: Event) -> None:
         if not self.session or event.source == GUI_SOURCE:
@@ -760,6 +761,6 @@ class CoreClient:
         if not result:
             logger.error("error editing link: %s", link)
 
-    def run_cmd(self, node_id: int, cmd: str) -> str:
-        _, output = self.client.node_command(self.session.id, node_id, cmd)
+    def run_cmd(self, node_id: int, cmd: str, wait: bool = True) -> str:
+        _, output = self.client.node_command(self.session.id, node_id, cmd, wait=wait)
         return output
