@@ -7,6 +7,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
 
+import yaml
+from bidict import bidict
 from mako.template import Template
 
 from core import utils
@@ -221,14 +223,52 @@ class DockerNode(CoreNode):
                     raise CoreError(
                         "a compose name is required when using a compose file"
                     )
-                compose_path = os.path.expandvars(self.compose)
-                data = self.host_cmd(f"cat {compose_path}")
-                template = Template(data)
-                rendered = template.render_unicode(node=self, hostname=hostname)
-                rendered = rendered.replace('"', r"\"")
-                rendered = "\\n".join(rendered.splitlines())
-                compose_path = self.directory / "docker-compose.yml"
-                self.host_cmd(f'printf "{rendered}" >> {compose_path}', shell=True)
+                # flatten out all composes
+                compose_paths = bidict(
+                    {Path(os.path.expandvars(self.compose)).resolve(): 0}
+                )
+                i = 0
+                while i < len(compose_paths):
+                    compose_path = compose_paths.inverse[i]
+                    data = self.host_cmd(f"cat {compose_path}")
+                    template = Template(data)
+                    rendered = template.render_unicode(node=self, hostname=hostname)
+
+                    rendered_yaml = yaml.safe_load(rendered)
+                    for service in rendered_yaml.get("services", {}).values():
+                        extends = service.get("extends")
+                        if not isinstance(extends, dict):
+                            continue
+
+                        ext_file = extends.get("file")
+                        if not ext_file:
+                            continue
+
+                        assert isinstance(ext_file, str)
+
+                        abspath = (compose_path.parent / ext_file).resolve()
+                        if abspath not in compose_paths:
+                            compose_paths[abspath] = len(compose_paths)
+                        extends["file"] = f"{compose_paths[abspath]}/compose.yaml"
+
+                    re_referenced = yaml.safe_dump(rendered_yaml)
+                    re_referenced = re_referenced.replace('"', r"\"")
+                    re_referenced = "\\n".join(re_referenced.splitlines())
+
+                    compose_path = self.directory / (
+                        "compose.yaml" if i == 0 else f"{i}/compose.yaml"
+                    )
+                    if i > 0:
+                        self.host_cmd(
+                            f'mkdir -p "{self.directory / f"{i}"}"',
+                            shell=True,
+                        )
+                    self.host_cmd(
+                        f'printf "{re_referenced}" >> {compose_path}',
+                        shell=True,
+                    )
+                    i += 1
+
                 self.host_cmd(
                     f"{DOCKER_COMPOSE} up -d {self.compose_name}", cwd=self.directory
                 )
