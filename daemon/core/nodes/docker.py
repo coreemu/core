@@ -230,13 +230,15 @@ class DockerNode(CoreNode):
                 i = 0
                 while i < len(compose_paths):
                     compose_path = compose_paths.inverse[i]
-                    data = self.host_cmd(f"cat {compose_path}")
-                    template = Template(data)
-                    rendered = template.render_unicode(node=self, hostname=hostname)
+                    data_string = self.host_cmd(f"cat {compose_path}")
 
-                    rendered_yaml = yaml.safe_load(rendered)
-                    for service in rendered_yaml.get("services", {}).values():
-                        extends = service.get("extends")
+                    data_yaml = yaml.safe_load(data_string)
+                    for service, settings in data_yaml.get("services", {}).items():
+                        if service == self.compose_name:
+                            settings["network_mode"] = "none"
+                            settings["container_name"] = "${node.name}"
+
+                        extends = settings.get("extends")
                         if not isinstance(extends, dict):
                             continue
 
@@ -251,9 +253,10 @@ class DockerNode(CoreNode):
                             compose_paths[abspath] = len(compose_paths)
                         extends["file"] = f"{compose_paths[abspath]}/compose.yaml"
 
-                    re_referenced = yaml.safe_dump(rendered_yaml)
-                    re_referenced = re_referenced.replace('"', r"\"")
-                    re_referenced = "\\n".join(re_referenced.splitlines())
+                    template = Template(yaml.safe_dump(data_yaml))
+                    rendered = template.render_unicode(node=self, hostname=hostname)
+                    rendered = rendered.replace('"', r"\"")
+                    rendered = "\\n".join(rendered.splitlines())
 
                     compose_path = self.directory / (
                         "compose.yaml" if i == 0 else f"{i}/compose.yaml"
@@ -264,7 +267,7 @@ class DockerNode(CoreNode):
                             shell=True,
                         )
                     self.host_cmd(
-                        f'printf "{re_referenced}" >> {compose_path}',
+                        f'printf "{rendered}" >> {compose_path}',
                         shell=True,
                     )
                     i += 1
