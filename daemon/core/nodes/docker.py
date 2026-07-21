@@ -239,19 +239,27 @@ class DockerNode(CoreNode):
                             settings["container_name"] = "${node.name}"
 
                         extends = settings.get("extends")
-                        if not isinstance(extends, dict):
-                            continue
+                        if isinstance(extends, dict):
+                            ext_file = extends.get("file")
+                            if ext_file:
+                                assert isinstance(ext_file, str)
+                                abspath = (compose_path.parent / ext_file).resolve()
+                                if abspath not in compose_paths:
+                                    compose_paths[abspath] = len(compose_paths)
+                                extends["file"] = (
+                                    f"{compose_paths[abspath]}/compose.yaml"
+                                )
 
-                        ext_file = extends.get("file")
-                        if not ext_file:
-                            continue
-
-                        assert isinstance(ext_file, str)
-
-                        abspath = (compose_path.parent / ext_file).resolve()
-                        if abspath not in compose_paths:
-                            compose_paths[abspath] = len(compose_paths)
-                        extends["file"] = f"{compose_paths[abspath]}/compose.yaml"
+                        volumes = settings.get("volumes")
+                        if isinstance(volumes, list):
+                            new_volumes = []
+                            for volume in volumes:
+                                volume_parts = volume.split(":")
+                                volume_parts[0] = str(
+                                    (compose_path.parent / volume_parts[0]).resolve()
+                                )
+                                new_volumes.append(":".join(volume_parts))
+                            settings["volumes"] = new_volumes
 
                     template = Template(yaml.safe_dump(data_yaml))
                     rendered = template.render_unicode(node=self, hostname=hostname)
